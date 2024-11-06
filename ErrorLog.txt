@@ -1,0 +1,5 @@
+2024-11-06 11:16:10,362 - ERROR -   Unable to import dependencies:
+
+No module named 'PyQt6'
+
+
