@@ -33,3 +33,12 @@ def get_video_duration(video_path):
     clip.close()
     
     return duration
+
+
+from PyQt6.QtCore import QEvent, Qt, QObject
+
+class EnterKeyFilter(QObject):
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Type.KeyPress and event.key() == Qt.Key.Key_Return:
+            return True
+        return super().eventFilter(obj, event)

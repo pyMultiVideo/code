@@ -1,5 +1,1637 @@
-2024-11-06 11:16:10,362 - ERROR -   Unable to import dependencies:
-
-No module named 'PyQt6'
-
-
+2024-11-08 13:43:57,997 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 433, in start_recording
+    self.toggle_playing_video.setText('Stop Recording')
+AttributeError: 'function' object has no attribute 'setText'
+2024-11-08 13:45:25,640 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 433, in start_recording
+    self.toggle_playing_video.setText('Stop Recording')
+AttributeError: 'function' object has no attribute 'setText'
+2024-11-08 14:07:47,492 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\enum.py", line 359, in __call__
+    def __call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1):
+KeyboardInterrupt
+2024-11-08 14:42:24,716 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 416, in start_recording
+    self._init_ffmpeg_process()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 310, in _init_ffmpeg_process
+    self.get_gpio_filename()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 243, in get_gpio_filename
+    with open(self.GPIO_filename, mode = 'w', newline='') as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:24,748 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:24,808 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:24,841 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:24,891 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:24,940 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:24,990 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,029 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,073 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,125 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,173 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,225 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,274 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,308 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,356 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,406 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,456 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,507 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,542 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,590 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,640 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,690 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,739 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,790 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,825 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,873 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,923 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:25,973 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,023 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,076 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,107 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,157 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,206 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,257 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,292 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,340 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,391 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,440 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,490 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,540 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,575 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,623 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,673 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,723 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,788 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,859 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,907 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:26,957 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,007 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,042 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,092 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,141 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,190 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,230 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,276 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,325 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,373 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,424 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,474 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,524 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,558 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,607 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,657 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,708 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,757 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,795 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,841 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,890 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,940 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:27,990 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:28,041 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:28,077 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:28,124 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:28,173 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:28,223 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:28,263 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:28,325 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:28,358 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:28,406 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code/data\\Subject_1_2024-11-08_14-42-24_GPIO_data.csv'
+2024-11-08 14:42:28,457 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 432, in stop_recording
+    self.file.close()
+AttributeError: 'CameraWidget' object has no attribute 'file'
+2024-11-08 14:44:34,463 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 294, in refresh_display
+    def refresh_display(self):
+KeyboardInterrupt
+2024-11-08 14:45:02,329 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 416, in start_recording
+    self._init_ffmpeg_process()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 310, in _init_ffmpeg_process
+    self.get_gpio_filename()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 243, in get_gpio_filename
+    with open(self.GPIO_filename, mode = 'w', newline='') as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:02,375 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:02,422 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:02,469 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:02,510 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:02,560 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:02,608 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:02,654 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:02,699 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:02,759 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:02,809 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:02,864 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:02,912 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:02,963 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,007 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,047 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,096 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,147 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,195 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,230 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,278 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,330 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,378 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,430 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,480 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,514 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,562 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,612 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,662 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,712 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,750 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,792 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,849 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,895 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,944 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:03,982 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,029 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,078 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,130 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,179 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,214 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,262 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,312 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,363 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,412 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,451 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,498 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,548 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,597 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,647 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,695 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,734 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,780 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,830 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,880 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,927 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:04,967 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,015 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,063 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,112 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,162 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,201 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,245 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,295 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,345 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,395 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,447 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,494 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,530 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,578 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,630 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,678 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,719 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,764 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,812 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,863 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,912 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,963 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:05,999 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:06,047 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:06,095 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:06,145 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:06,185 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:06,231 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:06,281 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:06,330 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:06,380 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:06,430 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 291, in recording_loop
+    self.fetch_image_data()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 195, in fetch_image_data
+    with open(self.GPIO_filename, mode = 'a', newline='') as self.file:
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\alifa\\OneDrive_-_Nexus365\\Documents\\Video_Aquisition_Application\\pyCamera\\code\\data\\Subject_1_2024-11-08_14-45-02_GPIO_data.csv'
+2024-11-08 14:45:06,441 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 432, in stop_recording
+    self.file.close()
+AttributeError: 'CameraWidget' object has no attribute 'file'
+2024-11-08 14:47:14,947 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 417, in start_recording
+    self.toggle_playing_video.setText('Stop Recording')
+AttributeError: 'function' object has no attribute 'setText'
+2024-11-08 14:47:18,958 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 417, in start_recording
+    self.toggle_playing_video.setText('Stop Recording')
+AttributeError: 'function' object has no attribute 'setText'
+2024-11-08 14:47:27,427 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 417, in start_recording
+    self.toggle_playing_video.setText('Stop Recording')
+AttributeError: 'function' object has no attribute 'setText'
+2024-11-08 14:48:08,755 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 417, in start_recording
+    self.toggle_playing_video.setText('Stop Recording')
+AttributeError: 'function' object has no attribute 'setText'
+2024-11-08 14:51:45,374 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 417, in start_recording
+    self.toggle_playing_video.setText('Stop Recording')
+AttributeError: 'function' object has no attribute 'setText'
+2024-11-08 15:03:53,142 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 303, in change_camera_config
+    self.load_experiment_from_file_path(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 334, in load_experiment_from_file_path
+    with open(file_path) as f:
+FileNotFoundError: [Errno 2] No such file or directory: ''
+2024-11-08 15:07:18,795 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 318, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:09:38,100 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 318, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:09:42,349 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 318, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:10:22,596 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 319, in change_camera_config
+    unique_id = self.unique_ids[num_cameras-1][0],
+IndexError: list index out of range
+2024-11-08 15:10:23,829 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 319, in change_camera_config
+    unique_id = self.unique_ids[num_cameras-1][0],
+IndexError: list index out of range
+2024-11-08 15:10:28,679 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 319, in change_camera_config
+    unique_id = self.unique_ids[num_cameras-1][0],
+IndexError: list index out of range
+2024-11-08 15:10:29,128 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 318, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:10:33,830 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 460, in change_camera
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:11:42,369 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 319, in change_camera_config
+    unique_id = self.unique_ids[num_cameras-1][0],
+IndexError: list index out of range
+2024-11-08 15:11:44,043 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 318, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:11:45,307 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 318, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:12:57,348 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 318, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:15:45,151 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 318, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:15:51,546 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 419, in start_recording
+    self.toggle_playing_video.setText('Stop Recording')
+AttributeError: 'function' object has no attribute 'setText'
+2024-11-08 15:19:04,519 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 318, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:20:07,415 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 318, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:21:20,257 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 337, in change_camera_config
+    box.set_parent(None)
+AttributeError: 'CameraConfig' object has no attribute 'set_parent'
+2024-11-08 15:21:54,844 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 338, in change_camera_config
+    box.deleteLater()
+AttributeError: 'CameraConfig' object has no attribute 'deleteLater'
+2024-11-08 15:22:40,389 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 319, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:25:05,486 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 319, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:25:05,926 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 337, in change_camera_config
+    box_object = self.camera_groupboxes.pop()
+IndexError: pop from empty list
+2024-11-08 15:25:07,228 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 323, in change_camera_config
+    camera_config    =self.experiment_config.cameras[num_cameras-1] # -1 because the index is 0 based
+IndexError: list index out of range
+2024-11-08 15:25:08,094 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 323, in change_camera_config
+    camera_config    =self.experiment_config.cameras[num_cameras-1] # -1 because the index is 0 based
+IndexError: list index out of range
+2024-11-08 15:25:08,508 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 320, in change_camera_config
+    unique_id = self.unique_ids[num_cameras-1][0],
+IndexError: list index out of range
+2024-11-08 15:25:49,026 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 319, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:25:49,510 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 337, in change_camera_config
+    box_object = self.camera_groupboxes.pop()
+IndexError: pop from empty list
+2024-11-08 15:25:50,393 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 323, in change_camera_config
+    camera_config    =self.experiment_config.cameras[num_cameras-1] # -1 because the index is 0 based
+IndexError: list index out of range
+2024-11-08 15:26:45,790 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 319, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:26:47,419 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 337, in change_camera_config
+    box_object = self.camera_groupboxes.pop()
+IndexError: pop from empty list
+2024-11-08 15:28:12,996 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 319, in change_camera_config
+    unique_id = self.unique_ids[num_cameras-1][0],
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:31:24,410 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 318, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:31:29,144 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 336, in change_camera_config
+    box_object = self.camera_groupboxes.pop()
+IndexError: pop from empty list
+2024-11-08 15:32:15,398 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 318, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:32:16,414 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 318, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:33:04,845 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 318, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:33:52,946 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\enum.py", line 359, in __call__
+    def __call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1):
+KeyboardInterrupt
+2024-11-08 15:34:09,656 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 460, in change_camera
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:34:13,871 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 340, in change_camera_config
+    box_object.de_init_camera()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 465, in de_init_camera
+    self.camera_object.end_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 147, in end_recording
+    self.pyspin_camera.EndAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34341, in EndAcquisition
+    return _PySpin._SWIG_CamPtr_EndAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is not initialized [-1002]
+2024-11-08 15:34:21,742 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 318, in change_camera_config
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 124, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:42:44,430 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 370, in load_camera_config
+    self._init_viewfinder_groupbox()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 262, in _init_viewfinder_groupbox
+    CameraWidget(
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 68, in __init__
+    self._init_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 170, in _init_recording
+    self.camera_object.begin_capturing()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\api\camera.py", line 127, in begin_capturing
+    self.pyspin_camera.BeginAcquisition()
+  File "C:\Users\alifa\Anaconda3\envs\flir\lib\site-packages\PySpin\PySpin.py", line 34318, in BeginAcquisition
+    return _PySpin._SWIG_CamPtr_BeginAcquisition(self)
+_PySpin.SpinnakerException: Spinnaker: Camera is already streaming [-1004]
+2024-11-08 15:57:31,455 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 455, in stop_all_recording
+    camera.stop_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 435, in stop_recording
+    self.file.close()
+AttributeError: 'CameraWidget' object has no attribute 'file'
+2024-11-08 15:57:43,262 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinder_Tab.py", line 451, in start_all_recording
+    camera.start_recording()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 418, in start_recording
+    self._init_ffmpeg_process()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 311, in _init_ffmpeg_process
+    self.get_mp4_filename()
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\camera_widget.py", line 224, in get_mp4_filename
+    + '/' + f"{self.camera_config.subject_ID}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
+TypeError: bad operand type for unary +: 'str'

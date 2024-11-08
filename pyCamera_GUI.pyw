@@ -1,5 +1,6 @@
 import logging
-import sys
+import sys, argparse
+
 
 # Set up logging
 logging.basicConfig(
@@ -23,7 +24,9 @@ except ImportError as e:
 # Import GUI now that dependancies are installed        
 import GUI.main_gui as mg
 
-def main():
+def main(parsed_args, unparsed_args):
+    
+    
     app = mg.QtWidgets.QApplication(sys.argv)
     # set pyqt6 style
     app.setStyle('Fusion')
@@ -31,6 +34,15 @@ def main():
     sys.excepthook = mg.GUIApp.exception_hook
     app.exec()
     
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", help="Path to the configuration file", type=str)
+    
+    parsed_args, unparsed_args = parser.parse_known_args()
+    return parsed_args, unparsed_args
+    
 # Run the main function if this script is run
 if __name__ == '__main__':
-    main()
+    parsed_args, unparsed_args = parse_args()
+    
+    main(parsed_args, unparsed_args)

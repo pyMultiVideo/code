@@ -7,22 +7,19 @@ import json
 from typing import Tuple
 
 import pandas as pd
+# import numpy as np
 
-def load_data_csv() -> Tuple[pd.DataFrame, pd.DataFrame]:
+def load_data() -> Tuple[pd.DataFrame]:
     
-    file_path = os.path.join(this.paths['camera_dir'], 'camera_information.csv')
-    camera_data = pd.read_csv(file_path)
-    camera_data.file_location = file_path
+    encoder_file_path = os.path.join(this.paths['encoder_dir'], 'encoders.json')
+    encoder_dict = json.load(open(encoder_file_path))
     
-    return camera_data
+    return encoder_dict
 
 
 
-config_path = os.path.join(os.path.dirname(__file__), 'config.json')
-config = json.load(open(config_path))
 
-ROOT = os.path.abspath(config['ROOT'])  # Root directory of the project
-
+ROOT = os.path.dirname(os.path.abspath(__file__))
 
 # this a variable that is accessible from any module once this module has been imported 
 # Pointer to module object instance
@@ -31,9 +28,14 @@ this = sys.modules[__name__]
 this.paths = {
     'ROOT': ROOT,
     'logger_dir': os.path.join(ROOT, 'app_data', 'logs'),
-    'camera_dir': os.path.join(ROOT, 'app_data', 'camera'),
+    'camera_dir': os.path.join(ROOT, 'configs', 'experiments'),
+    'encoder_dir': os.path.join(ROOT, 'configs', 'encoders')
 }
 
 # Load pandas dataframes
 
-this.camera_data = load_data_csv()
+this.encoder_dict = load_data()
+
+# Print the user_name column as a list
+# print(this.camera_data)
+# print(this.camera_data['user_name'].tolist())

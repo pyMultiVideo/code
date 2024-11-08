@@ -15,12 +15,16 @@ import logging
 import sys, os
 
 # import tab classes
-from GUI.view_finder_tab import viewfinder_tab
-from GUI.camera_widget import camera_widget
+from GUI.ViewFinder_Tab import ViewFinder_Tab
+from GUI.camera_widget import CameraWidget
 from GUI.system_tab import system_tab
-from GUI.encoder_tab import encoder_tab
+from GUI.setups_tab import setups_tab
 from GUI.ipython_tab import ipython_tab
 
+# import camera wrapper classes
+from api.camera import (
+    CameraTemplate as Camera
+)
 import PySpin
 
 if os.name == 'nt':
@@ -35,7 +39,7 @@ class GUIApp(QMainWindow):
         super().__init__()
         
         self.logger = logging.getLogger(__name__)
-        self._load_configs() 
+        self._load_camera_names() 
         self._init_cam_list()
         
         # Initialise the tab classess
@@ -57,8 +61,8 @@ class GUIApp(QMainWindow):
     def _init_tabs(self):
         '''Initialize tab classes'''
         # self.summary_tab    = system_tab(parent = self)
-        self.viewfinder_tab = viewfinder_tab(parent = self)
-        self.encoder_tab    = encoder_tab(parent = self)
+        self.viewfinder_tab = ViewFinder_Tab(parent = self)
+        self.encoder_tab    = setups_tab(parent = self)
         self.ipython_tab    = ipython_tab(parent = self)
         
         self._add_tabs()
@@ -71,27 +75,42 @@ class GUIApp(QMainWindow):
         self.tab_widget.addTab(self.encoder_tab,    'Encoder')
         self.tab_widget.addTab(self.ipython_tab,    'IPython')
         
-    def _load_configs(self):
+    def _load_camera_names(self):
         
         # Get list of json files in the configs folder
         json_files = [f for f in os.listdir('configs') if f.endswith('.json')]
         
-        for config in json_files:
-            name = config.split('.')[0]
-            setattr(self, name, json.load(open(f'configs/{config}')))
+        for setup in json_files:
+            name = setup.split('.')[0]
+            setattr(self, name, json.load(open(f'configs/{setup}')))
                 
         logging.info('Loaded configurations: ' + ', '.join(json_files))
 
+    def _init_experiments(self):
+        
+        # Get list of json files in the configs folder
+        json_files = [f for f in os.listdir('experiments') if f.endswith('.json')]
+        
+        for experiment in json_files:
+            name = experiment.split('.')[0]
+            setattr(self, name, json.load(open(f'configs/{experiment}')))
+                
+        logging.info('Loaded configurations: ' + ', '.join(json_files))
 
     def _init_cam_list(self):
         '''Initialise the camera list'''
+        # self.system = CameraSystem()
+        # self.cam_list = self.system.get_camera_list()
+        
         self.system = PySpin.System.GetInstance()
         self.cam_list = self.system.GetCameras()
         self.numCams = len(self.system.GetCameras())
-        print(self.cam_list)    
+        # print(self.cam_list)    
         for cam in self.cam_list:
+            
             logging.info(f'Found camera: {cam.GetUniqueID()}')
             
+
 
     def closeEvent(self, event):
         '''Close the GUI'''
