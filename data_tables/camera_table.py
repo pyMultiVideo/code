@@ -119,7 +119,3 @@ class experiment_overview_table(QtGui.QTableWidget):
                 for subject in eval(database.exp_df.loc[database.exp_df['Name'] == exp_name, 'Subjects'].values[0]):
                     database.mouse_df.loc[database.mouse_df['Mouse_ID'] == subject, 'in_system'] = False
 
-
-
-# class CameraTable:
-    

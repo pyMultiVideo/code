@@ -6,8 +6,8 @@ import sys, argparse
 logging.basicConfig(
     level=logging.ERROR, 
     handlers=[logging.FileHandler(
-              'ErrorLog.txt', 
-              delay=True)], 
+             'ErrorLog.txt', 
+              delay=True),], 
     format='%(asctime)s - %(levelname)s - %(message)s'
     )
 
@@ -25,8 +25,7 @@ except ImportError as e:
 import GUI.main_gui as mg
 
 def main(parsed_args, unparsed_args):
-    
-    
+
     app = mg.QtWidgets.QApplication(sys.argv)
     # set pyqt6 style
     app.setStyle('Fusion')

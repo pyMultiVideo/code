@@ -10,14 +10,16 @@ import pandas as pd
 # import numpy as np
 
 def load_data() -> Tuple[pd.DataFrame]:
+
+    
+    camera_file_path = os.path.join(this.paths['camera_dir'], 'cameras_configs.json')
+    camera_tables = json.load(open(camera_file_path))
+    # When loading in the database we should be able to check things about the data (are there any repeated values for the unique idenifiers. )
     
     encoder_file_path = os.path.join(this.paths['encoder_dir'], 'encoders.json')
     encoder_dict = json.load(open(encoder_file_path))
     
-    return encoder_dict
-
-
-
+    return camera_tables,  encoder_dict
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
@@ -28,13 +30,14 @@ this = sys.modules[__name__]
 this.paths = {
     'ROOT': ROOT,
     'logger_dir': os.path.join(ROOT, 'app_data', 'logs'),
-    'camera_dir': os.path.join(ROOT, 'configs', 'experiments'),
-    'encoder_dir': os.path.join(ROOT, 'configs', 'encoders')
+    'camera_dir': os.path.join(ROOT, 'configs', ),
+    'encoder_dir': os.path.join(ROOT, 'configs'),
+    'data_dir': os.path.join(ROOT, 'data'),
 }
 
 # Load pandas dataframes
 
-this.encoder_dict = load_data()
+this.camera_dict, this.encoder_dict = load_data()
 
 # Print the user_name column as a list
 # print(this.camera_data)

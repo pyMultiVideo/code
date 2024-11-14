@@ -1,1 +1,0 @@
-from tables.camera_overview_table import camera_overview_table

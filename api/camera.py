@@ -1,11 +1,14 @@
 
-import PySpin
 import numpy as np
+
+
 import json
-import logging 
+import logging
 import serial
 
-from utils.data_classes import CameraConfig
+import PySpin
+import cv2
+
 
 # Documentation for the Camera Object
 
@@ -44,7 +47,7 @@ class CameraTemplate():
         'Set the serial number of the camera'
         pass
     
-    def get_next_image(self) -> np.ndarray:
+    def get_next_image(self) -> list[np.ndarray]:
         'Gets the next image from the camera'
         pass
     
@@ -58,82 +61,113 @@ class CameraTemplate():
 
 class SpinnakerCamera(CameraTemplate):
     'Inherits from the camera class and adds the spinnaker specific functions from the PySpin library'
-    def __init__(self, camera: PySpin.Camera, config: CameraConfig):
+    def __init__(self, unique_id: str, CameraConfig = None):
         super().__init__(self)
+        self.camera_config = CameraConfig
+        # Logger
         self.logger = logging.getLogger(__name__)
-        self.pyspin_camera = camera
-        self.camera_config: CameraConfig = config
-        # self._init_camera()
-    
-    def _init_camera(self) -> None:
-    
-        # Set the camera parameters
-        self.set_exposure_time(self.camera_config.exposure_time)
-        self.set_gain(self.camera_config.gain)
-        self.set_frame_rate(self.camera_config.fps)
-        self.set_width(self.camera_config.width)
-        self.set_height(self.camera_config.height)
+        self.system = PySpin.System.GetInstance()
+        self.serial_number, self.api = unique_id.split('-')
+        self.cam = self.system.GetCameras().GetBySerial(self.serial_number)
         
-        # Set the serial number
-        self.set_serial_number(self.camera_config.serial_number)
-  
+        print('Camera:', self.cam)
+        self.cam.Init()
+
+        if self.camera_config is not None:
+            self.set_exposure_time(self.camera_config.exposure_time)
+            self.set_gain(self.camera_config.gain)
+            self.set_frame_rate(self.camera_config.fps)
+            self.set_width(self.camera_config.width)
+            self.set_height(self.camera_config.height)
+                
+        else:   
+            self.exposure_time  = self.get_exposure_time()
+            self.width          = self.get_width()
+            self.height         = self.get_height()
+            self.fps            = self.get_frame_rate()
+            self.gain           = self.get_gain()
+            self.pixel_format   = self.get_pixel_format()
+            self.bitrate        = self.get_bitrate()
+    # Functions to get the camera parameters
+    
+    def get_exposure_time(self) -> int:
+        nodemap = self.cam.GetNodeMap()       
+        return PySpin.CFloatPtr(nodemap.GetNode("ExposureTime")).GetValue()
+    
+    def get_width(self) -> int:
+        nodemap = self.cam.GetNodeMap()
+        return PySpin.CIntegerPtr(nodemap.GetNode("Width")).GetValue()
+    
+    def get_height(self) -> int:
+        nodemap = self.cam.GetNodeMap()
+        return PySpin.CIntegerPtr(nodemap.GetNode("Height")).GetValue()
+    
+    def get_frame_rate(self) -> int:
+        nodemap = self.cam.GetNodeMap()
+        return PySpin.CFloatPtr(nodemap.GetNode("AcquisitionFrameRate")).GetValue()
+    
+    def get_gain(self) -> int:
+        nodemap = self.cam.GetNodeMap()
+        return PySpin.CFloatPtr(nodemap.GetNode("Gain")).GetValue()
+    
+    def get_pixel_format(self) -> str:
+        nodemap = self.cam.GetNodeMap()
+        return PySpin.CEnumerationPtr(nodemap.GetNode("PixelFormat")).GetCurrentEntry().GetSymbolic()
+    
+    def get_bitrate(self) -> int:
+        nodemap = self.cam.GetNodeMap()
+        return PySpin.CIntegerPtr(nodemap.GetNode("DeviceLinkThroughputLimit")).GetValue()
+    
     # Functions to set the camera parameters
 
     def set_exposure_time(self, exposure_time: int) -> None:
-        if self.pyspin_camera.ExposureAuto and self.pyspin_camera.ExposureAuto.GetAccessMode() == PySpin.RW:
-            self.pyspin_camera.ExposureAuto.SetValue(PySpin.ExposureAuto_Off)
-        if self.pyspin_camera.ExposureTime and self.pyspin_camera.ExposureTime.GetAccessMode() == PySpin.RW:
-            self.pyspin_camera.ExposureTime.SetValue(exposure_time)
+        if self.cam.ExposureAuto and self.cam.ExposureAuto.GetAccessMode() == PySpin.RW:
+            self.cam.ExposureAuto.SetValue(PySpin.ExposureAuto_Off)
+        if self.cam.ExposureTime and self.cam.ExposureTime.GetAccessMode() == PySpin.RW:
+            self.cam.ExposureTime.SetValue(exposure_time)
             
     def set_gain(self, gain: int) -> None:
-        if self.pyspin_camera.GainAuto and self.pyspin_camera.GainAuto.GetAccessMode() == PySpin.RW:
-            self.pyspin_camera.GainAuto.SetValue(PySpin.GainAuto_Off)
-        if self.pyspin_camera.Gain and self.pyspin_camera.Gain.GetAccessMode() == PySpin.RW:
-            self.pyspin_camera.Gain.SetValue(gain)
+        if self.cam.GainAuto and self.cam.GainAuto.GetAccessMode() == PySpin.RW:
+            self.cam.GainAuto.SetValue(PySpin.GainAuto_Off)
+        if self.cam.Gain and self.cam.Gain.GetAccessMode() == PySpin.RW:
+            self.cam.Gain.SetValue(gain)
             
     def set_frame_rate(self, frame_rate: int) -> None:
-        if self.pyspin_camera.AcquisitionFrameRateEnable and self.pyspin_camera.AcquisitionFrameRateEnable.GetAccessMode() == PySpin.RW:
-            self.pyspin_camera.AcquisitionFrameRateEnable.SetValue(True)
-        if self.pyspin_camera.AcquisitionFrameRate and self.pyspin_camera.AcquisitionFrameRate.GetAccessMode() == PySpin.RW:
-            self.pyspin_camera.AcquisitionFrameRate.SetValue(frame_rate)
+        if self.cam.AcquisitionFrameRateEnable and self.cam.AcquisitionFrameRateEnable.GetAccessMode() == PySpin.RW:
+            self.cam.AcquisitionFrameRateEnable.SetValue(True)
+        if self.cam.AcquisitionFrameRate and self.cam.AcquisitionFrameRate.GetAccessMode() == PySpin.RW:
+            self.cam.AcquisitionFrameRate.SetValue(frame_rate)
             
     def set_width(self, width: int) -> None:
-        if self.pyspin_camera.Width and self.pyspin_camera.Width.GetAccessMode() == PySpin.RW:
-            self.pyspin_camera.Width.SetValue(width)
+        if self.cam.Width and self.cam.Width.GetAccessMode() == PySpin.RW:
+            self.cam.Width.SetValue(width)
         
     def set_height(self, height: int) -> None:
-        if self.pyspin_camera.Height and self.pyspin_camera.Height.GetAccessMode() == PySpin.RW:
-            self.pyspin_camera.Height.SetValue(height)
+        if self.cam.Height and self.cam.Height.GetAccessMode() == PySpin.RW:
+            self.cam.Height.SetValue(height)
             
     def set_frame_rate(self, frame_rate: int) -> None:
-        if self.pyspin_camera.AcquisitionFrameRateEnable and self.pyspin_camera.AcquisitionFrameRateEnable.GetAccessMode() == PySpin.RW:
-            self.pyspin_camera.AcquisitionFrameRateEnable.SetValue(True)
-        if self.pyspin_camera.AcquisitionFrameRate and self.pyspin_camera.AcquisitionFrameRate.GetAccessMode() == PySpin.RW:
-            self.pyspin_camera.AcquisitionFrameRate.SetValue(frame_rate)
-         
-    def set_config(self, config: CameraConfig) -> None:
-        'Function to set the camera configuration'
-        self.set_exposure_time(config.exposure_time)
-        self.set_gain(config.gain)
-        self.set_frame_rate(config.fps)
-        self.set_width(config.width)
-        self.set_height(config.height)
-        self.set_serial_number(config.serial_number)
-        
+        if self.cam.AcquisitionFrameRateEnable and self.cam.AcquisitionFrameRateEnable.GetAccessMode() == PySpin.RW:
+            self.cam.AcquisitionFrameRateEnable.SetValue(True)
+        if self.cam.AcquisitionFrameRate and self.cam.AcquisitionFrameRate.GetAccessMode() == PySpin.RW:
+            self.cam.AcquisitionFrameRate.SetValue(frame_rate)
+
     # Function to aquire images from the camera
           
     def begin_capturing(self) -> None:
-        self.pyspin_camera.Init()
-        self.pyspin_camera.BeginAcquisition()
+        # initialize the camera if it is not already initialized
+        if not self.cam.IsInitialized():
+            self.cam.Init()
+        self.cam.BeginAcquisition()
             
     def get_next_image(self) -> np.ndarray:
         
         # Check if the camera is not in aquistion mode
-        if not self.pyspin_camera.IsStreaming():
-            raise Exception("Camera is not in acquisition mode.")
+        if not self.cam.IsStreaming():
+            raise Exception(f"Camera {self.serial_number} is not in acquisition mode.")
         
         # Get the next image
-        next_image = self.pyspin_camera.GetNextImage()
+        next_image = self.cam.GetNextImage()
         
         # Check if the image is incomplete
         if next_image.IsIncomplete():
@@ -145,17 +179,35 @@ class SpinnakerCamera(CameraTemplate):
         next_image.Release()
         # Return the image
         return self.next_image
+    
+    def get_next_image_list(self) -> list[np.ndarray]:
+        '''Get all the images in the buffer'''
+        # Delete all images from the image list
+        self.image_list = []
+        # check if the camera is in acquisition mode
+        if not self.cam.IsStreaming():
+            raise Exception(f"Camera {self.serial_number} is not in acquisition mode.")
+        # get the next image
+        next_image = self.cam.GetNextImage()
+        # Get all images in the buffer
+        while not next_image.IsIncomplete():
+            self.image_list.append(next_image.GetNDArray())
+            next_image.Release()
+            next_image = self.cam.GetNextImage()
+        
+        return self.image_list
         
     def end_recording(self) -> None:
-        self.pyspin_camera.EndAcquisition()
-        self.pyspin_camera.DeInit()
+        self.cam.EndAcquisition()
+        self.cam.DeInit()
+        # make sure to release the camera
             
             
     def get_GPIO_data(self) -> dict:
         'Get the GPIO data from the camera'
         
         try:
-            node_line_selector = PySpin.CEnumerationPtr(self.pyspin_camera.GetNodeMap().GetNode('LineSelector'))
+            node_line_selector = PySpin.CEnumerationPtr(self.cam.GetNodeMap().GetNode('LineSelector'))
             if not PySpin.IsAvailable(node_line_selector) or not PySpin.IsReadable(node_line_selector):
                 raise Exception("LineSelector node not available.")
             
@@ -165,7 +217,7 @@ class SpinnakerCamera(CameraTemplate):
             for line_entry in line_entries:
                 line_name = line_entry.GetName()
                 
-                node_line_status = PySpin.CBooleanPtr(self.pyspin_camera.GetNodeMap().GetNode("LineStatus"))
+                node_line_status = PySpin.CBooleanPtr(self.cam.GetNodeMap().GetNode("LineStatus"))
                 if not PySpin.IsAvailable(node_line_status) or not PySpin.IsReadable(node_line_status):
                     raise Exception("LineStatus node not available.")
 
@@ -178,16 +230,35 @@ class SpinnakerCamera(CameraTemplate):
         return self.GPIO_data
 class USBCamera(CameraTemplate):
     'Example use of a USB camera instead of the spinnaker camera'
-    def __init__(self):
-        super().__init__()
+    def __init__(self, unique_id: str):
+        super().__init__(self)
         self.logger = logging.getLogger(__name__)
+        serial_number, api = unique_id.split('-')
+        self.usb_id = int(serial_number)
+        self._init_camera()
         
     def _init_camera(self):
-        capture = cv2.VideoCapture(0)
+        self.capture = cv2.VideoCapture(self.usb_id, cv2.CAP_DSHOW)
     
+    def begin_capturing(self):
+        # self.capture.open(self.usb_id)
+        pass
+    
+    def get_next_image(self) -> np.ndarray:
+        ret, frame = self.capture.read()
+        # convert the frame to monochrome
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        return frame
     
     
 if __name__ == '__main__':
     # load the camera config
     # Testing functions here
+    
+    
+    
+    spinnaker_camera = SpinnakerCamera("18360350-spinnaker")
+    
+    
+    
     pass

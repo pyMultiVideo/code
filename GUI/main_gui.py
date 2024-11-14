@@ -15,11 +15,11 @@ import logging
 import sys, os
 
 # import tab classes
-from GUI.ViewFinder_Tab import ViewFinder_Tab
-from GUI.camera_widget import CameraWidget
-from GUI.system_tab import system_tab
-from GUI.setups_tab import setups_tab
-from GUI.ipython_tab import ipython_tab
+from GUI.ViewFinderTab import ViewFinder_Tab
+from GUI.CameraWidget import CameraWidget
+# from GUI.system_tab import system_tab
+from GUI.SetupsTab import SetupsTabs
+from GUI.ipython_tab import iPythonTab
 
 # import camera wrapper classes
 from api.camera import (
@@ -28,7 +28,7 @@ from api.camera import (
 import PySpin
 
 if os.name == 'nt':
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('Camera Viewer 2')
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('pyCamera')
 
 
 class GUIApp(QMainWindow):
@@ -45,25 +45,26 @@ class GUIApp(QMainWindow):
         # Initialise the tab classess
         self._set_icons()
         self._init_tabs()
+        self._init_timers() 
         # Could add log in here
 
         self.setGeometry(100, 100, 700, 800) # x, y, width, height
-        self.setWindowTitle('Camera Viewer 2') # default window title
+        self.setWindowTitle('pyCamera') # default window title
         self.setCentralWidget(self.tab_widget)
         self.show() # show the GUI
         
     def _set_icons(self):
         '''Set the icons for the GUI'''
-        icon = QIcon('assets/camera_icon.webp')
+        icon = QIcon('assets/logo/pyCamera.svg')
         self.setWindowIcon(icon)
         self.statusBar().showMessage('Ready')
                         
     def _init_tabs(self):
         '''Initialize tab classes'''
         # self.summary_tab    = system_tab(parent = self)
+        self.setups_tab    = SetupsTabs(parent = self)
         self.viewfinder_tab = ViewFinder_Tab(parent = self)
-        self.encoder_tab    = setups_tab(parent = self)
-        self.ipython_tab    = ipython_tab(parent = self)
+        self.ipython_tab    = iPythonTab(parent = self)
         
         self._add_tabs()
 
@@ -72,7 +73,7 @@ class GUIApp(QMainWindow):
         self.tab_widget = QTabWidget()
         self.tab_widget.addTab(self.viewfinder_tab, 'View Finder')
         # self.tab_widget.addTab(self.summary_tab,    'Summary')
-        self.tab_widget.addTab(self.encoder_tab,    'Encoder')
+        self.tab_widget.addTab(self.setups_tab,     'Setups')
         self.tab_widget.addTab(self.ipython_tab,    'IPython')
         
     def _load_camera_names(self):
@@ -109,8 +110,24 @@ class GUIApp(QMainWindow):
         for cam in self.cam_list:
             
             logging.info(f'Found camera: {cam.GetUniqueID()}')
+       
+    def _init_timers(self):
+        '''Initialise the timers'''
+        self.refresh_timer = QTimer()
+        self.refresh()
+        self.refresh_timer.timeout.connect(self.refresh)
+        self.refresh_timer.start(1000)
+    
+    def refresh(self):
+        '''
+        Refresh the pages that require it
+        '''
+        self.setups_tab.refresh()
             
-
+    def resizeEvent(self, event):
+        '''Resize the GUI'''
+        self.viewfinder_tab.resize(event.size().width(), event.size().height())
+        event.accept()
 
     def closeEvent(self, event):
         '''Close the GUI'''
