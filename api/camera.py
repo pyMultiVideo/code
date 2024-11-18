@@ -155,6 +155,7 @@ class SpinnakerCamera(CameraTemplate):
     # Function to aquire images from the camera
           
     def begin_capturing(self) -> None:
+        print(f'Begin capturing: {self.serial_number}')
         # initialize the camera if it is not already initialized
         if not self.cam.IsInitialized():
             self.cam.Init()
@@ -201,7 +202,6 @@ class SpinnakerCamera(CameraTemplate):
         self.cam.EndAcquisition()
         self.cam.DeInit()
         # make sure to release the camera
-            
             
     def get_GPIO_data(self) -> dict:
         'Get the GPIO data from the camera'

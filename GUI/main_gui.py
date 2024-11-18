@@ -15,10 +15,8 @@ import logging
 import sys, os
 
 # import tab classes
-from GUI.ViewFinderTab import ViewFinder_Tab
-from GUI.CameraWidget import CameraWidget
-# from GUI.system_tab import system_tab
-from GUI.SetupsTab import SetupsTabs
+from GUI.ViewFinderTab import ViewFinderTab
+from GUI.SetupsTab import SetupsTab
 from GUI.ipython_tab import iPythonTab
 
 # import camera wrapper classes
@@ -61,9 +59,8 @@ class GUIApp(QMainWindow):
                         
     def _init_tabs(self):
         '''Initialize tab classes'''
-        # self.summary_tab    = system_tab(parent = self)
-        self.setups_tab    = SetupsTabs(parent = self)
-        self.viewfinder_tab = ViewFinder_Tab(parent = self)
+        self.setups_tab     = SetupsTab(parent = self)
+        self.viewfinder_tab = ViewFinderTab(parent = self)
         self.ipython_tab    = iPythonTab(parent = self)
         
         self._add_tabs()
@@ -72,7 +69,6 @@ class GUIApp(QMainWindow):
         '''Add tabs to the GUI'''
         self.tab_widget = QTabWidget()
         self.tab_widget.addTab(self.viewfinder_tab, 'View Finder')
-        # self.tab_widget.addTab(self.summary_tab,    'Summary')
         self.tab_widget.addTab(self.setups_tab,     'Setups')
         self.tab_widget.addTab(self.ipython_tab,    'IPython')
         
@@ -123,6 +119,7 @@ class GUIApp(QMainWindow):
         Refresh the pages that require it
         '''
         self.setups_tab.refresh()
+        self.viewfinder_tab.refresh()
             
     def resizeEvent(self, event):
         '''Resize the GUI'''

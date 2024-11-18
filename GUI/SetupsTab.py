@@ -1,5 +1,5 @@
 import pandas as pd
-from api.data_classes import CameraConfig
+from api.data_classes import CameraSettingsConfig
 from tools.load_camera import get_unique_ids, load_saved_setups
 import PyQt6.QtGui as QtGui, PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtCore as QtCore
@@ -14,11 +14,58 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem,
     QLineEdit
     )
-
+import json
 import db as database
+from dataclasses import asdict
 
+class Setup():
+    '''Class that contains the setup for the camera'''
+    def __init__(self, 
+                setups_table, 
+                name, 
+                unique_id, 
+    ):
+        self.setups_table = setups_table
+        self.setups_tab = setups_table.parent
+        self.name = name
+        self.unique_id = unique_id
 
-class SetupsTabs(QtWidgets.QWidget):
+        
+        self.label = self.name if self.name != None else self.unique_id
+        
+        # Edit name 
+        self.name_edit = QLineEdit()
+        if self.name:
+            self.name_edit.setText(self.name)
+        self.name_edit.editingFinished.connect(self.camera_name_changed)
+
+        # Edit unique_id
+        self.unique_id_edit = QLineEdit()
+        self.unique_id_edit.setReadOnly(True)
+        if self.unique_id:
+            self.unique_id_edit.setText(self.unique_id)
+    
+        self.setups_table.insertRow(0)
+        self.setups_table.setCellWidget(0, 0, self.name_edit)
+        self.setups_table.setCellWidget(0, 1, self.unique_id_edit)
+    def camera_name_changed(self):
+        """Called when name text of setup is edited."""
+        self.name = str(self.name_edit.text())
+        self.label = self.name if self.name else self.unique_id
+        if self.name == "_hidden_":
+            self.name_edit.setStyleSheet("color: grey;")
+        else:
+            self.name_edit.setStyleSheet("color: black;")
+        self.setups_tab.update_saved_setups(setup=self)
+        self.setups_tab.setups_changed = True
+    
+    def get_info(self):
+        return CameraSettingsConfig(
+            name = self.name,
+            unique_id = self.unique_id,
+            )
+
+class SetupsTab(QtWidgets.QWidget):
     '''
     Class that creates a setup tab that contains the camera table. This where we can see the camera settings and update them.
     In particular a name for the camera, for each serial number. 
@@ -28,14 +75,14 @@ class SetupsTabs(QtWidgets.QWidget):
     
     '''
     def __init__(self, parent=None):
-        super(SetupsTabs, self).__init__(parent)
+        super(SetupsTab, self).__init__(parent)
 
         self.GUI = parent
         
         self._initialize_camera_groupbox()
-
+        self.saved_setups_file = database.this.paths['camera_dir'] + '/cameras_configs.json'
         # 
-        self.setups = {} # Dict of setups: {Unique_id: Setup}
+        self.setups: dict[str, Setup] = {} # Dict of setups: {Unique_id: Setup}
         # Get a list of the saved setups from the database
         self.saved_setups = self.load_saved_setups()
         self.refresh()
@@ -55,11 +102,11 @@ class SetupsTabs(QtWidgets.QWidget):
         self.page_layout.addWidget(self.camera_table_groupbox)
         self.setLayout(self.camera_table_layout)
         
-    def load_saved_setups(self) -> list[CameraConfig]:
+    def load_saved_setups(self) -> list[CameraSettingsConfig]:
         '''Function to load the saved setups from the database as a list of Setup objects'''
         return load_saved_setups(database)
 
-    def get_saved_setups(self, unique_id: str = None, name: str = None) -> CameraConfig:
+    def get_saved_setups(self, unique_id: str = None, name: str = None) -> CameraSettingsConfig:
         '''
         Get a saved Setup_info object from a name or unique_id from self.saved_setups
         This function gets the next setup that matches the unique_id or name (using the 'next' function)
@@ -76,6 +123,28 @@ class SetupsTabs(QtWidgets.QWidget):
                 pass
         return None
     
+    
+    def update_saved_setups(self, setup: Setup):
+        '''Called when a setup is updated to update the saved setups'''
+        saved_setup: CameraSettingsConfig = self.get_saved_setups(unique_id=setup.unique_id)
+        camera_settings_config = setup.get_info()
+        # if therer are no changes to the setup, return
+        if saved_setup == camera_settings_config:
+            return
+        # if the setup has a name 
+        if saved_setup:
+            self.saved_setups.remove(saved_setup)
+        if setup.name:
+            # add the setup config to the saved setups list
+            self.saved_setups.append(setup.get_info())
+        if self.saved_setups:
+
+            with open(self.saved_setups_file, 'w') as f:
+                json.dump([asdict(setup) for setup in self.saved_setups], f, indent=4)
+        # else:
+        #     self.save_path.unlink(missing_ok=True)
+
+    
     def refresh(self): 
         ''' Function to refresh the entries in the camera table to correspond to the connected cameras'''
         # Get a list of connected cameras (based on their unique id)
@@ -85,20 +154,13 @@ class SetupsTabs(QtWidgets.QWidget):
             # Add any new cameras setups to the setups
             for unique_id in set(connected_cameras) - set(self.setups.keys()):
                 # Check if this unique_id has been seen before by looking in the saved setups database
-                setup_info = self.get_saved_setups(unique_id=unique_id)
-                if setup_info:
+                camera_settings_config: CameraSettingsConfig = self.get_saved_setups(unique_id=unique_id)
+                if camera_settings_config:
                     # Instantiate the setup and add it to the setups dict
                     self.setups[unique_id] = Setup(
-                        setups_table = self.camera_table, 
-                        name = setup_info.name, 
-                        unique_id = setup_info.unique_id,
-                        width = setup_info.width,
-                        height = setup_info.height,
-                        bitrate = setup_info.bitrate,
-                        fps = setup_info.fps,
-                        pixel_format = setup_info.pixel_format,
-                        gain = setup_info.gain,
-                        exposure_time = setup_info.exposure_time
+                        setups_table    = self.camera_table, 
+                        name            = camera_settings_config.name, 
+                        unique_id       = camera_settings_config.unique_id
                         )
                 # If the unique_id has not been seen before, create a new setup
                 else:
@@ -109,6 +171,7 @@ class SetupsTabs(QtWidgets.QWidget):
                         unique_id=unique_id
                         )
                     
+                self.update_saved_setups(self.setups[unique_id])
             # Remove any setups that are no longer connected
             for unique_id in set(self.setups.keys()) - set(connected_cameras):
                 # Sequence for removed a setup from the table (and deleting it)
@@ -119,17 +182,23 @@ class SetupsTabs(QtWidgets.QWidget):
         '''Function to get the labels of the setups'''
         return [setup.label for setup in self.setups.values()]
     
-    def get_camera_names(self) -> list[str]:
+    def get_camera_labels(self) -> list[str]:
         '''Function to get the names of the cameras if they exist. if they have not been named, use the unique_id'''
-        return [setup.name if setup.name else setup.unique_id for setup in self.setups.values()]
+        return sorted([setup.name if setup.name else setup.unique_id for setup in self.setups.values()])
     
-    def get_camera_unique_id_from_dropdown(self, dropdown: str) -> str:
+    def get_camera_unique_ids(self) -> list[str]:
+        
+        '''Function to get the unique_ids of the cameras'''
+        return sorted([setup.unique_id for setup in self.setups.values()])
+
+    def get_camera_unique_id_from_label(self, camera_label: str) -> str:
         '''Function to get the unique_id of the camera from the label'''
+
         for setup in self.setups.values():
             # Check if the setup name is the same as the dropdown
-            if setup.name == dropdown:
+            if setup.name == camera_label:
                 return setup.unique_id
-            elif setup.unique_id == dropdown:
+            elif setup.unique_id == camera_label:
                 return setup.unique_id
         return None
             
@@ -145,8 +214,6 @@ class CameraOverviewTable(QTableWidget):
         self.configure_camera_table()
         # table is populated row by row. Specifically when each new camera is connected view instantiation of a new Setup object
 
-
-           
     def configure_camera_table(self):
         self.header_names = self.camera_dict[0].keys() if len(self.camera_dict) > 0 else ['Name', 'Unique ID']
         self.setColumnCount(len(self.header_names))
@@ -163,99 +230,4 @@ class CameraOverviewTable(QTableWidget):
         self.horizontalHeader().setSectionResizeMode(6, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)       
         self.horizontalHeader().setSectionResizeMode(7, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
         self.horizontalHeader().setSectionResizeMode(8, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
-
-class Setup():
-    '''Class that contains the setup for the camera'''
-    def __init__(self, setups_table, name, unique_id, width=0, height=0, bitrate=0, fps=0, pixel_format='None', gain=0, exposure_time=0):
-        self.setups_table = setups_table
-        self.name = name
-        self.unique_id = unique_id
-        self.width = width
-        self.height = height
-        self.bitrate = bitrate
-        self.fps = fps
-        self.pixel_format = pixel_format
-        self.gain = gain
-        self.exposure_time = exposure_time
-        
-        self.label = self.name if self.name else self.unique_id # If the name is not given, use the unique_id as the label
-        
-        # Edit name 
-        self.name_edit = QLineEdit()
-        if self.name:
-            self.name_edit.setText(self.name)
-        self.name_edit.editingFinished.connect(self.camera_name_changed)
-
-        # Edit unique_id
-        self.id_edit = QLineEdit()
-        self.id_edit.setReadOnly(True)
-        if self.unique_id:
-            self.id_edit.setText(self.unique_id)
-    
-        # Edit width
-        self.width_edit = QLineEdit()
-        self.width_edit.setReadOnly(True)
-        if self.width:
-            self.width_edit.setText(str(self.width))
-            
-        # Edit height
-        self.height_edit = QLineEdit()
-        self.height_edit.setReadOnly(True)
-        if self.height:
-            self.height_edit.setText(str(self.height))
-            
-        # Edit bitrate
-        self.bitrate_edit = QLineEdit()
-        self.bitrate_edit.setReadOnly(True)
-        if self.bitrate:
-            self.bitrate_edit.setText(str(self.bitrate))
-            
-        # Edit fps
-        self.fps_edit = QLineEdit()
-        self.fps_edit.setReadOnly(True)
-        if self.fps:
-            self.fps_edit.setText(str(self.fps))
-            
-        # Edit pixel_format
-        self.pixel_format_edit = QLineEdit()
-        self.pixel_format_edit.setReadOnly(True)
-        if self.pixel_format:
-            self.pixel_format_edit.setText(self.pixel_format)
-            
-        # Edit gain
-        self.gain_edit = QLineEdit()
-        self.gain_edit.setReadOnly(True)
-        if self.gain:
-            self.gain_edit.setText(str(self.gain))
-    
-        # Exit Exposure Time
-        self.exposure_time_edit = QLineEdit()
-        self.exposure_time_edit.setReadOnly(True)
-        if self.exposure_time:
-            self.exposure_time_edit.setText(str(self.exposure_time))
-            
-            
-
-        self.setups_table.insertRow(0)
-        self.setups_table.setCellWidget(0, 0, self.name_edit)
-        self.setups_table.setCellWidget(0, 1, self.id_edit)
-        self.setups_table.setCellWidget(0, 2, self.width_edit)
-        self.setups_table.setCellWidget(0, 3, self.height_edit)
-        self.setups_table.setCellWidget(0, 4, self.bitrate_edit)
-        self.setups_table.setCellWidget(0, 5, self.fps_edit)
-        self.setups_table.setCellWidget(0, 6, self.pixel_format_edit)
-        self.setups_table.setCellWidget(0, 7, self.gain_edit)
-        
-        
-    def camera_name_changed(self):
-        '''Change the name of the camera, getting the new information from the table'''
-        self.name = str(self.name_edit.text())
-        self.label = self.name if self.name else self.unique_id
-        
-        self.setups_table
-    
-    
-    def get_info(self):
-        return CameraConfig(self.name, self.unique_id, self.subject_id, self.width, self.height, self.bitrate, self.fps, self.pixel_format, self.gain)
-    
     

@@ -1,24 +1,29 @@
 from dataclasses import dataclass
 
 @dataclass
-class CameraConfig:
-    name: str # name of the camera
-    unique_id: str # unique id for the camera
-    # subject_id: str # subject id (of the thing thing being recorded) 
-    width: int
-    height: int
-    bitrate: int
-    fps: int
-    pixel_format: str
-    gain: int
-    exposure_time: int
+class CameraSetupConfig:
+    '''
+    Data class to hold the configuration of a single user set camera settings
+    '''
+    label: str
+    downsample_factor: int
+    subject_id: str
     
 
 @dataclass
 class ExperimentConfig:
+    '''
+    Data to hold the use set configuration of a single experiment
+    '''
     data_dir: str
     encoder: str
     num_cameras: int
-    cameras: list[CameraConfig]
-    
-    
+    cameras: list[CameraSetupConfig]
+ 
+@dataclass
+class CameraSettingsConfig:
+    '''
+    Data class to hold the camera settings for a single camera
+    '''
+    name: str
+    unique_id: str

@@ -1,1 +1,1 @@
-from GUI.ViewFinderTab import ViewFinder_Tab
+from GUI.ViewFinderTab import ViewFinderTab

@@ -29,3 +29,7 @@
 
 - [x] added a metadata file which saved start an stop time to a a json file.
 - down sampling the image by some scale to be the reduced resolution.
+
+
+# Latest
+The camera widget is initialsing with no label in the dropdown. So maybe its not been assigned by the time i am trying to set it. Try changin the constructer of the camera widget

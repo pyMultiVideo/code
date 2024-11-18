@@ -2,7 +2,7 @@
 import PySpin
 import cv2
 import logging
-from api.data_classes import CameraConfig
+from api.data_classes import CameraSettingsConfig
 
 logging.basicConfig(level=logging.INFO)
 
@@ -26,15 +26,6 @@ def get_unique_ids() -> list[str]:
         cam_id: tuple[str] = f"{cam.DeviceSerialNumber()}-spinnaker"
         unique_id_list.append(cam_id)
 
-    # USB system
-    # for i in range(10): # Check for 10 cameras (for a computer with 10 USB ports)
-    #     cam = cv2.VideoCapture(i, cv2.CAP_DSHOW)
-    #     if not cam.isOpened():
-    #         continue
-    #     cam_id: tuple[str] = f"{i}-usb"
-    #     unique_id_list.append(cam_id)
-    
-    # User would have to add the way of geting the unique id for their camera api here
     
     return sorted(unique_id_list)
 
@@ -43,28 +34,24 @@ def init_camera(unique_id: str):
         logging.error('No camera selected')
         return None
     # split the unique_id into the api and the unique id
-    serial_number, api = unique_id.split('-')
-    
+    try:
+        serial_number, api = unique_id.split('-')
+    except ValueError:
+        logging.error('Invalid camera ID')
+        return None
     if api == 'spinnaker':
         return SpinnakerCamera(unique_id)
     if api == 'usb':
         return USBCamera(int(unique_id), None)
 
-def load_saved_setups(database) -> list[CameraConfig]:
+def load_saved_setups(database) -> list[CameraSettingsConfig]:
     '''Function to load the saved setups from the database as a list of Setup objects'''
     setups_from_database = []
     for cam in database.camera_dict: 
         setups_from_database.append(
-            CameraConfig(
-                name            = cam['name'], 
-                unique_id       = cam['unique_id'],
-                width           = cam['width'],
-                height          = cam['height'],
-                bitrate         = cam['bitrate'],
-                fps             = cam['fps'],
-                pixel_format    = cam['pixel_format'],
-                gain            = cam['gain'],
-                exposure_time   = cam['exposure_time']
+            CameraSettingsConfig(
+                name      = cam['name'],
+                unique_id = cam['unique_id'],
                 )
             )
     return setups_from_database

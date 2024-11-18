@@ -30,7 +30,7 @@ def main(parsed_args, unparsed_args):
     # set pyqt6 style
     app.setStyle('Fusion')
     gui = mg.GUIApp()
-    sys.excepthook = mg.GUIApp.exception_hook
+    # sys.excepthook = mg.GUIApp.exception_hook
     app.exec()
     
 def parse_args():

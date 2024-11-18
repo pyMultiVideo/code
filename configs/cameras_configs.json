@@ -1,24 +1,14 @@
 [
     {
-        "name": "Camera One",
-        "unique_id": "18360350-spinnaker",
-        "width": 1280,
-        "height": 720,
-        "bitrate": 4000,
-        "fps": 30,
-        "pixel_format": "YUV",
-        "gain": 1,
-        "exposure_time": 10000
+        "name": "Test1",
+        "unique_id": "21013407-spinnaker"
     },
     {
-        "name": "Camera Two",
-        "unique_id": "21013407-spinnaker",
-        "width": 1280,
-        "height": 720,
-        "bitrate": 3000,
-        "fps": 25,
-        "pixel_format": "RGB",
-        "gain": 15,
-        "exposure_time": 10000
+        "name": "Test2",
+        "unique_id": "20073102-spinnaker"
+    },
+    {
+        "name": "Test4",
+        "unique_id": "18360350-spinnaker"
     }
 ]
