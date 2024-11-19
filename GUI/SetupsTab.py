@@ -27,16 +27,16 @@ class Setup():
     ):
         self.setups_table = setups_table
         self.setups_tab = setups_table.parent
-        self.name = name
+        self.label = name
         self.unique_id = unique_id
 
         
-        self.label = self.name if self.name != None else self.unique_id
+        self.label = self.label if self.label != None else self.unique_id
         
         # Edit name 
         self.name_edit = QLineEdit()
-        if self.name:
-            self.name_edit.setText(self.name)
+        if self.label:
+            self.name_edit.setText(self.label)
         self.name_edit.editingFinished.connect(self.camera_name_changed)
 
         # Edit unique_id
@@ -48,20 +48,22 @@ class Setup():
         self.setups_table.insertRow(0)
         self.setups_table.setCellWidget(0, 0, self.name_edit)
         self.setups_table.setCellWidget(0, 1, self.unique_id_edit)
+        
     def camera_name_changed(self):
         """Called when name text of setup is edited."""
-        self.name = str(self.name_edit.text())
-        self.label = self.name if self.name else self.unique_id
-        if self.name == "_hidden_":
+        self.label = str(self.name_edit.text())
+        self.label = self.label if self.label else self.unique_id
+        if self.label == "_hidden_":
             self.name_edit.setStyleSheet("color: grey;")
         else:
             self.name_edit.setStyleSheet("color: black;")
         self.setups_tab.update_saved_setups(setup=self)
         self.setups_tab.setups_changed = True
+        
     
     def get_info(self):
         return CameraSettingsConfig(
-            name = self.name,
+            name = self.label,
             unique_id = self.unique_id,
             )
 
@@ -86,7 +88,9 @@ class SetupsTab(QtWidgets.QWidget):
         # Get a list of the saved setups from the database
         self.saved_setups = self.load_saved_setups()
         self.refresh()
-
+        # flag to check if the setups have changed (which can be used to update things about the viewfinder tab)
+        self.setups_changed = False
+        
         # print('List of cameras:', [setup.name if setup.name else setup.unique_id for setup in self.setups.values()])
     # Layout functions
 
@@ -134,16 +138,16 @@ class SetupsTab(QtWidgets.QWidget):
         # if the setup has a name 
         if saved_setup:
             self.saved_setups.remove(saved_setup)
-        if setup.name:
+        if setup.label:
             # add the setup config to the saved setups list
             self.saved_setups.append(setup.get_info())
         if self.saved_setups:
-
             with open(self.saved_setups_file, 'w') as f:
                 json.dump([asdict(setup) for setup in self.saved_setups], f, indent=4)
         # else:
         #     self.save_path.unlink(missing_ok=True)
-
+        
+        self.refresh()
     
     def refresh(self): 
         ''' Function to refresh the entries in the camera table to correspond to the connected cameras'''
@@ -151,7 +155,7 @@ class SetupsTab(QtWidgets.QWidget):
         connected_cameras = get_unique_ids()
         # Check if the connected cameras are the same as the setups
         if not connected_cameras == self.setups.keys(): 
-            # Add any new cameras setups to the setups
+            # Add any new cameras setups to the setups (comparing unique_ids)
             for unique_id in set(connected_cameras) - set(self.setups.keys()):
                 # Check if this unique_id has been seen before by looking in the saved setups database
                 camera_settings_config: CameraSettingsConfig = self.get_saved_setups(unique_id=unique_id)
@@ -172,11 +176,22 @@ class SetupsTab(QtWidgets.QWidget):
                         )
                     
                 self.update_saved_setups(self.setups[unique_id])
+                
             # Remove any setups that are no longer connected
             for unique_id in set(self.setups.keys()) - set(connected_cameras):
                 # Sequence for removed a setup from the table (and deleting it)
                 self.setups.pop(unique_id)
                 
+        
+    # def rename_setup(self, old_label, new_label):
+    #     '''Function to rename a setup'''
+    #     for setup in self.setups.values():
+    #         if setup.label == old_label:
+    #             setup.label = new_label
+    #             setup.name_edit.setText(new_label)
+    #             self.update_saved_setups(setup)
+    #             break
+    #     self.setups_changed = True
         
     def get_setups_labels(self) -> list[str]:
         '''Function to get the labels of the setups'''
@@ -184,7 +199,7 @@ class SetupsTab(QtWidgets.QWidget):
     
     def get_camera_labels(self) -> list[str]:
         '''Function to get the names of the cameras if they exist. if they have not been named, use the unique_id'''
-        return sorted([setup.name if setup.name else setup.unique_id for setup in self.setups.values()])
+        return sorted([setup.label if setup.label else setup.unique_id for setup in self.setups.values()])
     
     def get_camera_unique_ids(self) -> list[str]:
         
@@ -195,8 +210,9 @@ class SetupsTab(QtWidgets.QWidget):
         '''Function to get the unique_id of the camera from the label'''
 
         for setup in self.setups.values():
+            print(setup.label, setup.label, camera_label)
             # Check if the setup name is the same as the dropdown
-            if setup.name == camera_label:
+            if setup.label == camera_label:
                 return setup.unique_id
             elif setup.unique_id == camera_label:
                 return setup.unique_id

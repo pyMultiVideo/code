@@ -67,7 +67,7 @@ class CameraWidget(QWidget):
         self.fps = fps
         self.pixel_format = pixel_format
         self.unique_id = self.setups_tab.get_camera_unique_id_from_label(self.label)
-        
+        print('unique_id', self.unique_id)
         self.camera_object: CameraObject = init_camera(self.unique_id)
         self.resolution_width  = self.camera_object.width
         self.resolution_height = self.camera_object.height
@@ -127,7 +127,6 @@ class CameraWidget(QWidget):
         # Dropdown for selecting the camera
         self.camera_dropdown = QComboBox()
         # set the current text to the camera label
-        print('label', self.label)
         # self.camera_dropdown.addItem(self.label)
         # self.camera_dropdown.setCurrentText(self.label)
         self.camera_dropdown.currentTextChanged.connect(self.change_camera)
@@ -231,7 +230,7 @@ class CameraWidget(QWidget):
         self.camera_dropdown.currentTextChanged.disconnect(self.change_camera)
         cbox_update_options(cbox = self.camera_dropdown, 
                             options = self.setups_tab.get_camera_labels(), 
-                            used_cameras_labels = self.view_finder.used_camera_groupbox_labels,
+                            used_cameras_labels = list([cam.label for cam in self.view_finder.camera_groupboxes]),
                             selected = self.label)
         self.camera_dropdown.currentTextChanged.connect(self.change_camera)
         
@@ -264,7 +263,7 @@ class CameraWidget(QWidget):
         self.metadata_filename = \
             self.view_finder.save_dir_textbox.toPlainText() + \
             '/' + f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_metadata.json"
-         
+        
         
     def display_frame(self, image_data: np.array) -> None:
         
@@ -279,7 +278,6 @@ class CameraWidget(QWidget):
             
         except Exception as e:
             print(f"Error displaying image: {e}")
-
     def draw_status_overlay(self):
         if self.recording == True:
             status = 'RECORDING'
@@ -287,10 +285,7 @@ class CameraWidget(QWidget):
         elif self.recording == False:
             status = 'NOT RECORDING'
             color = 'r'
-
         self.text.setText(status, color=color)  
-        
-        
         
     def _init_GPIO_overlay(self):
         '''Initialise the GPIO data'''
@@ -307,10 +302,7 @@ class CameraWidget(QWidget):
                                     rotatable   =False,
                                     resizable   =False,
                                     aspectLocked=True,
-                                    
-                                     )
-
-        
+                                    )
         self.video_feed.addItem(self.ellipse)
         
     def draw_GPIO_overlay(self) -> None:
@@ -476,7 +468,8 @@ class CameraWidget(QWidget):
         self.downsampling_factor_label.setEnabled(False)
         self.start_recording_button.setEnabled(False)
         self.subject_id_text.setEnabled(False)
-        self.logger.info('Recording Started')
+        # Tabs can't be changed
+        self.view_finder.GUI.tab_widget.tabBar().setEnabled(False)
         
     def stop_recording(self):
         
@@ -489,6 +482,8 @@ class CameraWidget(QWidget):
         self.subject_id_text.setEnabled(True)
         self.camera_dropdown.setEnabled(True)
         self.downsampling_factor_label.setEnabled(True)
+        # Tabs can be changed
+        self.view_finder.GUI.tab_widget.tabBar().setEnabled(True)
         
         self.logger.info('Recording Stopped')
         
@@ -501,7 +496,6 @@ class CameraWidget(QWidget):
         # shut down old camera
         if self.camera_object != None:
             self.camera_object.end_recording()
-            self.view_finder.used_camera_groupbox_labels.remove(self.label)
         # Get the new camera ID
         new_camera_label = str(self.camera_dropdown.currentText())
         print('new_camera_label', new_camera_label)
@@ -511,7 +505,7 @@ class CameraWidget(QWidget):
             )
         # Get the new camera object 
         print(f'Changing camera to: {camera_unique_id}')
-
+        
         self._change_camera(camera_unique_id, new_camera_label)
 
     def _change_camera(self, new_unique_id, new_camera_label):
@@ -521,14 +515,12 @@ class CameraWidget(QWidget):
         # Set the new camera name
         self.unique_id = new_unique_id
         self.label = new_camera_label
-        # self.view_finder.update_camera_dropdowns()
-        # self.label = self.find_saved_camera_name(new_unique_id)
         # Call the display function once
         self.camera_object.begin_capturing()
         self.fetch_image_data()
         self.display_frame(self.image_data)
         #  Update the list cameras that are currently being used. 
-        self.view_finder.used_camera_groupbox_labels.append(self.label)
+
         self.camera_setup_groupbox.setTitle(self.label)
 
         
@@ -562,10 +554,21 @@ class CameraWidget(QWidget):
         self._change_camera(new_unique_id = self.unique_id, new_camera_label = self.label)
         self.logger.info(f'Camera configuration set to: {camera_config}')
 
+    def rename(self, new_label):
+        '''Function to rename the camera'''
+        # remove the current label from the camera_dropdown widget
+        # self.camera_dropdown.currentTextChanged.disconnect(self.change_camera)
+        self.camera_dropdown.removeItem(self.camera_dropdown.findText(self.label))
+
+        self.label = new_label
+        self.camera_dropdown.setCurrentText(new_label)        
+        self.camera_setup_groupbox.setTitle(new_label)
+
+        
     def disconnect(self):
         # deinit the camera from recording
         self.camera_object.end_recording()
-        self.view_finder.used_camera_groupbox_labels.remove(self.label)
+       
 
     def on_destroyed(self):
         'Function that is called when the camera widget is being closed by the "self.deleteLater() method'

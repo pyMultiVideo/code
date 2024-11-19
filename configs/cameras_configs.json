@@ -1,14 +1,14 @@
 [
     {
-        "name": "Test1",
-        "unique_id": "21013407-spinnaker"
-    },
-    {
-        "name": "Test2",
+        "name": "testa",
         "unique_id": "20073102-spinnaker"
     },
     {
-        "name": "Test4",
+        "name": "testb",
         "unique_id": "18360350-spinnaker"
+    },
+    {
+        "name": "testC",
+        "unique_id": "21013407-spinnaker"
     }
 ]

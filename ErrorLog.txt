@@ -2,3 +2,24 @@
 2024-11-18 14:09:01,258 - ERROR - Camera label Test5 not found in database
 2024-11-18 14:09:24,779 - ERROR - Camera label Test5 not found in database
 2024-11-18 14:10:15,732 - ERROR - Camera label Test5 not found in database
+2024-11-18 14:42:24,726 - ERROR - No camera selected
+2024-11-18 14:42:26,023 - ERROR - No camera selected
+2024-11-18 17:55:17,784 - ERROR - No camera selected
+2024-11-18 17:55:21,243 - ERROR - No camera selected
+2024-11-18 17:55:21,867 - ERROR - No camera selected
+2024-11-18 18:28:56,843 - ERROR - No camera selected
+2024-11-18 18:34:23,940 - ERROR - No camera selected
+2024-11-18 18:36:03,926 - ERROR - No camera selected
+2024-11-18 18:38:41,814 - ERROR - No camera selected
+2024-11-18 18:40:41,975 - ERROR - No camera selected
+2024-11-18 18:45:37,072 - ERROR - No camera selected
+2024-11-18 18:46:03,077 - ERROR - No camera selected
+2024-11-18 18:46:26,855 - ERROR - No camera selected
+2024-11-18 18:47:13,634 - ERROR - No camera selected
+2024-11-18 18:47:41,431 - ERROR - No camera selected
+2024-11-18 21:39:41,220 - ERROR - No camera selected
+2024-11-19 12:33:00,844 - ERROR - No camera selected
+2024-11-19 12:39:52,267 - ERROR - No camera selected
+2024-11-19 12:41:15,362 - ERROR - No camera selected
+2024-11-19 12:42:18,079 - ERROR - No camera selected
+2024-11-19 17:40:48,733 - ERROR - No camera selected

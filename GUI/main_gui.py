@@ -68,6 +68,7 @@ class GUIApp(QMainWindow):
     def _add_tabs(self):
         '''Add tabs to the GUI'''
         self.tab_widget = QTabWidget()
+
         self.tab_widget.addTab(self.viewfinder_tab, 'View Finder')
         self.tab_widget.addTab(self.setups_tab,     'Setups')
         self.tab_widget.addTab(self.ipython_tab,    'IPython')

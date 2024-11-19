@@ -45,7 +45,7 @@ class ViewFinderTab(QWidget):
         self.GUI = parent
         self.logging = logging.getLogger(__name__)
         # self.default_config_path = 'experiments/default_config.json'
-        self.used_camera_groupbox_labels: list[str] = []
+
         self.camera_groupboxes: List[CameraWidget] = []
         self.connected_cameras: list[str] = self.GUI.setups_tab.get_setups_labels()
         self.camera_database= load_saved_setups(database) # list of camera_configs
@@ -191,7 +191,6 @@ class ViewFinderTab(QWidget):
         self.stop_recording_button.clicked.connect(self.stop_recording)
         
 
-        
         self._set_control_all_layout()
         
     def _set_control_all_layout(self):
@@ -231,7 +230,7 @@ class ViewFinderTab(QWidget):
         self.viewfinder_groupbox.setLayout(self.camera_layout)
         
 
-        useable_cameras = sorted(list(set(self.connected_cameras) - set(self.used_camera_groupbox_labels)), key=str.lower)
+        useable_cameras = sorted(list(set(self.connected_cameras) - set(list(cam.label for cam in self.camera_groupboxes))), key=str.lower)
         print('useable_cameras - init', useable_cameras)
         for camera_index, camera_label in enumerate(useable_cameras[:1]): # One camera by default
             self.camera_groupboxes.append(
@@ -242,9 +241,7 @@ class ViewFinderTab(QWidget):
                     )
             print('camera', camera_label)
             self.logging.info('Camera {} added to viewfinder'.format(camera_index))
-            # Add the camera label to the list of camera labels                 
-            self.used_camera_groupbox_labels.append(
-                camera_label)
+
             
             # Display the camera groupbox
             self.camera_layout.addWidget(
@@ -259,7 +256,7 @@ class ViewFinderTab(QWidget):
         Function to change the number of camera groupboxes being displayed in the viewfinder tab
         '''
         # Get the set of useable cameras
-        useable_cameras = sorted(list(set(self.connected_cameras) - set(self.used_camera_groupbox_labels)), key=str.lower)
+        useable_cameras = sorted(list(set(self.connected_cameras) - set([cam.label for cam in self.camera_groupboxes])), key=str.lower)
         print('useable_cameras', useable_cameras)
         
         # value of spinbox
@@ -274,10 +271,7 @@ class ViewFinderTab(QWidget):
             )
             self.camera_groupboxes.append(new_cam)
             
-            # Add the camera label to the list of camera labels
-            self.used_camera_groupbox_labels.append(
-                label
-            )
+
         
             # Display the new cameras
             self.camera_layout.addWidget(
@@ -294,9 +288,6 @@ class ViewFinderTab(QWidget):
                 box = self.camera_groupboxes.pop()
                 box.disconnect()
                     
-                # Remove the camera label from the list of camera labels
-                self.used_camera_groupbox_labels.remove(box.label)
-        
         # self.update_camera_dropdowns()
         self.refresh()
 
@@ -344,21 +335,23 @@ class ViewFinderTab(QWidget):
 
         for camera in experiment_config.cameras:
             print('camera', camera)
-            self.camera_groupboxes.append(
+            self.initialize_camera_widget(label=camera.label, subject_id=camera.subject_id)
+
+
+    def initialize_camera_widget(self, label, subject_id=None):
+        self.camera_groupboxes.append(
                 CameraWidget(
                     parent = self,
-                    label = camera.label,
-                    subject_id = camera.subject_id
+                    label = label,
+                    subject_id = subject_id
                 )
             )
-            self.used_camera_groupbox_labels.append(camera.label)
-            self.camera_layout.addWidget(
+        self.camera_layout.addWidget(
                 self.camera_groupboxes[-1], 
                 len(self.camera_groupboxes)%2, 
                 len(self.camera_groupboxes)//2
             )
 
-        
     def update_camera_dropdowns(self):
         '''Update the camera dropdowns'''
         for camera in self.camera_groupboxes:
@@ -368,11 +361,48 @@ class ViewFinderTab(QWidget):
         '''Refresh the viewfinder tab'''
         self.check_to_enable_global_start_recording()
         self.check_to_enable_global_stop_recording()
-        for camera in self.camera_groupboxes:
-            camera.refresh()
+        for camera_label in self.camera_groupboxes:
+            camera_label.refresh()
         
-    ## Get Attributes    
-    
+        # Check the setups_changed flag
+        if self.GUI.setups_tab.setups_changed:
+            self.GUI.setups_tab.setups_changed = False
+            # Handle the renamed cameras
+            self.handle_camera_renamed()
+                    
+    def handle_camera_renamed(self):
+        '''Handle the renamed cameras by renaming the relevent attributes of the camera groupboxes'''
+        # Set of new camera labels
+        
+        old_cameras = self.connected_cameras
+        new_cameras = self.GUI.setups_tab.get_setups_labels()
+        
+        print('old_cameras', old_cameras)
+        print('new_cameras', new_cameras)
+
+        
+        # list of only the old camera labels
+        removed_cameras = list(set(old_cameras) - set(new_cameras))
+        # list of only the new camera labels
+        added_cameras = list(set(new_cameras) - set(old_cameras))
+        for cam in removed_cameras:
+            if cam in [cam.label for cam in self.camera_groupboxes]:
+                camera_widget = [camera for camera in self.camera_groupboxes if camera.label == cam][0]
+
+                
+
+
+
+                camera_widget.rename(
+                    new_label = added_cameras[0]
+                )
+                print('new_label', camera_widget.label)
+                print('added_cameras', added_cameras)
+
+
+        self.connected_cameras = new_cameras
+        
+        
     def get_save_dir(self):
         '''Return the save directory'''
         save_directory = QFileDialog.getExistingDirectory(self, 'Select Directory')

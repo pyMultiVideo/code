@@ -37,8 +37,7 @@ def init_camera(unique_id: str):
     try:
         serial_number, api = unique_id.split('-')
     except ValueError:
-        logging.error('Invalid camera ID')
-        return None
+        raise ValueError('Invalid unique_id')
     if api == 'spinnaker':
         return SpinnakerCamera(unique_id)
     if api == 'usb':

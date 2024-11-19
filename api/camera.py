@@ -160,6 +160,7 @@ class SpinnakerCamera(CameraTemplate):
         if not self.cam.IsInitialized():
             self.cam.Init()
         self.cam.BeginAcquisition()
+        print(f'Camera {self.serial_number} is in acquisition mode.')
             
     def get_next_image(self) -> np.ndarray:
         
@@ -180,7 +181,7 @@ class SpinnakerCamera(CameraTemplate):
         next_image.Release()
         # Return the image
         return self.next_image
-    
+        
     def get_next_image_list(self) -> list[np.ndarray]:
         '''Get all the images in the buffer'''
         # Delete all images from the image list
@@ -200,6 +201,9 @@ class SpinnakerCamera(CameraTemplate):
         
     def end_recording(self) -> None:
         self.cam.EndAcquisition()
+        # check if the camera has stopped acquisition
+        if self.cam.IsStreaming():
+            raise Exception(f"Camera {self.serial_number} is still in acquisition mode.")
         self.cam.DeInit()
         # make sure to release the camera
             
