@@ -74,6 +74,7 @@ class SpinnakerCamera(CameraTemplate):
         self.cam.Init()
 
         if self.camera_config is not None:
+            # Note: none of these functions are implemented.
             self.set_exposure_time(self.camera_config.exposure_time)
             self.set_gain(self.camera_config.gain)
             self.set_frame_rate(self.camera_config.fps)
@@ -159,7 +160,8 @@ class SpinnakerCamera(CameraTemplate):
         # initialize the camera if it is not already initialized
         if not self.cam.IsInitialized():
             self.cam.Init()
-        self.cam.BeginAcquisition()
+        if not self.cam.IsStreaming():
+            self.cam.BeginAcquisition()
         print(f'Camera {self.serial_number} is in acquisition mode.')
             
     def get_next_image(self) -> np.ndarray:
@@ -181,7 +183,7 @@ class SpinnakerCamera(CameraTemplate):
         next_image.Release()
         # Return the image
         return self.next_image
-        
+
     def get_next_image_list(self) -> list[np.ndarray]:
         '''Get all the images in the buffer'''
         # Delete all images from the image list
@@ -200,11 +202,10 @@ class SpinnakerCamera(CameraTemplate):
         return self.image_list
         
     def end_recording(self) -> None:
-        self.cam.EndAcquisition()
-        # check if the camera has stopped acquisition
         if self.cam.IsStreaming():
-            raise Exception(f"Camera {self.serial_number} is still in acquisition mode.")
-        self.cam.DeInit()
+            self.cam.EndAcquisition()
+        if self.cam.IsInitialized():
+            self.cam.DeInit()
         # make sure to release the camera
             
     def get_GPIO_data(self) -> dict:

@@ -33,6 +33,7 @@ from api.data_classes import ExperimentConfig, CameraSetupConfig
 from tools.load_camera import load_saved_setups, init_camera, get_unique_ids
 from GUI.CameraWidget import CameraWidget
 import db as database
+from dialogues.error_message import show_info_message
 
 # TODO: Implement the  load_saved_steups from the database... thinking about new and old setups, renaming unique id. can the camearconfig datastruct be passed deeper into the function to reduce the number of arguments being sent through the functions
 # also 
@@ -230,25 +231,10 @@ class ViewFinderTab(QWidget):
         self.viewfinder_groupbox.setLayout(self.camera_layout)
         
 
-        useable_cameras = sorted(list(set(self.connected_cameras) - set(list(cam.label for cam in self.camera_groupboxes))), key=str.lower)
+        useable_cameras = sorted(list(set(self.connected_cameras) - set(self.camera_groupbox_labels())), key=str.lower)
         print('useable_cameras - init', useable_cameras)
         for camera_index, camera_label in enumerate(useable_cameras[:1]): # One camera by default
-            self.camera_groupboxes.append(
-                    CameraWidget(
-                        parent = self,
-                        label = camera_label,
-                        )
-                    )
-            print('camera', camera_label)
-            self.logging.info('Camera {} added to viewfinder'.format(camera_index))
-
-            
-            # Display the camera groupbox
-            self.camera_layout.addWidget(
-                self.camera_groupboxes[-1], 
-                camera_index%2, 
-                camera_index//2
-                )
+            self.initialize_camera_widget(label=camera_label)
 
         
     def change_camera_config(self):
@@ -256,40 +242,37 @@ class ViewFinderTab(QWidget):
         Function to change the number of camera groupboxes being displayed in the viewfinder tab
         '''
         # Get the set of useable cameras
-        useable_cameras = sorted(list(set(self.connected_cameras) - set([cam.label for cam in self.camera_groupboxes])), key=str.lower)
+        useable_cameras = sorted(list(set(self.connected_cameras) - set(self.camera_groupbox_labels())), key=str.lower)
         print('useable_cameras', useable_cameras)
         
         # value of spinbox
-        
-        
+
         if self.camera_quantity_spin_box.value() > len(self.camera_groupboxes): # If the number of cameras is being reduced
             label = useable_cameras[0]
-            
-            new_cam = CameraWidget(
-                parent = self,
-                label = label,
-            )
-            self.camera_groupboxes.append(new_cam)
-            
-
-        
-            # Display the new cameras
-            self.camera_layout.addWidget(
-                                self.camera_groupboxes[-1], 
-                                len(self.camera_groupboxes)%2, 
-                                len(self.camera_groupboxes)//2
-                                        )
-        
-        
+            self.initialize_camera_widget(label=label)
         
         elif self.camera_quantity_spin_box.value() <= len(self.camera_groupboxes):
             for i in range(len(self.camera_groupboxes) - self.camera_quantity_spin_box.value()):
-                self.camera_groupboxes[-1].deleteLater()
-                box = self.camera_groupboxes.pop()
-                box.disconnect()
-                    
-        # self.update_camera_dropdowns()
+                self.camera_groupboxes[-1].disconnect()
+
         self.refresh()
+
+    def initialize_camera_widget(self, label, subject_id=None):
+        '''Create a new camera widget and add it to the viewfinder tab'''
+        self.camera_groupboxes.append(
+                CameraWidget(
+                    parent = self,
+                    label = label,
+                    subject_id = subject_id
+                )
+            )
+        position = len(self.camera_groupboxes) - 1
+        self.camera_layout.addWidget(
+                self.camera_groupboxes[-1], 
+                position%2, 
+                position//2
+            )
+
 
     def change_encoder(self):
         'Function to change the encoder'
@@ -324,8 +307,15 @@ class ViewFinderTab(QWidget):
             config_data['cameras'] = [CameraSetupConfig(**camera) for camera in config_data['cameras']]
         experiment_config = ExperimentConfig(**config_data)
         # Removes all the cameras that are currently being displayed
-        self.disconnect()
+        
+        
+        # check if config file contains cameras that are in the database
+        for camera in experiment_config.cameras:
+            if camera.label not in self.GUI.setups_tab.get_setups_labels():
+                show_info_message(f'Camera {camera.label} is not connected')
+                return
         self.set_experiment_config(experiment_config)
+        
 
     def set_experiment_config(self, experiment_config: ExperimentConfig):
         '''Function to set the experiment configuration'''
@@ -333,24 +323,12 @@ class ViewFinderTab(QWidget):
         self.encoder_selection.setCurrentText(experiment_config.encoder)
         self.camera_quantity_spin_box.setValue(experiment_config.num_cameras)
 
+        self.disconnect()
         for camera in experiment_config.cameras:
-            print('camera', camera)
             self.initialize_camera_widget(label=camera.label, subject_id=camera.subject_id)
 
 
-    def initialize_camera_widget(self, label, subject_id=None):
-        self.camera_groupboxes.append(
-                CameraWidget(
-                    parent = self,
-                    label = label,
-                    subject_id = subject_id
-                )
-            )
-        self.camera_layout.addWidget(
-                self.camera_groupboxes[-1], 
-                len(self.camera_groupboxes)%2, 
-                len(self.camera_groupboxes)//2
-            )
+
 
     def update_camera_dropdowns(self):
         '''Update the camera dropdowns'''
@@ -374,11 +352,9 @@ class ViewFinderTab(QWidget):
         '''Handle the renamed cameras by renaming the relevent attributes of the camera groupboxes'''
         # Set of new camera labels
         
-        old_cameras = self.connected_cameras
+        old_cameras = self.connected_cameras # is it possible to remove the self.connected cameras list and call the function directly from somewhere else?
         new_cameras = self.GUI.setups_tab.get_setups_labels()
-        
-        print('old_cameras', old_cameras)
-        print('new_cameras', new_cameras)
+
 
         
         # list of only the old camera labels
@@ -386,19 +362,9 @@ class ViewFinderTab(QWidget):
         # list of only the new camera labels
         added_cameras = list(set(new_cameras) - set(old_cameras))
         for cam in removed_cameras:
-            if cam in [cam.label for cam in self.camera_groupboxes]:
+            if cam in self.camera_groupbox_labels():
                 camera_widget = [camera for camera in self.camera_groupboxes if camera.label == cam][0]
-
-                
-
-
-
-                camera_widget.rename(
-                    new_label = added_cameras[0]
-                )
-                print('new_label', camera_widget.label)
-                print('added_cameras', added_cameras)
-
+                camera_widget.rename(new_label = added_cameras[0])
 
         self.connected_cameras = new_cameras
         
@@ -407,6 +373,10 @@ class ViewFinderTab(QWidget):
         '''Return the save directory'''
         save_directory = QFileDialog.getExistingDirectory(self, 'Select Directory')
         self.save_dir_textbox.setPlainText(save_directory)
+
+    def camera_groupbox_labels(self) -> List[str]:
+        '''Return the labels of the camera groupboxes'''
+        return [camera.label for camera in self.camera_groupboxes]
 
     def check_to_enable_global_start_recording(self):
         '''Check if all the cameras are ready to start recording. If any camera is not ready to start, 
@@ -426,13 +396,12 @@ class ViewFinderTab(QWidget):
             else:
                 self.stop_recording_button.setEnabled(False)
 
+
     def disconnect(self):
         '''Disconnect all cameras'''
         for camera in self.camera_groupboxes:
             camera.disconnect()
-            camera.deleteLater()
-            self.camera_groupboxes.remove(camera)
-    
+
     def start_recording(self):
         for camera in self.camera_groupboxes:
             camera.start_recording()

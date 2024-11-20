@@ -183,16 +183,6 @@ class SetupsTab(QtWidgets.QWidget):
                 self.setups.pop(unique_id)
                 
         
-    # def rename_setup(self, old_label, new_label):
-    #     '''Function to rename a setup'''
-    #     for setup in self.setups.values():
-    #         if setup.label == old_label:
-    #             setup.label = new_label
-    #             setup.name_edit.setText(new_label)
-    #             self.update_saved_setups(setup)
-    #             break
-    #     self.setups_changed = True
-        
     def get_setups_labels(self) -> list[str]:
         '''Function to get the labels of the setups'''
         return [setup.label for setup in self.setups.values()]

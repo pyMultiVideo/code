@@ -1,9 +1,7 @@
 # core python
 import numpy as np
-import os
 import json, csv
 import logging
-import sys
 from datetime import datetime
 
 from GUI.SetupsTab import SetupsTab
@@ -21,28 +19,18 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QComboBox,
-    QTextEdit,
-    QStackedLayout
+    QTextEdit
     )
 import pyqtgraph as pg
 from PyQt6.QtGui import (
-    # QImage,
-    QPixmap,
-    QPainter,
-    QIcon,
-    QColor,
-    QFont,
-    QBrush
+    QIcon
     )
-import PyQt6.QtCore as QtCore
 from PyQt6.QtCore import (
-    QTimer,
     Qt
 )
 # video
 import PySpin
 import ffmpeg
-import cv2
 
 
 class CameraWidget(QWidget):
@@ -78,7 +66,6 @@ class CameraWidget(QWidget):
         self._init_camera_setup_groupbox()
         self._set_camera_setup_layout()
         self._page_layout()
-
         self._init_recording()
 
 
@@ -98,7 +85,6 @@ class CameraWidget(QWidget):
         self.downsampling_factor_text.setCurrentText('1')
         self.downsampling_factor = 1
         self.downsampling_factor_text.currentTextChanged.connect(self.change_downsampling_factor)
-        
         
         # Subject ID
         self.subject_id_label = QLabel('Subject ID:')
@@ -127,13 +113,8 @@ class CameraWidget(QWidget):
         # Dropdown for selecting the camera
         self.camera_dropdown = QComboBox()
         # set the current text to the camera label
-        # self.camera_dropdown.addItem(self.label)
-        # self.camera_dropdown.setCurrentText(self.label)
         self.camera_dropdown.currentTextChanged.connect(self.change_camera)
-
         self.update_camera_dropdown()
-
-        
         # Add the widgets to the layout
         self.camera_header_layout.addWidget(self.camera_id_label)
         self.camera_header_layout.addWidget(self.camera_dropdown)
@@ -143,7 +124,7 @@ class CameraWidget(QWidget):
         self.camera_header_layout.addWidget(self.subject_id_text)
         self.camera_header_layout.addWidget(self.start_recording_button)
         self.camera_header_layout.addWidget(self.stop_recording_button)
-        # set the hieght of the header layou
+        # set the hieght of the header layout
         # set with of header layout
         # Set the layout for the groupbox
         self.camera_setup_groupbox.setLayout(self.camera_header_layout)
@@ -172,9 +153,8 @@ class CameraWidget(QWidget):
         # Default width and hieght for the camera widget
         self.width  = self.resolution_width
         self.height = self.resolution_height
-        # Set one frame to display
-        # Run funciton to check if the text field is empty
-        self.text_field_update()
+
+        self.validate_subject_id_input()
         
         # Intialise the camera to begin capturing
         if self.camera_object != None:
@@ -213,7 +193,7 @@ class CameraWidget(QWidget):
             print(f"Error fetching image data: {e}")
             
     def get_mp4_filename(self) -> str:
-        
+        '''Get the filename for the mp4 file'''
         self.subject_id = self.subject_id_text.toPlainText()
         
         self.recording_filename = \
@@ -225,7 +205,9 @@ class CameraWidget(QWidget):
         
         
     def update_camera_dropdown(self):
-        '''Update the camera options'''
+        '''Update the camera options
+        
+        Note: this function is wrapped in functions to disconnect and reconnect the signal to the dropdown when the function changes the text in the dropdown'''
         # disconnect self.camera_dropdown from the current function
         self.camera_dropdown.currentTextChanged.disconnect(self.change_camera)
         cbox_update_options(cbox = self.camera_dropdown, 
@@ -330,7 +312,7 @@ class CameraWidget(QWidget):
         '''Function Called by the parent class every FPS (as defined in parent class)'''
         # Fetch the image data
         self.fetch_image_data()
-        # Displaying on GUI
+
 
     def refresh(self):
         # update the labels of the camera dropdown
@@ -438,9 +420,9 @@ class CameraWidget(QWidget):
         '''Update the subject ID'''
         self.subject_id = self.subject_id_text.toPlainText()
         self.logger.info(f'Subject ID changed to: {self.subject_id}')
-        self.text_field_update()
+        self.validate_subject_id_input()
         
-    def text_field_update(self):
+    def validate_subject_id_input(self):
         '''Change the colour of the subject ID text field'''
         if self.subject_id_text.toPlainText() == '':
             self.start_recording_button.setEnabled(False)
@@ -462,7 +444,6 @@ class CameraWidget(QWidget):
         
         self.create_metadata_file()
         # update label
-        
         self.stop_recording_button.setEnabled(True)
         self.camera_dropdown.setEnabled(False)
         self.downsampling_factor_label.setEnabled(False)
@@ -520,9 +501,7 @@ class CameraWidget(QWidget):
         self.fetch_image_data()
         self.display_frame(self.image_data)
         #  Update the list cameras that are currently being used. 
-
         self.camera_setup_groupbox.setTitle(self.label)
-
         
     def change_downsampling_factor(self):
         '''Change the downsampling factor of the camera'''
@@ -559,20 +538,20 @@ class CameraWidget(QWidget):
         # remove the current label from the camera_dropdown widget
         # self.camera_dropdown.currentTextChanged.disconnect(self.change_camera)
         self.camera_dropdown.removeItem(self.camera_dropdown.findText(self.label))
-
         self.label = new_label
         self.camera_dropdown.setCurrentText(new_label)        
         self.camera_setup_groupbox.setTitle(new_label)
 
         
     def disconnect(self):
-        # deinit the camera from recording
+        '''Function for disconnecting the camera from the GUI. 
+        
+        This function does the following:
+        - Ends the recording from the camera object
+        - Removes the camera from the grid layout
+        - Removes the camera from the camera groupboxes list
+        - Deletes the camera widget when PyQt6 is ready to delete it'''
         self.camera_object.end_recording()
-       
-
-    def on_destroyed(self):
-        'Function that is called when the camera widget is being closed by the "self.deleteLater() method'
-        self.logger.info('Camera Widget Destroyed')
-        print('Camera Widget Destroyed')
-        # deinit the camera
-        self.camera_object.end_recording()
+        self.view_finder.camera_groupboxes.remove(self)
+        self.view_finder.camera_layout.removeWidget(self)
+        self.deleteLater()
