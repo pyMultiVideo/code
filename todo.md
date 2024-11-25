@@ -2,34 +2,46 @@
 
 > BAR IS LOW FOR IT TO BE HELPFUL. BASIC FUNCTIONALITY IS MOST IMPORTANT
 
-## IPython Tab (for debugging the state of the variables when using the app)
+## Important bugs
 
-- [ ] embed ipython in the ipython tab
-- [ ] Create a function for creating / recreating the camera information
-- [ ] Will there be a function that saves out and replaces csv with another csv with the updated information on closing?
+USB camera take a long time to initalise compared to the FLIR spinnaker cameras
 
-## ViewFinder
-
-- Make windows resizeable
-  - Resize event is working for one camera window (not including the qlabel)
-  - When i add another camera, the size of that window is too big?
-
-  - [ ] The names of the cameras will always have the same mapping to serial numbers for all users.
-  - [x] unique id could just be 'serialnumber-api'
+- This seems to be the case for the simplest of python scripts. So i don't think that htis is because of me...
   
-- Add a screen that says 'No camera selected' to the interface.
-- Cameras that are not avialable should not be in the list of cameras that can be selected for each camera widget.
-  - BUG: this does not work perfectly: the new widget does work (has the correct types of cameras availablet use.)
-  - The old widget does not!
-- The list of cameras being added to the list is always the list entry of the list. This can be fixed by refreshing the list of avialable cameras before getting a camear to add to screen.
-- add visual indication of if the gpio pins are showing properly
-  - this has been implemented. Untestd if it decays propley if the channels are not showing.
+Camera now in aqusition mode when you remove and add new cameras.
 
-- remove the config file from the camerawidget object. create a @save config functino
+## encoding from the buffer
 
-- [x] added a metadata file which saved start an stop time to a a json file.
-- down sampling the image by some scale to be the reduced resolution.
+Instead of encoding video one frame at a time, the video buffer should be emptied and encoded for all frames in the buffer to make sure that no frames are lost during encoding
 
+- how do i make sure that the buffer is encodering the frames and setting the gpio data with the same allignement?
 
-# Latest
-The camera widget is initialsing with no label in the dropdown. So maybe its not been assigned by the time i am trying to set it. Try changin the constructer of the camera widget
+## Feature requests
+
+- Add being able to start the application from a config file
+  - Pass the config file to the main gui (as a dictionary of parsed arguments)
+  - On intialistaion of the view finder application, it checks if there have been any config files parsed. if so load them instead of doing the default behaviour.
+
+### Automated testing of code
+
+- Including testing how much of the computer resources are alllocated to streaming video before the software stops working optimally
+
+### Grid layout
+
+- Change the grid layout to be veritcal layout
+  - upon changing the checkbox:
+    - remove all the initalised layouts. Change them to another layout object and use that instead.
+    - Should be parameter in the config.  that can be saved.
+    - derf function to that is more flexiable that is called from the add to camera layout function
+
+### Multithreading
+
+- Multithreading wiodgets? [Multithreading widgets](https://www.pythonguis.com/tutorials/multithreading-pyqt6-applications-qthreadpool/)
+- FMMPEG already uses its own subprocess to the video encoding.
+- Displaying the video on separate threads would be the goal of this software.
+
+### Passing Camera config file to the camera widget that are used to do the startup
+
+- Define new datastructure that can optionally be sent to the camera initalisation function.
+- This will use that file to set the camera attributes instead of the default ones.
+This changes aqusision settings.

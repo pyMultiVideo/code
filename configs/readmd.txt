@@ -1,0 +1,2 @@
+Contains the list of cameras that have saved settings.
+List of the encoders that ffmpeg supports that are are in the menu.

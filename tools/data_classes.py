@@ -18,6 +18,7 @@ class ExperimentConfig:
     data_dir: str
     encoder: str
     num_cameras: int
+    grid_layout: bool
     cameras: list[CameraSetupConfig]
  
 @dataclass
@@ -27,3 +28,5 @@ class CameraSettingsConfig:
     '''
     name: str
     unique_id: str
+    fps: str
+    pxl_fmt: str

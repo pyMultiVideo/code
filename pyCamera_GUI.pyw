@@ -14,8 +14,12 @@ logging.basicConfig(
 # Dependancy Mangement
 try:
     import PyQt6
+    import pyqtgraph
     import ffmpeg
     import PySpin
+    # for handling usb cameras
+    import cv2_enumerate_cameras
+    import cv2
 
 except ImportError as e:
     logging.error("  Unable to import dependencies:\n\n" + str(e) + "\n\n")
@@ -25,23 +29,27 @@ except ImportError as e:
 import GUI.main_gui as mg
 
 def main(parsed_args, unparsed_args):
-
     app = mg.QtWidgets.QApplication(sys.argv)
     # set pyqt6 style
+    print('Starting GUI')    
     app.setStyle('Fusion')
     gui = mg.GUIApp()
-    # sys.excepthook = mg.GUIApp.exception_hook
+    sys.excepthook = mg.GUIApp.exception_hook
     app.exec()
     
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", help="Path to the configuration file", type=str)
-    
+    '''
+    Logic for config. If there is a config, instead of doing the normal init on the viewfinder tab, 
+    we will load the a config file (from the state where there are not camera widgets intialised. )
+    '''
+
     parsed_args, unparsed_args = parser.parse_known_args()
     return parsed_args, unparsed_args
     
 # Run the main function if this script is run
 if __name__ == '__main__':
     parsed_args, unparsed_args = parse_args()
-    
+
     main(parsed_args, unparsed_args)

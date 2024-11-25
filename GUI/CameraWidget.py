@@ -1,14 +1,15 @@
 # core python
 import numpy as np
-import json, csv
+import cv2
+import json, csv, time
 import logging
 from datetime import datetime
 
 from GUI.SetupsTab import SetupsTab
 from tools.load_camera import init_camera
 from tools.camera_options import cbox_update_options
-from api.camera import SpinnakerCamera as CameraObject
-from api.data_classes import CameraSetupConfig
+from tools.camera import SpinnakerCamera as CameraObject
+from tools.data_classes import CameraSetupConfig
 # gui
 
 from PyQt6.QtWidgets import (
@@ -29,7 +30,6 @@ from PyQt6.QtCore import (
     Qt
 )
 # video
-import PySpin
 import ffmpeg
 
 
@@ -40,9 +40,7 @@ class CameraWidget(QWidget):
     def __init__(self, 
         parent,
         label, 
-        subject_id=None,
-        fps=30,
-        pixel_format='yuv420p'
+        subject_id,
         ):
         super(CameraWidget, self).__init__(parent)
         self.view_finder = parent
@@ -52,17 +50,24 @@ class CameraWidget(QWidget):
         # Camera attributes
         self.label = label
         self.subject_id = subject_id
-        self.fps = fps
-        self.pixel_format = pixel_format
-        self.unique_id = self.setups_tab.get_camera_unique_id_from_label(self.label)
-        print('unique_id', self.unique_id)
-        self.camera_object: CameraObject = init_camera(self.unique_id)
-        self.resolution_width  = self.camera_object.width
-        self.resolution_height = self.camera_object.height
+        
+        # Check if the camera label is in the database. If is it, we can use the Settings Config information 
+        # to set the camera settings. 
+        
+        if self.label in self.setups_tab.get_camera_labels():
+            self.camera_settings = self.setups_tab.getCameraSettingsConfig(self.label)
+        self.fps        = self.camera_settings.fps
+        self.pxl_fmt    = self.camera_settings.pxl_fmt
+        self.unique_id = self.camera_settings.unique_id
+        
+        self.camera_object: CameraObject = init_camera(
+            self.unique_id, self.camera_settings)
+        
+        self.cam_width  = self.camera_object.width
+        self.cam_height = self.camera_object.height
         
 
         # Layout
-        print('Camera Widget Created')
         self._init_camera_setup_groupbox()
         self._set_camera_setup_layout()
         self._page_layout()
@@ -85,6 +90,22 @@ class CameraWidget(QWidget):
         self.downsampling_factor_text.setCurrentText('1')
         self.downsampling_factor = 1
         self.downsampling_factor_text.currentTextChanged.connect(self.change_downsampling_factor)
+        
+        # Pxl fmt
+        self.pxl_fmt_label = QLabel('Pixel Format:')
+        self.pxl_fmt_cbox = QComboBox()
+        self.pxl_fmt_cbox.addItems(['yuv420p', 'bgr24'])
+        self.pxl_fmt_cbox.setCurrentText('yuv420p') # default settings
+        self.pxl_fmt_cbox.currentTextChanged.connect(self.change_pxl_fmt)
+        self.pxl_fmt_cbox.setEnabled(False)
+        
+        # FPS
+        self.fps_label = QLabel('FPS:')
+        self.fps_text = QComboBox()
+        self.fps_text.addItems(['30', '60', '120'])
+        self.fps_text.setCurrentText('30')
+        self.fps_text.currentTextChanged.connect(self.change_fps)
+        self.fps_text.setEnabled(False)
         
         # Subject ID
         self.subject_id_label = QLabel('Subject ID:')
@@ -120,6 +141,10 @@ class CameraWidget(QWidget):
         self.camera_header_layout.addWidget(self.camera_dropdown)
         self.camera_header_layout.addWidget(self.downsampling_factor_label)
         self.camera_header_layout.addWidget(self.downsampling_factor_text)
+        self.camera_header_layout.addWidget(self.fps_label)
+        self.camera_header_layout.addWidget(self.fps_text)
+        self.camera_header_layout.addWidget(self.pxl_fmt_label)
+        self.camera_header_layout.addWidget(self.pxl_fmt_cbox)
         self.camera_header_layout.addWidget(self.subject_id_label)
         self.camera_header_layout.addWidget(self.subject_id_text)
         self.camera_header_layout.addWidget(self.start_recording_button)
@@ -151,47 +176,57 @@ class CameraWidget(QWidget):
         # Set the recording flag to False
         self.recording = False
         # Default width and hieght for the camera widget
-        self.width  = self.resolution_width
-        self.height = self.resolution_height
+        self.width  = self.cam_width
+        self.height = self.cam_height
 
         self.validate_subject_id_input()
         
-        # Intialise the camera to begin capturing
-        if self.camera_object != None:
-            self.camera_object.begin_capturing()
-            self.display_frame(self.camera_object.get_next_image())
-        else:
-            self.display_frame(np.zeros((self.height, self.width), dtype=np.uint8))
+        self.camera_object.begin_capturing()
+        # self.display_frame(self.camera_object.get_next_image())
+
+
+    def fetch_display_frame(self):
+        '''Function that gets the next frame that is then displayed on the GUI'''
+        self._image_data = self.camera_object.get_next_image()
 
     def fetch_image_data(self) -> None:
         '''
-        The `fetch_image_data` function retrieves the latest image from a camera and converts the image
-        data to a format suitable for PyQt6 and OpenCV.
-        
-        image_result is returned as Mono8 Pixel format
-        
-        :return: The `fetch_image_data` method is returning the image data in a format suitable for
-        PyQt6 and OpenCV after retrieving the latest image from the camera.
+        Function that gets both the GPIO and the image data from the camera and sends them 
+        to the encodeing function to be saved to disk.
         '''
-        try:
-            # Retrieve the latest image from the camera
-            self.image_data = self.camera_object.get_next_image()
-            if self.recording == True:
-                # for image in self.image_list:
-                # encode the frames
-                self.encode_frame_ffmpeg_process(frame=self.image_data)
-                self.recorded_frames += 1
-                # self.encode_frame_pynvidia_api(frame=image_data)
-                with open(self.GPIO_filename, mode = 'a', newline='') as self.f:
-                    writer = csv.writer(self.f)
-                    # get the GPIO data
-                    self.get_GPIO_data()                           
-                    # write the GPIO data to a file
-                    writer.writerow(self.GPIO_data)
-    
-        except PySpin.SpinnakerException as e:
-            print(f"Error fetching image data: {e}")
+        USE_BUFFER = False
+
+        if USE_BUFFER:
             
+            try:
+                # Retrieve the latest image from the camera
+                if self.recording == True:
+                    self.img_buffer, self.gpio_buffer = self.camera_object.retrieve_buffered_data()
+                    print(len(self.img_buffer))
+                    # encode the frames
+                    self.encode_frame_from_camera_buffer(
+                        buffer = self.img_buffer
+                        )
+                    # encode the GPIO data
+                    self.encode_gpio_data(
+                        gpio_data = self.gpio_buffer
+                        )
+                    # update the number of recorded frames
+                    self.recorded_frames += len(self.img_buffer)
+        
+            except Exception as e:
+                print(f"Error fetching image data: {e}")
+    
+        elif USE_BUFFER == False:
+            
+            if self.recording: 
+                self.img_buffer = self.camera_object.get_next_image()
+                self.encode_frame_ffmpeg_process(self.img_buffer)
+                self.get_GPIO_data()
+                self.encode_gpio_data(self.GPIO_data)
+                self.recorded_frames += 1
+                
+
     def get_mp4_filename(self) -> str:
         '''Get the filename for the mp4 file'''
         self.subject_id = self.subject_id_text.toPlainText()
@@ -200,9 +235,7 @@ class CameraWidget(QWidget):
             self.view_finder.save_dir_textbox.toPlainText() + \
             '/' + f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
         
-        
-        print(f'Saving recording to: {type(self.recording_filename)}')
-        
+        self.logger.info(f'Saving recording to: {type(self.recording_filename)}')
         
     def update_camera_dropdown(self):
         '''Update the camera options
@@ -290,7 +323,6 @@ class CameraWidget(QWidget):
     def draw_GPIO_overlay(self) -> None:
         '''Draw the GPIO data on the image'''
         DECAY = 0.9
-        ALLIGNMENT = Qt.AlignmentFlag.AlignTop
         if self.GPIO_data == None:
             self.gpio_over_lay_color = DECAY * np.array(self.gpio_over_lay_color)
         elif self.GPIO_data != None:
@@ -308,32 +340,26 @@ class CameraWidget(QWidget):
         # update the color of the ellipse
         self.ellipse.setPen(pg.mkPen(color=self.gpio_over_lay_color, width=2))
 
-    def recording_loop(self):
-        '''Function Called by the parent class every FPS (as defined in parent class)'''
-        # Fetch the image data
-        self.fetch_image_data()
-
-
     def refresh(self):
         # update the labels of the camera dropdown
         self.update_camera_dropdown()
-        pass
+
 
     def refresh_display(self):
         '''Function to refresh the display. Called by the parent class'''
-        self.fetch_image_data()
-        self.display_frame(self.image_data)
+        self.fetch_display_frame()
+        self.display_frame(self._image_data)
         
     def _init_ffmpeg_process(self) -> None:
         self.get_mp4_filename()
         self.get_gpio_filename()
-        print(f'GPIO file: {self.GPIO_filename}' + '\n'
-            f'MP4 file: {self.recording_filename}')  
 
-        # Calculate downsampled width and height
-        downsampled_width = int(self.resolution_width / self.downsampling_factor)
-        downsampled_height = int(self.resolution_height / self.downsampling_factor)
         
+        # Calculate downsampled width and height. The preset value is one. 
+        downsampled_width = int(self.cam_width / self.downsampling_factor)
+        downsampled_height = int(self.cam_height / self.downsampling_factor)
+        
+
         # Set up an ffmpeg encoding pipeline
         self.ffmpeg_process = (
             ffmpeg
@@ -347,7 +373,7 @@ class CameraWidget(QWidget):
             .output(
                 self.recording_filename, 
                 vcodec=self.view_finder.encoder,
-                pix_fmt=self.pixel_format, 
+                pix_fmt=self.pxl_fmt, 
                 preset='fast', 
                 crf=23
                 )
@@ -355,6 +381,7 @@ class CameraWidget(QWidget):
                 pipe_stdin=True
                 )
         )
+        print('FFmpeg pipeline initialized')
         self.logger.info('FFmpeg pipeline initialized')
 
         
@@ -373,6 +400,29 @@ class CameraWidget(QWidget):
             print(f"Error encoding frame: {e}")
         
         
+    def encode_frame_from_camera_buffer(self, buffer: list[np.ndarray]) -> None:    
+
+        try: 
+            while buffer:
+                # Get the frame from the buffer
+                frame = buffer.pop(0)
+                # Encode the frame
+                self.encode_frame_ffmpeg_process(frame)
+                
+        except Exception as e:
+            print(f"Error encoding frame: {e}")
+        
+    def encode_gpio_data(self, gpio_data: list[bool]) -> None:
+        
+        try:
+            # Write the GPIO data to the file
+            with open(self.GPIO_filename, mode = 'a', newline='') as self.f:
+                writer = csv.writer(self.f)
+                writer.writerow(gpio_data)
+                
+        except Exception as e:
+            print(f"Error encoding GPIO data: {e}")
+        
     def get_GPIO_data(self):
         '''Write the GPIO data to a file
         
@@ -385,7 +435,7 @@ class CameraWidget(QWidget):
             # convert list of booleans to list of ints
             self.GPIO_data = [int(x) for x in self.GPIO_data]
 
-        except PySpin.SpinnakerException as ex:
+        except Exception as ex:
             print(f"Error: {ex}")
             return None
         
@@ -421,6 +471,8 @@ class CameraWidget(QWidget):
         self.subject_id = self.subject_id_text.toPlainText()
         self.logger.info(f'Subject ID changed to: {self.subject_id}')
         self.validate_subject_id_input()
+        # call the refresh function from th viewfinder class
+        self.view_finder.refresh()
         
     def validate_subject_id_input(self):
         '''Change the colour of the subject ID text field'''
@@ -437,18 +489,21 @@ class CameraWidget(QWidget):
         self.get_metadata_filename()
         
         # Initalise ffmpeg process
-        print('Starting recording')
         self._init_ffmpeg_process()   
+        # Set the recording flag to True
         self.recording = True
+        # Reset the number of recorded frames to zero
         self.recorded_frames = 0
-        
         self.create_metadata_file()
-        # update label
+        
+        # update labels on GUI
         self.stop_recording_button.setEnabled(True)
         self.camera_dropdown.setEnabled(False)
         self.downsampling_factor_label.setEnabled(False)
         self.start_recording_button.setEnabled(False)
         self.subject_id_text.setEnabled(False)
+        self.fps_label.setEnabled(False)
+        self.pxl_fmt_label.setEnabled(False)
         # Tabs can't be changed
         self.view_finder.GUI.tab_widget.tabBar().setEnabled(False)
         
@@ -457,12 +512,14 @@ class CameraWidget(QWidget):
         self.recording = False  
         self.close_metadata_file()
         
-        # Set other buttons to now be enabledf
+        # Set other buttons to now be enabled
         self.stop_recording_button.setEnabled(False)
         self.start_recording_button.setEnabled(True)
         self.subject_id_text.setEnabled(True)
         self.camera_dropdown.setEnabled(True)
         self.downsampling_factor_label.setEnabled(True)
+        self.fps_label.setEnabled(True)
+        self.pxl_fmt_label.setEnabled(True)
         # Tabs can be changed
         self.view_finder.GUI.tab_widget.tabBar().setEnabled(True)
         
@@ -472,34 +529,31 @@ class CameraWidget(QWidget):
         self.ffmpeg_process.wait()
         
     def change_camera(self):
-        'Function to change which camera is being viewed'
+
         self.logger.info('Changing camera')
         # shut down old camera
         if self.camera_object != None:
             self.camera_object.end_recording()
         # Get the new camera ID
         new_camera_label = str(self.camera_dropdown.currentText())
-        print('new_camera_label', new_camera_label)
         # from the setups tab, get the unique id of the camera
         camera_unique_id = self.setups_tab.get_camera_unique_id_from_label(
             new_camera_label
             )
-        # Get the new camera object 
-        print(f'Changing camera to: {camera_unique_id}')
-        
         self._change_camera(camera_unique_id, new_camera_label)
 
     def _change_camera(self, new_unique_id, new_camera_label):
-        print('unique_id', new_unique_id)
-        # Set the new camera object
-        self.camera_object = init_camera(new_unique_id)
         # Set the new camera name
-        self.unique_id = new_unique_id
-        self.label = new_camera_label
-        # Call the display function once
+        self.unique_id  = new_unique_id
+        self.label      = new_camera_label
+        # Get the new camera settings
+        camera_settings = self.setups_tab.getCameraSettingsConfig(self.label)        
+        # Set the new camera object
+        self.camera_object = init_camera(
+            new_unique_id, camera_settings)
         self.camera_object.begin_capturing()
-        self.fetch_image_data()
-        self.display_frame(self.image_data)
+        # Call the display function once
+        self.display_frame(self.camera_object.get_next_image())
         #  Update the list cameras that are currently being used. 
         self.camera_setup_groupbox.setTitle(self.label)
         
@@ -511,16 +565,19 @@ class CameraWidget(QWidget):
         # Set the new downsampling factor
         self.downsampling_factor = downsampling_factor
         
+    ### Config related functions.
+        
     def get_camera_config(self):
         '''Get the camera configuration'''
         return CameraSetupConfig(
             label = self.label,
             downsample_factor = self.downsampling_factor,
-            subject_id = self.subject_id
+            subject_id = self.subject_id,
+            
         )
             
-    def set_camera_config(self, camera_config: CameraSetupConfig):
-        '''Set the camera configuration'''
+    def set_camera_widget_config(self, camera_config: CameraSetupConfig):
+        '''Set the settings assocaitd with the camera widget into the GUI'''
         # Check if the camera label is in the database
         if camera_config.label not in self.setups_tab.get_camera_labels():
             self.logger.error(f'Camera label {camera_config.label} not found in database')
@@ -533,6 +590,8 @@ class CameraWidget(QWidget):
         self._change_camera(new_unique_id = self.unique_id, new_camera_label = self.label)
         self.logger.info(f'Camera configuration set to: {camera_config}')
 
+    ### Functions for changing the camera settings for a camera
+
     def rename(self, new_label):
         '''Function to rename the camera'''
         # remove the current label from the camera_dropdown widget
@@ -542,7 +601,30 @@ class CameraWidget(QWidget):
         self.camera_dropdown.setCurrentText(new_label)        
         self.camera_setup_groupbox.setTitle(new_label)
 
+    def change_fps(self):
+        '''Change the FPS of the camera'''
+        self.logger.info('Changing FPS')
+        # Get the new FPS
+        fps = int(self.fps_text.currentText())
+        # Set the new FPS
+        self.fps = fps
         
+        # This function requires reinitalisation of the camera with the new FPS
+        self.camera_object.set_frame_rate(fps)
+        
+    def change_pxl_fmt(self):
+        '''Change the pixel format of the camera'''
+        self.logger.info('Changing pixel format')
+        # Get the new pixel format
+        pxl_fmt = str(self.pxl_fmt_cbox.currentText())
+        # Set the new pixel format
+        self.pxl_fmt = pxl_fmt
+        
+        # This function requires reinitalisation of the camera with the new pixel format
+        self.camera_object.set_pixel_format(pxl_fmt)
+    
+    ### Functions for disconnecting the camera from the GUI
+    
     def disconnect(self):
         '''Function for disconnecting the camera from the GUI. 
         
@@ -552,6 +634,5 @@ class CameraWidget(QWidget):
         - Removes the camera from the camera groupboxes list
         - Deletes the camera widget when PyQt6 is ready to delete it'''
         self.camera_object.end_recording()
-        self.view_finder.camera_groupboxes.remove(self)
         self.view_finder.camera_layout.removeWidget(self)
         self.deleteLater()

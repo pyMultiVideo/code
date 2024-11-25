@@ -1,7 +1,7 @@
 from PyQt6.QtGui import (
     QIcon
 )
-from PyQt6 import QtWidgets
+import PyQt6.QtWidgets as QtWidgets # This import is used in the script above.
 from PyQt6.QtWidgets import (
     QMainWindow, QTabWidget
 )
@@ -15,15 +15,9 @@ import logging
 import sys, os
 
 # import tab classes
-from GUI.ViewFinderTab import ViewFinderTab
-from GUI.SetupsTab import SetupsTab
-from GUI.ipython_tab import iPythonTab
-
-# import camera wrapper classes
-from api.camera import (
-    CameraTemplate as Camera
-)
-import PySpin
+from GUI.ViewFinderTab  import ViewFinderTab
+from GUI.SetupsTab      import SetupsTab
+from GUI.ipython_tab    import iPythonTab
 
 if os.name == 'nt':
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('pyCamera')
@@ -35,10 +29,9 @@ class GUIApp(QMainWindow):
     '''
     def __init__(self):
         super().__init__()
-        
+        print('Starting GUI')  
         self.logger = logging.getLogger(__name__)
         self._load_camera_names() 
-        self._init_cam_list()
         
         # Initialise the tab classess
         self._set_icons()
@@ -95,23 +88,10 @@ class GUIApp(QMainWindow):
                 
         logging.info('Loaded configurations: ' + ', '.join(json_files))
 
-    def _init_cam_list(self):
-        '''Initialise the camera list'''
-        # self.system = CameraSystem()
-        # self.cam_list = self.system.get_camera_list()
-        
-        self.system = PySpin.System.GetInstance()
-        self.cam_list = self.system.GetCameras()
-        self.numCams = len(self.system.GetCameras())
-        # print(self.cam_list)    
-        for cam in self.cam_list:
-            
-            logging.info(f'Found camera: {cam.GetUniqueID()}')
-       
+    
     def _init_timers(self):
         '''Initialise the timers'''
         self.refresh_timer = QTimer()
-        self.refresh()
         self.refresh_timer.timeout.connect(self.refresh)
         self.refresh_timer.start(1000)
     
@@ -119,7 +99,7 @@ class GUIApp(QMainWindow):
         '''
         Refresh the pages that require it
         '''
-        self.setups_tab.refresh()
+        # self.setups_tab.refresh()
         self.viewfinder_tab.refresh()
             
     def resizeEvent(self, event):
@@ -130,12 +110,7 @@ class GUIApp(QMainWindow):
     def closeEvent(self, event):
         '''Close the GUI'''
         logging.info('Closing the GUI')
-        # Close the camera
-        self.cam_list.Clear()
-        self.system.ReleaseInstance()
         event.accept()
-        # Close the GUI   
-        # run ctrl+c
         sys.exit(0)
         
     # Exception handling    

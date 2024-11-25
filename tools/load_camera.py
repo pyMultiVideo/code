@@ -1,35 +1,80 @@
 'Functions for loading the camera IDs'
-import PySpin
-import cv2
-import logging
-from api.data_classes import CameraSettingsConfig
+# Different imports for running the script from different places
+if __name__ == '__main__':
+    from camera import (
+        SpinnakerCamera,
+        USBCamera
+        )
+    from data_classes import CameraSettingsConfig
+else:   
+    from tools.camera import (
+        SpinnakerCamera,
+        USBCamera
+        )
+    from tools.data_classes import CameraSettingsConfig
 
+import PySpin
+import logging
 logging.basicConfig(level=logging.INFO)
 
-# import serial.tools.list_ports as list_ports
-from api.camera import (
-    SpinnakerCamera,
-    USBCamera
-    )
+# Library for handling usb cameras
+import cv2_enumerate_cameras
 
-def get_unique_ids() -> list[str]:
-    'Get a list of unique camera IDs for all the different types of cameras connected to the machine'
-    
+def get_usb_cameras_list() -> list[str]:
+    'Get a list of the USB cameras connected to the machine'
+    usb_cam_list = cv2_enumerate_cameras.enumerate_cameras()
+    # Preprocess this list because it returns duplicates sometimtes
+    for cam1 in usb_cam_list:
+        for cam2 in usb_cam_list:
+            if cam1.path == cam2.path:
+                usb_cam_list.remove(cam2)
+
+    return usb_cam_list
+
+def get_unique_ids(VERBOSE:bool = False) -> list[str]:
+    """Get a list of unique camera IDs for all the different types of cameras connected to the machine."""
     unique_id_list = []
-    
-    # PySpin system
     pyspin_system = PySpin.System.GetInstance()
     pyspin_cam_list = pyspin_system.GetCameras()
+    
+    if VERBOSE:
+        print(f"Number of cameras detected: {pyspin_cam_list.GetSize()}")
+    
     for cam in pyspin_cam_list:
-        # Get cam serial number
-        cam.Init()
-        cam_id: tuple[str] = f"{cam.DeviceSerialNumber()}-spinnaker"
-        unique_id_list.append(cam_id)
-
+        try:
+            # Initialize the camera
+            cam.Init()
+            # Get cam serial number
+            cam_id: str = f"{cam.DeviceSerialNumber()}-spinnaker"
+            if VERBOSE:
+                print(f"Camera ID: {cam_id}")
+            unique_id_list.append(cam_id)
+        except Exception as e:
+            if VERBOSE:
+                print(f"Error accessing camera: {e}")
+        finally:
+            if cam.IsStreaming():
+                continue
+            else: 
+                cam.DeInit()
+    
+    # Release resources
+    pyspin_cam_list.Clear()
+    # pyspin_system.ReleaseInstance()
+    
+    # # USB CAMERAS
+    # usb_cam_list = get_usb_cameras_list()
+    # for cam in usb_cam_list:
+    #     cam_id: str = f"{cam.pid}-usb"
+    #     if VERBOSE:
+    #         print(f"Camera ID: {cam_id}")
+    #     unique_id_list.append(cam_id)
+    
+    
     
     return sorted(unique_id_list)
 
-def init_camera(unique_id: str):
+def init_camera(unique_id: str, CameraSettingsConfig: CameraSettingsConfig = None):
     if unique_id is None:
         logging.error('No camera selected')
         return None
@@ -39,9 +84,9 @@ def init_camera(unique_id: str):
     except ValueError:
         raise ValueError('Invalid unique_id')
     if api == 'spinnaker':
-        return SpinnakerCamera(unique_id)
+        return SpinnakerCamera(unique_id, CameraSettingsConfig)
     if api == 'usb':
-        return USBCamera(int(unique_id), None)
+        return USBCamera(unique_id, CameraSettingsConfig)
 
 def load_saved_setups(database) -> list[CameraSettingsConfig]:
     '''Function to load the saved setups from the database as a list of Setup objects'''
@@ -51,6 +96,8 @@ def load_saved_setups(database) -> list[CameraSettingsConfig]:
             CameraSettingsConfig(
                 name      = cam['name'],
                 unique_id = cam['unique_id'],
+                fps       = cam['fps'],
+                pxl_fmt   = cam['pxl_fmt']
                 )
             )
     return setups_from_database
@@ -58,4 +105,5 @@ def load_saved_setups(database) -> list[CameraSettingsConfig]:
 
 
 if __name__ =='__main__':
-    get_unique_ids()
+    # print(get_usb_cameras_list())
+    print(get_unique_ids())

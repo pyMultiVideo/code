@@ -1,52 +1,132 @@
-2024-11-18 14:07:10,550 - ERROR - No camera selected
-2024-11-18 14:09:01,258 - ERROR - Camera label Test5 not found in database
-2024-11-18 14:09:24,779 - ERROR - Camera label Test5 not found in database
-2024-11-18 14:10:15,732 - ERROR - Camera label Test5 not found in database
-2024-11-18 14:42:24,726 - ERROR - No camera selected
-2024-11-18 14:42:26,023 - ERROR - No camera selected
-2024-11-18 17:55:17,784 - ERROR - No camera selected
-2024-11-18 17:55:21,243 - ERROR - No camera selected
-2024-11-18 17:55:21,867 - ERROR - No camera selected
-2024-11-18 18:28:56,843 - ERROR - No camera selected
-2024-11-18 18:34:23,940 - ERROR - No camera selected
-2024-11-18 18:36:03,926 - ERROR - No camera selected
-2024-11-18 18:38:41,814 - ERROR - No camera selected
-2024-11-18 18:40:41,975 - ERROR - No camera selected
-2024-11-18 18:45:37,072 - ERROR - No camera selected
-2024-11-18 18:46:03,077 - ERROR - No camera selected
-2024-11-18 18:46:26,855 - ERROR - No camera selected
-2024-11-18 18:47:13,634 - ERROR - No camera selected
-2024-11-18 18:47:41,431 - ERROR - No camera selected
-2024-11-18 21:39:41,220 - ERROR - No camera selected
-2024-11-19 12:33:00,844 - ERROR - No camera selected
-2024-11-19 12:39:52,267 - ERROR - No camera selected
-2024-11-19 12:41:15,362 - ERROR - No camera selected
-2024-11-19 12:42:18,079 - ERROR - No camera selected
-2024-11-19 17:40:48,733 - ERROR - No camera selected
-2024-11-19 19:09:17,815 - ERROR - No camera selected
-2024-11-19 19:09:50,394 - ERROR - No camera selected
-2024-11-19 19:12:11,559 - ERROR - No camera selected
-2024-11-19 23:20:38,674 - ERROR - No camera selected
-2024-11-19 23:20:44,822 - ERROR - No camera selected
-2024-11-19 23:43:13,886 - ERROR - No camera selected
-2024-11-20 00:10:21,752 - ERROR - No camera selected
-2024-11-20 00:19:02,527 - ERROR - No camera selected
-2024-11-20 00:19:03,421 - ERROR - No camera selected
-2024-11-20 00:19:04,234 - ERROR - No camera selected
-2024-11-20 00:19:04,466 - ERROR - No camera selected
-2024-11-20 00:19:05,245 - ERROR - No camera selected
-2024-11-20 00:19:05,493 - ERROR - No camera selected
-2024-11-20 00:19:06,242 - ERROR - No camera selected
-2024-11-20 00:19:06,571 - ERROR - No camera selected
-2024-11-20 00:19:07,240 - ERROR - No camera selected
-2024-11-20 00:19:07,553 - ERROR - No camera selected
-2024-11-20 00:19:08,240 - ERROR - No camera selected
-2024-11-20 00:19:08,457 - ERROR - No camera selected
-2024-11-20 00:19:09,221 - ERROR - No camera selected
-2024-11-20 00:19:09,440 - ERROR - No camera selected
-2024-11-20 00:19:10,266 - ERROR - No camera selected
-2024-11-20 00:19:10,498 - ERROR - No camera selected
-2024-11-20 00:19:11,297 - ERROR - No camera selected
-2024-11-20 00:19:11,575 - ERROR - No camera selected
-2024-11-20 00:19:12,293 - ERROR - No camera selected
-2024-11-20 00:19:12,666 - ERROR - No camera selected
+2024-11-25 14:11:45,182 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 370, in load_experiment_config
+    print(self.setups_tab.setups_recording_status_dict())
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\SetupsTab.py", line 248, in setups_recording_status_dict
+    recording_status[setup.label] = camera_object.is_recording()
+AttributeError: 'SpinnakerCamera' object has no attribute 'is_recording'
+2024-11-25 14:11:52,660 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 370, in load_experiment_config
+    print(self.setups_tab.setups_recording_status_dict())
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\SetupsTab.py", line 248, in setups_recording_status_dict
+    recording_status[setup.label] = camera_object.is_recording()
+AttributeError: 'SpinnakerCamera' object has no attribute 'is_recording'
+2024-11-25 14:11:53,267 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 370, in load_experiment_config
+    print(self.setups_tab.setups_recording_status_dict())
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\SetupsTab.py", line 248, in setups_recording_status_dict
+    recording_status[setup.label] = camera_object.is_recording()
+AttributeError: 'SpinnakerCamera' object has no attribute 'is_recording'
+2024-11-25 14:11:53,478 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 370, in load_experiment_config
+    print(self.setups_tab.setups_recording_status_dict())
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\SetupsTab.py", line 248, in setups_recording_status_dict
+    recording_status[setup.label] = camera_object.is_recording()
+AttributeError: 'SpinnakerCamera' object has no attribute 'is_recording'
+2024-11-25 14:13:14,339 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 370, in load_experiment_config
+    print(self.setups_tab.setups_recording_status_dict())
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\SetupsTab.py", line 248, in setups_recording_status_dict
+    recording_status[setup.label] = camera_object.is_recording()
+AttributeError: 'SpinnakerCamera' object has no attribute 'is_recording'
+2024-11-25 14:13:39,716 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 376, in load_experiment_config
+    experiment_config = ExperimentConfig(**config_data)
+TypeError: ExperimentConfig.__init__() missing 1 required positional argument: 'grid_layout'
+2024-11-25 14:14:47,668 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 230, in encode_buffer
+    def encode_buffer(self):
+KeyboardInterrupt
+2024-11-25 14:15:44,201 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 393, in load_experiment_config
+    self.initialize_camera_widget(label=camera.label, subject_id=camera.subject_id)
+TypeError: ViewFinderTab.initialize_camera_widget() missing 2 required positional arguments: 'fps' and 'pxl_fmt'
+2024-11-25 14:16:09,008 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 365, in save_experiment_config
+    config_file.write(json.dumps(asdict(self.get_page_config()), indent=4))
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 354, in get_page_config
+    grid_layout = self.layout_checkbox.isChecked(),
+AttributeError: 'ViewFinderTab' object has no attribute 'layout_checkbox'
+2024-11-25 14:16:51,262 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 230, in encode_buffer
+    def encode_buffer(self):
+KeyboardInterrupt
+2024-11-25 14:17:19,643 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 373, in load_experiment_config
+    with open(file_tuple[0], 'r') as config_file:
+FileNotFoundError: [Errno 2] No such file or directory: ''
+2024-11-25 14:17:49,350 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 393, in load_experiment_config
+    self.initialize_camera_widget(label=camera.label, subject_id=camera.subject_id)
+TypeError: ViewFinderTab.initialize_camera_widget() missing 2 required positional arguments: 'fps' and 'pxl_fmt'
+2024-11-25 14:19:47,758 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 395, in load_experiment_config
+    subject_id=camera.subje,
+AttributeError: 'CameraSetupConfig' object has no attribute 'subje'
+2024-11-25 14:20:08,112 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 396, in load_experiment_config
+    pxl_fmt=camera.pxl_fmt,
+AttributeError: 'CameraSetupConfig' object has no attribute 'pxl_fmt'
+2024-11-25 14:41:46,837 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 361, in load_experiment_config
+    with open(file_tuple[0], 'r') as config_file:
+FileNotFoundError: [Errno 2] No such file or directory: ''
+2024-11-25 14:48:13,249 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 361, in load_experiment_config
+    with open(file_tuple[0], 'r') as config_file:
+FileNotFoundError: [Errno 2] No such file or directory: ''
+2024-11-25 14:48:26,034 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 361, in load_experiment_config
+    with open(file_tuple[0], 'r') as config_file:
+FileNotFoundError: [Errno 2] No such file or directory: ''
+2024-11-25 14:48:52,719 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 361, in load_experiment_config
+    with open(file_tuple[0], 'r') as config_file:
+FileNotFoundError: [Errno 2] No such file or directory: ''
+2024-11-25 14:49:24,721 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 361, in load_experiment_config
+    with open(file_tuple[0], 'r') as config_file:
+FileNotFoundError: [Errno 2] No such file or directory: ''
+2024-11-25 14:50:28,986 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 361, in load_experiment_config
+    with open(file_tuple[0], 'r') as config_file:
+FileNotFoundError: [Errno 2] No such file or directory: ''
+2024-11-25 14:50:49,736 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 352, in save_experiment_config
+    with open(file_path[0], 'w') as config_file:
+FileNotFoundError: [Errno 2] No such file or directory: ''
+2024-11-25 14:56:09,762 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 361, in load_experiment_config
+    with open(file_tuple[0], 'r') as config_file:
+FileNotFoundError: [Errno 2] No such file or directory: ''
+2024-11-25 15:15:27,501 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 230, in encode_buffer
+    def encode_buffer(self):
+KeyboardInterrupt
+2024-11-25 15:16:10,513 - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "c:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\GUI\ViewFinderTab.py", line 359, in load_experiment_config
+    with open(file_tuple[0], 'r') as config_file:
+FileNotFoundError: [Errno 2] No such file or directory: ''

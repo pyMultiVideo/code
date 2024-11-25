@@ -1,14 +1,26 @@
 [
     {
-        "name": "testC",
-        "unique_id": "21013407-spinnaker"
+        "name": "22704-usb",
+        "unique_id": "22704-usb",
+        "fps": "30",
+        "pxl_fmt": "yuv420p"
     },
     {
         "name": "testb",
-        "unique_id": "18360350-spinnaker"
+        "unique_id": "18360350-spinnaker",
+        "fps": "30",
+        "pxl_fmt": "yuv420p"
     },
     {
-        "name": "test1",
-        "unique_id": "20073102-spinnaker"
+        "name": "test12",
+        "unique_id": "20073102-spinnaker",
+        "fps": "30",
+        "pxl_fmt": "yuv420p"
+    },
+    {
+        "name": "testC",
+        "unique_id": "21013407-spinnaker",
+        "fps": "30",
+        "pxl_fmt": "yuv420p"
     }
 ]
