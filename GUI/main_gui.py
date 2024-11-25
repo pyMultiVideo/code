@@ -1,7 +1,6 @@
 from PyQt6.QtGui import (
     QIcon
 )
-import PyQt6.QtWidgets as QtWidgets # This import is used in the script above.
 from PyQt6.QtWidgets import (
     QMainWindow, QTabWidget
 )
@@ -27,9 +26,11 @@ class GUIApp(QMainWindow):
     '''
     Class to create the main GUI window
     '''
-    def __init__(self):
+    def __init__(self, parsed_args):
         super().__init__()
         print('Starting GUI')  
+        self.startup_config = parsed_args.config
+        print('Startup config:', self.startup_config)
         self.logger = logging.getLogger(__name__)
         self._load_camera_names() 
         
@@ -43,6 +44,7 @@ class GUIApp(QMainWindow):
         self.setWindowTitle('pyCamera') # default window title
         self.setCentralWidget(self.tab_widget)
         self.show() # show the GUI
+        
         
     def _set_icons(self):
         '''Set the icons for the GUI'''
@@ -77,8 +79,8 @@ class GUIApp(QMainWindow):
                 
         logging.info('Loaded configurations: ' + ', '.join(json_files))
 
+
     def _init_experiments(self):
-        
         # Get list of json files in the configs folder
         json_files = [f for f in os.listdir('experiments') if f.endswith('.json')]
         

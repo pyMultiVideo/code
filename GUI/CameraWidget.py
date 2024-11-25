@@ -564,6 +564,7 @@ class CameraWidget(QWidget):
         downsampling_factor = int(self.downsampling_factor_text.currentText())
         # Set the new downsampling factor
         self.downsampling_factor = downsampling_factor
+
         
     ### Config related functions.
         

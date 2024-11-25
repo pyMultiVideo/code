@@ -27,13 +27,14 @@ except ImportError as e:
         
 # Import GUI now that dependancies are installed        
 import GUI.main_gui as mg
+import PyQt6.QtWidgets as QtWidgets
 
 def main(parsed_args, unparsed_args):
-    app = mg.QtWidgets.QApplication(sys.argv)
-    # set pyqt6 style
-    print('Starting GUI')    
+    app = QtWidgets.QApplication(sys.argv)
     app.setStyle('Fusion')
-    gui = mg.GUIApp()
+    # Parse the arguments to main window
+    gui = mg.GUIApp(parsed_args)
+    gui.show()
     sys.excepthook = mg.GUIApp.exception_hook
     app.exec()
     
@@ -51,5 +52,5 @@ def parse_args():
 # Run the main function if this script is run
 if __name__ == '__main__':
     parsed_args, unparsed_args = parse_args()
-
+    print(parsed_args, unparsed_args)
     main(parsed_args, unparsed_args)

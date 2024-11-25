@@ -236,17 +236,24 @@ class ViewFinderTab(QWidget):
         self.camera_layout = QGridLayout()
         self.viewfinder_groupbox = QGroupBox("Viewfinder")
         self.viewfinder_groupbox.setLayout(self.camera_layout)
-        
 
-        useable_cameras = sorted(list(set(self.connected_cameras()) - set(self.camera_groupbox_labels())), key=str.lower)
-        print('useable_cameras - init', useable_cameras)
-        for camera_index, camera_label in enumerate(useable_cameras[:1]): # One camera by default
-            self.initialize_camera_widget(
-                label=camera_label,
-                )
+        if self.GUI.startup_config == None:         
+            useable_cameras = sorted(list(set(self.connected_cameras()) - set(self.camera_groupbox_labels())), key=str.lower)
+            print('useable_cameras - init', useable_cameras)
+            for camera_index, camera_label in enumerate(useable_cameras[:1]): # One camera by default
+                self.initialize_camera_widget(
+                    label=camera_label,
+                    )
             
-
-        
+        else:
+            # Load the default config file
+            with open(self.GUI.startup_config, 'r') as config_file:
+                config_data = json.load(config_file)
+                config_data['cameras'] = [CameraSetupConfig(**camera) for camera in config_data['cameras']]
+            experiment_config = ExperimentConfig(**config_data)
+            
+            self.load_experiment_config(experiment_config)
+            
     def spinbox_add_remove_cameras(self):
         '''
         Function attached to the spinbox that adds or removes cameras from the viewfinder tab
@@ -365,6 +372,11 @@ class ViewFinderTab(QWidget):
             if camera.label not in self.setups_tab.get_setups_labels():
                 show_info_message(f'Camera {camera.label} is not connected')
                 return
+
+        self.load_experiment_config(experiment_config)
+
+
+    def load_experiment_config(self, experiment_config: ExperimentConfig):
         # Remove all the cameras that are currently being displayed
         for i in range(len(self.camera_groupboxes)):
             camera = self.camera_groupboxes.pop()
@@ -379,6 +391,7 @@ class ViewFinderTab(QWidget):
         self.camera_quantity_spin_box.setValue(experiment_config.num_cameras)
         self.encoder_selection.setCurrentText(experiment_config.encoder)
         self.save_dir_textbox.setPlainText(experiment_config.data_dir)
+        self.layout_checkbox.setChecked(experiment_config.grid_layout)
 
 
     def update_camera_dropdowns(self):
