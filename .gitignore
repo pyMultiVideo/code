@@ -1,4 +1,7 @@
 *__pycache__
 *.pyc
-ErrorLog.txt
+vscode/
 .vscode/*
+ErrorLog.txt
+todo.md
+test_notebook.ipynb

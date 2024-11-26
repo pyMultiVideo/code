@@ -1,1 +1,1 @@
-from GUI.ViewFinderTab import ViewFinderTab
+from GUI.VideoCapture import VideoCapture

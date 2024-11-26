@@ -1,7 +1,5 @@
-from time import sleep
-import json, os, logging
+import json, logging
 from typing import List
-import numpy as np
 from PyQt6.QtWidgets import (
     QVBoxLayout, 
     QGroupBox, 
@@ -19,43 +17,35 @@ from PyQt6.QtWidgets import (
     )
 from PyQt6.QtGui import (
     QFont,
-    QImage,
-    QPixmap,
     QIcon
     
     )
 from PyQt6.QtCore import (
-    QTimer,
-    Qt
+    QTimer
 )
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict
 from tools.data_classes import ExperimentConfig, CameraSetupConfig
 from tools.load_camera import load_saved_setups
-from GUI.CameraWidget import CameraWidget
-from GUI.SetupsTab import SetupsTab
+from GUI.CameraWidget import Viewfinder
+from GUI.CameraSetupTab import CamerasTab
+from GUI.error_message import show_info_message
 import db as database
-from dialogues.error_message import show_info_message
 
 
-class ViewFinderTab(QWidget):
-    '''Widget for the for viewing the camera feed live'''
+class VideoCapture(QWidget):
+    '''Tab used to display the viewfinder and control the cameras'''
     def __init__(self, parent=None):
-        super(ViewFinderTab, self).__init__(parent)
+        super(VideoCapture, self).__init__(parent)
         self.GUI = parent
-        self.setups_tab: SetupsTab = self.GUI.setups_tab
+        self.camera_setup_tab: CamerasTab = self.GUI.camera_setup_tab
         self.logging = logging.getLogger(__name__)
-        # self.default_config_path = 'experiments/default_config.json'
-
-        self.camera_groupboxes: List[CameraWidget] = []
-        
-        self.camera_database= load_saved_setups(database) # list of camera_configs
-
+        self.camera_groupboxes: List[Viewfinder] = []
+        self.camera_database = load_saved_setups(database) # list of camera_configs
         self._init_header_groupbox()
         self._init_viewfinder_groupbox()
         self._page_layout()
         self._init_timers()
-        # List of camera groupbox names that are currently being displayed
         print('Viewfinder tab initialised')
         
     def _init_header_groupbox(self):
@@ -67,7 +57,6 @@ class ViewFinderTab(QWidget):
         self._init_config_groupbox()
         self._init_save_dir_groupbox()
         self._init_control_all_groupbox()
-        
         
         self.header_hlayout = QHBoxLayout()
         self.header_hlayout.addWidget(self.config_groupbox)
@@ -110,12 +99,11 @@ class ViewFinderTab(QWidget):
         self.camera_quantity_spin_box = QSpinBox()
         self.camera_quantity_spin_box.setFont(QFont('Courier', 12))
         self.camera_quantity_spin_box.setReadOnly(False)
-        maxCameras = len(self.setups_tab.setups.keys())
+        maxCameras = len(self.camera_setup_tab.setups.keys())
         self.camera_quantity_spin_box.setRange(1,maxCameras)
         self.camera_quantity_spin_box.setSingleStep(1) 
         self.camera_quantity_spin_box.valueChanged.connect(self.spinbox_add_remove_cameras)
         self.camera_quantity_spin_box.setValue(1)
-    
         # 
         self.save_camera_config_button = QPushButton('Save Layout')
         self.save_camera_config_button.setIcon(QIcon('assets/icons/save.svg'))
@@ -124,10 +112,8 @@ class ViewFinderTab(QWidget):
         
         # Button for loading camera configuration
         self.load_experiment_config_button = QPushButton('Load Layout')
-        # self.load_camera_config_button.setFixedWidth(30)
         self.load_experiment_config_button.setFixedHeight(30)
         self.load_experiment_config_button.clicked.connect(self.load_experiment_config)
-        
         
         # Check box for changing the layout of the camera widgets
         self.layout_checkbox = QCheckBox('Grid Layout')
@@ -182,7 +168,6 @@ class ViewFinderTab(QWidget):
     def _init_control_all_groupbox(self):
             
         self.control_all_groupbox = QGroupBox("Control All")
-            
         
         # Button for recording video 
         self.start_recording_button = QPushButton('')
@@ -198,7 +183,6 @@ class ViewFinderTab(QWidget):
         self.stop_recording_button.setFixedHeight(30)
         self.stop_recording_button.clicked.connect(self.stop_recording)
         
-
         self._set_control_all_layout()
         
     def _set_control_all_layout(self):
@@ -252,7 +236,7 @@ class ViewFinderTab(QWidget):
                 config_data['cameras'] = [CameraSetupConfig(**camera) for camera in config_data['cameras']]
             experiment_config = ExperimentConfig(**config_data)
             
-            self.load_experiment_config(experiment_config)
+            self.load_from_config_dir(experiment_config)
             
     def spinbox_add_remove_cameras(self):
         '''
@@ -283,7 +267,7 @@ class ViewFinderTab(QWidget):
             ):
         '''Create a new camera widget and add it to the viewfinder tab'''
         self.camera_groupboxes.append(
-                CameraWidget(
+                Viewfinder(
                     parent      = self,
                     label       = label,
                     subject_id  = subject_id,
@@ -367,20 +351,32 @@ class ViewFinderTab(QWidget):
             config_data = json.load(config_file)
             config_data['cameras'] = [CameraSetupConfig(**camera) for camera in config_data['cameras']]
         experiment_config = ExperimentConfig(**config_data)
+        # Check if the config file is valid
+        self.check_valid_config(experiment_config)
+        # Load the camera configuration
+        self.load_from_config_dir(experiment_config)
+
+    def check_valid_config(self, experiment_config: ExperimentConfig):
+        '''
+        Function to hold the logic for checking if the config file is valid
+        '''
         # Check if config file contains cameras that are in the database
         for camera in experiment_config.cameras:
-            if camera.label not in self.setups_tab.get_setups_labels():
+            if camera.label not in self.camera_setup_tab.get_setups_labels():
                 show_info_message(f'Camera {camera.label} is not connected')
                 return
 
-        self.load_experiment_config(experiment_config)
 
-
-    def load_experiment_config(self, experiment_config: ExperimentConfig):
+    def load_from_config_dir(self, experiment_config: ExperimentConfig):
+        '''
+        Load the camera configuration from the experiment config dataclass
+        '''
+        
         # Remove all the cameras that are currently being displayed
         for i in range(len(self.camera_groupboxes)):
             camera = self.camera_groupboxes.pop()
             camera.disconnect()
+            
         # Initialise the cameras from the config file
         for camera in experiment_config.cameras:
             self.initialize_camera_widget(
@@ -407,8 +403,8 @@ class ViewFinderTab(QWidget):
             camera_label.refresh()
         
         # Check the setups_changed flag
-        if self.setups_tab.setups_changed:
-            self.setups_tab.setups_changed = False
+        if self.camera_setup_tab.setups_changed:
+            self.camera_setup_tab.setups_changed = False
             # Handle the renamed cameras
             self.handle_camera_setups_modified()
                     
@@ -423,7 +419,7 @@ class ViewFinderTab(QWidget):
             # if the label not in the initialised list of cameras (either new or not initialised)
             if label not in self.camera_groupbox_labels():
                 # get the unique id of the camera of the queried label
-                unique_id = self.setups_tab.get_camera_unique_id_from_label(label)
+                unique_id = self.camera_setup_tab.get_camera_unique_id_from_label(label)
                 # if the unique id is not in the list of camera groupboxes is it a uninitialized camera
                 if unique_id in [camera.unique_id for camera in self.camera_groupboxes]:
                     print('camera unique id', [camera.unique_id for camera in self.camera_groupboxes], 'queried unique id', unique_id)
@@ -449,7 +445,7 @@ class ViewFinderTab(QWidget):
 
     def connected_cameras(self) -> List[str]:
         '''Return the labels of cameras connected to the PC'''
-        return self.setups_tab.get_setups_labels()
+        return self.camera_setup_tab.get_setups_labels()
 
     def check_to_enable_global_start_recording(self):
         '''Check if all the cameras are ready to start recording. If any camera is not ready to start, 

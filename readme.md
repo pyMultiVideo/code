@@ -34,6 +34,5 @@ USB Camera (almost supported.)
 
 - Get the config file from the `/experiments` folder and use that as the input to the `--config` argument
 
-`--config /path/to/config.json` argument and example usage.
-
+`--config /path/to/config.json` argument and example usage. for example: `C:/Users/alifa/Anaconda3/envs/flir/python.exe "c:/Users/alifa/OneDrive - Nexus365/Documents/Video Aquisition Application/pyCamera/code/pyCamera_GUI.pyw" --config "C:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\experiments\fps-3.json"`
 

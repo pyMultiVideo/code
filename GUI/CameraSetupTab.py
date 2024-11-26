@@ -14,7 +14,7 @@ import json
 import db as database
 from dataclasses import asdict
 
-class Setup():
+class Camera():
     '''Class that contains the setup for the camera'''
     def __init__(self, 
                 setups_table, 
@@ -99,7 +99,7 @@ class Setup():
             pxl_fmt = self.pxl_fmt
             )
 
-class SetupsTab(QtWidgets.QWidget):
+class CamerasTab(QtWidgets.QWidget):
     '''
     Class that creates a setup tab that contains the camera table. This where we can see the camera settings and update them.
     In particular a name for the camera, for each serial number. 
@@ -107,14 +107,14 @@ class SetupsTab(QtWidgets.QWidget):
     This is the highest level of the setups tab, and contains the camera table.
     '''
     def __init__(self, parent=None):
-        super(SetupsTab, self).__init__(parent)
+        super(CamerasTab, self).__init__(parent)
         print('SetupsTab')
         self.GUI = parent
         
         self._initialize_camera_groupbox()
         self.saved_setups_file = database.this.paths['camera_dir'] + '/cameras_configs.json'
         # 
-        self.setups: dict[str, Setup] = {} # Dict of setups: {Unique_id: Setup}
+        self.setups: dict[str, Camera] = {} # Dict of setups: {Unique_id: Setup}
         # Get a list of the saved setups from the database
         self.saved_setups = self.load_saved_setups()
         self.refresh()
@@ -161,7 +161,7 @@ class SetupsTab(QtWidgets.QWidget):
         return None
     
     
-    def update_saved_setups(self, setup: Setup):
+    def update_saved_setups(self, setup: Camera):
         '''Called when a setup is updated to update the saved setups'''
         saved_setup: CameraSettingsConfig = self.get_saved_setups(unique_id=setup.unique_id)
         camera_settings_config = setup.getCameraSettingsConfig()
@@ -200,7 +200,7 @@ class SetupsTab(QtWidgets.QWidget):
                 camera_settings_config: CameraSettingsConfig = self.get_saved_setups(unique_id=unique_id)
                 if camera_settings_config:
                     # Instantiate the setup and add it to the setups dict
-                    self.setups[unique_id] = Setup(
+                    self.setups[unique_id] = Camera(
                         setups_table    = self.camera_table, 
                         name            = camera_settings_config.name, 
                         unique_id       = camera_settings_config.unique_id,
@@ -210,7 +210,7 @@ class SetupsTab(QtWidgets.QWidget):
                 # If the unique_id has not been seen before, create a new setup
                 else:
                     # Note: Name == None since this is a new camera
-                    self.setups[unique_id] = Setup(
+                    self.setups[unique_id] = Camera(
                         setups_table    = self.camera_table, 
                         name            = None, 
                         unique_id       = unique_id, 

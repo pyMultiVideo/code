@@ -14,9 +14,8 @@ import logging
 import sys, os
 
 # import tab classes
-from GUI.ViewFinderTab  import ViewFinderTab
-from GUI.SetupsTab      import SetupsTab
-from GUI.ipython_tab    import iPythonTab
+from GUI.VideoCapture  import VideoCapture
+from GUI.CameraSetupTab      import CamerasTab
 
 if os.name == 'nt':
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('pyCamera')
@@ -54,28 +53,25 @@ class GUIApp(QMainWindow):
                         
     def _init_tabs(self):
         '''Initialize tab classes'''
-        self.setups_tab     = SetupsTab(parent = self)
-        self.viewfinder_tab = ViewFinderTab(parent = self)
-        self.ipython_tab    = iPythonTab(parent = self)
+        self.camera_setup_tab     = CamerasTab(parent = self)
+        self.video_capture_tab = VideoCapture(parent = self)
         
         self._add_tabs()
 
     def _add_tabs(self):
         '''Add tabs to the GUI'''
         self.tab_widget = QTabWidget()
-
-        self.tab_widget.addTab(self.viewfinder_tab, 'View Finder')
-        self.tab_widget.addTab(self.setups_tab,     'Setups')
-        self.tab_widget.addTab(self.ipython_tab,    'IPython')
+        self.tab_widget.addTab(self.video_capture_tab, 'Video Capture')
+        self.tab_widget.addTab(self.camera_setup_tab,     'Cameras')
         
     def _load_camera_names(self):
         
         # Get list of json files in the configs folder
-        json_files = [f for f in os.listdir('configs') if f.endswith('.json')]
+        json_files = [f for f in os.listdir('config') if f.endswith('.json')]
         
         for setup in json_files:
             name = setup.split('.')[0]
-            setattr(self, name, json.load(open(f'configs/{setup}')))
+            setattr(self, name, json.load(open(f'config/{setup}')))
                 
         logging.info('Loaded configurations: ' + ', '.join(json_files))
 
@@ -102,11 +98,11 @@ class GUIApp(QMainWindow):
         Refresh the pages that require it
         '''
         # self.setups_tab.refresh()
-        self.viewfinder_tab.refresh()
+        self.video_capture_tab.refresh()
             
     def resizeEvent(self, event):
         '''Resize the GUI'''
-        self.viewfinder_tab.resize(event.size().width(), event.size().height())
+        self.video_capture_tab.resize(event.size().width(), event.size().height())
         event.accept()
 
     def closeEvent(self, event):

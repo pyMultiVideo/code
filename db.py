@@ -30,8 +30,8 @@ this = sys.modules[__name__]
 this.paths = {
     'ROOT': ROOT,
     'logger_dir': os.path.join(ROOT, 'app_data', 'logs'),
-    'camera_dir': os.path.join(ROOT, 'configs'),
-    'encoder_dir': os.path.join(ROOT, 'configs'),
+    'camera_dir': os.path.join(ROOT, 'config'),
+    'encoder_dir': os.path.join(ROOT, 'config'),
     'data_dir': os.path.join(ROOT, 'data'),
 }
 

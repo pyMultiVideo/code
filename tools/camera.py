@@ -35,7 +35,7 @@ class CameraTemplate():
     def begin_capturing(self) -> None:
         pass
     
-    def end_recording(self) -> None:
+    def stop_capturing(self) -> None:
         pass
 
 class SpinnakerCamera(CameraTemplate):
@@ -55,6 +55,7 @@ class SpinnakerCamera(CameraTemplate):
 
         if self.camera_config is not None:
             self.set_frame_rate(self.camera_config.fps)
+            # self.set_pixel_format(self.camera_config.pxl_fmt)
         else:   
             self.fps            = self.get_frame_rate()
             
@@ -110,11 +111,12 @@ class SpinnakerCamera(CameraTemplate):
     # Functions to set the camera parameters
 
     def set_frame_rate(self, frame_rate: int) -> None:
-        
+        '''
+        Function to set the frame rate of the camera.
+        '''
         ## Make sure that frame rate is an int
         if type(frame_rate)==str:
             frame_rate = int(frame_rate)
-        
         
         nodemap = self.cam.GetNodeMap()
         
@@ -201,23 +203,20 @@ class SpinnakerCamera(CameraTemplate):
             raise Exception(f"Camera {self.serial_number} is not in acquisition mode.")
         # For all the images in the buffer or if 1s has passed
         
-        startTime = time.time()
         while not self.cam.GetNextImage().IsIncomplete():
             # This part of the function is not overwriting the self.next_image variable.
             # This is because the self.next_image variable is only used to display the current image.
             next_image = self.cam.GetNextImage()
             self.image_list.append(next_image.GetNDArray())
-            next_image.Release()
+            # next_image.Release()
             self.gpio_list.append(self.get_GPIO_data())
-            
-            if time.time() - startTime > 1:
-                break
+
             
         assert len(self.image_list) == len(self.gpio_list); 'The number of images and GPIO data do not match. So one of them is not being fetched correctly.'
             
         return self.image_list, self.gpio_list
         
-    def end_recording(self) -> None:
+    def stop_capturing(self) -> None:
         if self.cam.IsStreaming():
             print(f'Camera {self.serial_number} has stopped aquisiton.')
             self.cam.EndAcquisition()
@@ -227,7 +226,7 @@ class SpinnakerCamera(CameraTemplate):
         # make sure to release the camera
 
             
-    def is_Recording(self) -> bool:
+    def isStreaming(self) -> bool:
         return self.cam.IsStreaming()
             
     def get_GPIO_data(self) -> dict[str, bool]:

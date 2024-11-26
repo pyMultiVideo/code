@@ -5,7 +5,7 @@ import json, csv, time
 import logging
 from datetime import datetime
 
-from GUI.SetupsTab import SetupsTab
+from GUI.CameraSetupTab import CamerasTab
 from tools.load_camera import init_camera
 from tools.camera_options import cbox_update_options
 from tools.camera import SpinnakerCamera as CameraObject
@@ -33,7 +33,7 @@ from PyQt6.QtCore import (
 import ffmpeg
 
 
-class CameraWidget(QWidget):
+class Viewfinder(QWidget):
     '''
     Widget for each camera to be viewed
     '''
@@ -42,9 +42,9 @@ class CameraWidget(QWidget):
         label, 
         subject_id,
         ):
-        super(CameraWidget, self).__init__(parent)
+        super(Viewfinder, self).__init__(parent)
         self.view_finder = parent
-        self.setups_tab: SetupsTab = self.view_finder.GUI.setups_tab
+        self.camera_setup_tab: CamerasTab = self.view_finder.GUI.camera_setup_tab
         # Camera object is the camera api that is being used that has generic versions of the core functions
         self.logger = logging.getLogger(__name__)
         # Camera attributes
@@ -54,8 +54,8 @@ class CameraWidget(QWidget):
         # Check if the camera label is in the database. If is it, we can use the Settings Config information 
         # to set the camera settings. 
         
-        if self.label in self.setups_tab.get_camera_labels():
-            self.camera_settings = self.setups_tab.getCameraSettingsConfig(self.label)
+        if self.label in self.camera_setup_tab.get_camera_labels():
+            self.camera_settings = self.camera_setup_tab.getCameraSettingsConfig(self.label)
         self.fps        = self.camera_settings.fps
         self.pxl_fmt    = self.camera_settings.pxl_fmt
         self.unique_id = self.camera_settings.unique_id
@@ -78,6 +78,10 @@ class CameraWidget(QWidget):
         self.setLayout(self.camera_setup_hlayout)
 
     def _init_camera_setup_groupbox(self):
+        
+        self._initialise_video_feed()
+        
+        
         self.camera_setup_groupbox = QGroupBox(f"{self.label}")
         
         # Header Layout for groupbox
@@ -136,6 +140,7 @@ class CameraWidget(QWidget):
         # set the current text to the camera label
         self.camera_dropdown.currentTextChanged.connect(self.change_camera)
         self.update_camera_dropdown()
+        self.camera_dropdown.setCurrentText(self.label)
         # Add the widgets to the layout
         self.camera_header_layout.addWidget(self.camera_id_label)
         self.camera_header_layout.addWidget(self.camera_dropdown)
@@ -149,11 +154,11 @@ class CameraWidget(QWidget):
         self.camera_header_layout.addWidget(self.subject_id_text)
         self.camera_header_layout.addWidget(self.start_recording_button)
         self.camera_header_layout.addWidget(self.stop_recording_button)
-        # set the hieght of the header layout
-        # set with of header layout
         # Set the layout for the groupbox
         self.camera_setup_groupbox.setLayout(self.camera_header_layout)
         self.camera_setup_groupbox.setFixedHeight(100)
+        
+    def _initialise_video_feed(self):
         self.video_feed = pg.ImageView()
         self.video_feed.ui.histogram.hide()
         self.video_feed.ui.roiBtn.hide()
@@ -239,14 +244,18 @@ class CameraWidget(QWidget):
         
     def update_camera_dropdown(self):
         '''Update the camera options
-        
-        Note: this function is wrapped in functions to disconnect and reconnect the signal to the dropdown when the function changes the text in the dropdown'''
+        NOTE: this function is wrapped in functions to disconnect and reconnect the signal to the dropdown when the function changes the text in the dropdown
+        BUG: This function does not have a selected text when it is called from initialisation from a config file. This doesnt majorly affect functionality,however
+        the combobox is filled with the other camera label and the correct camera is not an option in the dropdown. 
+        '''
         # disconnect self.camera_dropdown from the current function
         self.camera_dropdown.currentTextChanged.disconnect(self.change_camera)
-        cbox_update_options(cbox = self.camera_dropdown, 
-                            options = self.setups_tab.get_camera_labels(), 
-                            used_cameras_labels = list([cam.label for cam in self.view_finder.camera_groupboxes]),
-                            selected = self.label)
+        cbox_update_options(
+            cbox = self.camera_dropdown, 
+            options = self.camera_setup_tab.get_camera_labels(), 
+            used_cameras_labels = list([cam.label for cam in self.view_finder.camera_groupboxes]),
+            selected = self.label
+            )
         self.camera_dropdown.currentTextChanged.connect(self.change_camera)
         
         
@@ -292,8 +301,12 @@ class CameraWidget(QWidget):
             self.draw_status_overlay()
             
         except Exception as e:
+            
             print(f"Error displaying image: {e}")
+            
+            
     def draw_status_overlay(self):
+        
         if self.recording == True:
             status = 'RECORDING'
             color = 'g'
@@ -533,11 +546,11 @@ class CameraWidget(QWidget):
         self.logger.info('Changing camera')
         # shut down old camera
         if self.camera_object != None:
-            self.camera_object.end_recording()
+            self.camera_object.stop_capturing()
         # Get the new camera ID
         new_camera_label = str(self.camera_dropdown.currentText())
         # from the setups tab, get the unique id of the camera
-        camera_unique_id = self.setups_tab.get_camera_unique_id_from_label(
+        camera_unique_id = self.camera_setup_tab.get_camera_unique_id_from_label(
             new_camera_label
             )
         self._change_camera(camera_unique_id, new_camera_label)
@@ -547,7 +560,7 @@ class CameraWidget(QWidget):
         self.unique_id  = new_unique_id
         self.label      = new_camera_label
         # Get the new camera settings
-        camera_settings = self.setups_tab.getCameraSettingsConfig(self.label)        
+        camera_settings = self.camera_setup_tab.getCameraSettingsConfig(self.label)        
         # Set the new camera object
         self.camera_object = init_camera(
             new_unique_id, camera_settings)
@@ -580,13 +593,13 @@ class CameraWidget(QWidget):
     def set_camera_widget_config(self, camera_config: CameraSetupConfig):
         '''Set the settings assocaitd with the camera widget into the GUI'''
         # Check if the camera label is in the database
-        if camera_config.label not in self.setups_tab.get_camera_labels():
+        if camera_config.label not in self.camera_setup_tab.get_camera_labels():
             self.logger.error(f'Camera label {camera_config.label} not found in database')
             return
         
         self.label = camera_config.label
         self.downsampling_factor = camera_config.downsample_factor
-        self.unique_id = self.setups_tab.get_camera_unique_id_from_label(self.label)
+        self.unique_id = self.camera_setup_tab.get_camera_unique_id_from_label(self.label)
         self.subject_id = camera_config.subject_id
         self._change_camera(new_unique_id = self.unique_id, new_camera_label = self.label)
         self.logger.info(f'Camera configuration set to: {camera_config}')
@@ -634,6 +647,6 @@ class CameraWidget(QWidget):
         - Removes the camera from the grid layout
         - Removes the camera from the camera groupboxes list
         - Deletes the camera widget when PyQt6 is ready to delete it'''
-        self.camera_object.end_recording()
+        self.camera_object.stop_capturing()
         self.view_finder.camera_layout.removeWidget(self)
         self.deleteLater()
