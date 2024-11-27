@@ -27,7 +27,7 @@ from PyQt6.QtCore import (
 from dataclasses import asdict
 from tools.data_classes import ExperimentConfig, CameraSetupConfig
 from tools.load_camera import load_saved_setups
-from GUI.CameraWidget import Viewfinder
+from GUI.ViewfinderWidget import Viewfinder
 from GUI.CameraSetupTab import CamerasTab
 from GUI.error_message import show_info_message
 import db as database
@@ -198,22 +198,15 @@ class VideoCapture(QWidget):
         self.display_update_timer.timeout.connect(self.update_display)
         self.display_update_timer.start(int(1000 / 30))  # 30 fps
         
-        self.recording_update_timer = QTimer()
-        self.recording_update_timer.timeout.connect(self.encode_buffer)
-        self.recording_update_timer.start(int(1000 / 30)) # NOTE: how should this value be set?
-        
         self.refresh_timer = QTimer()
         self.refresh_timer.timeout.connect(self.refresh)
         self.refresh_timer.start(1000)
         
     def update_display(self):
         for camera in self.camera_groupboxes:
-            camera.fetch_display_frame()
+            camera.fetch_image_data()
             camera.display_frame(camera._image_data)
     
-    def encode_buffer(self):
-        for camera in self.camera_groupboxes:
-            camera.fetch_image_data()
     
     def _init_viewfinder_groupbox(self):
 
@@ -228,7 +221,6 @@ class VideoCapture(QWidget):
                 self.initialize_camera_widget(
                     label=camera_label,
                     )
-            
         else:
             # Load the default config file
             with open(self.GUI.startup_config, 'r') as config_file:

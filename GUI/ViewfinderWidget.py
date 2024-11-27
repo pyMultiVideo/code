@@ -189,47 +189,44 @@ class Viewfinder(QWidget):
         self.camera_object.begin_capturing()
         # self.display_frame(self.camera_object.get_next_image())
 
-
     def fetch_display_frame(self):
         '''Function that gets the next frame that is then displayed on the GUI'''
-        self._image_data = self.camera_object.get_next_image()
-
+        self.display_frame(
+            image_data = self._image_data
+        )
+        
     def fetch_image_data(self) -> None:
         '''
         Function that gets both the GPIO and the image data from the camera and sends them 
         to the encodeing function to be saved to disk.
         '''
-        USE_BUFFER = False
+        USE_BUFFER = True
 
         if USE_BUFFER:
             
             try:
                 # Retrieve the latest image from the camera
+                self.img_buffer, self.gpio_buffer = self.camera_object.retrieve_buffered_data()
+                # Assign the first image of to the data to be displayed
+                # print(f'Number of frames: {len(self.img_buffer)}')
+                self._image_data = self.img_buffer[0]
+
                 if self.recording == True:
-                    self.img_buffer, self.gpio_buffer = self.camera_object.retrieve_buffered_data()
-                    print(len(self.img_buffer))
                     # encode the frames
                     self.encode_frame_from_camera_buffer(
-                        buffer = self.img_buffer
+                        frame_buffer = self.img_buffer
                         )
                     # encode the GPIO data
-                    self.encode_gpio_data(
-                        gpio_data = self.gpio_buffer
+                    self.encode_gpio_data_from_camera_buffer(
+                        gpio_buffer = self.gpio_buffer
                         )
                     # update the number of recorded frames
                     self.recorded_frames += len(self.img_buffer)
         
             except Exception as e:
                 print(f"Error fetching image data: {e}")
-    
-        elif USE_BUFFER == False:
-            
-            if self.recording: 
-                self.img_buffer = self.camera_object.get_next_image()
-                self.encode_frame_ffmpeg_process(self.img_buffer)
-                self.get_GPIO_data()
-                self.encode_gpio_data(self.GPIO_data)
-                self.recorded_frames += 1
+                print(self.camera_object.buffer_list)
+
                 
 
     def get_mp4_filename(self) -> str:
@@ -295,9 +292,9 @@ class Viewfinder(QWidget):
             # Display the image on the GUI
             self.video_feed.setImage(image_data.T)
             # Display the GPIO data on the image
-            self.get_GPIO_data()
-            self.draw_GPIO_overlay()
-            # # Recording status overlay
+            # self.get_GPIO_data()
+            # self.draw_GPIO_overlay()
+            # # # Recording status overlay
             self.draw_status_overlay()
             
         except Exception as e:
@@ -359,8 +356,9 @@ class Viewfinder(QWidget):
 
 
     def refresh_display(self):
-        '''Function to refresh the display. Called by the parent class'''
-        self.fetch_display_frame()
+        '''
+        This function will display the self._image_data on the GUI
+        '''
         self.display_frame(self._image_data)
         
     def _init_ffmpeg_process(self) -> None:
@@ -413,12 +411,12 @@ class Viewfinder(QWidget):
             print(f"Error encoding frame: {e}")
         
         
-    def encode_frame_from_camera_buffer(self, buffer: list[np.ndarray]) -> None:    
+    def encode_frame_from_camera_buffer(self, frame_buffer: list[np.ndarray]) -> None:    
 
         try: 
-            while buffer:
+            while frame_buffer:
                 # Get the frame from the buffer
-                frame = buffer.pop(0)
+                frame = frame_buffer.pop(0)
                 # Encode the frame
                 self.encode_frame_ffmpeg_process(frame)
                 
@@ -426,8 +424,19 @@ class Viewfinder(QWidget):
             print(f"Error encoding frame: {e}")
         
     def encode_gpio_data(self, gpio_data: list[bool]) -> None:
+        """
+        The function `encode_gpio_data` writes GPIO data to a file in CSV format.
+        
+        :param gpio_data: The `gpio_data` parameter is a list of boolean values representing the GPIO
+        data that needs to be encoded and written to a file. The `encode_gpio_data` method takes this
+        list of boolean values and writes them to a file specified by `self.GPIO_filename`. If an error
+        occurs during the encoding
+        :type gpio_data: list[bool]
+        """
+        
         
         try:
+            gpio_data = [int(x) for x in gpio_data]
             # Write the GPIO data to the file
             with open(self.GPIO_filename, mode = 'a', newline='') as self.f:
                 writer = csv.writer(self.f)
@@ -436,22 +445,25 @@ class Viewfinder(QWidget):
         except Exception as e:
             print(f"Error encoding GPIO data: {e}")
         
-    def get_GPIO_data(self):
-        '''Write the GPIO data to a file
-        
-        Note: Line1, Line2, Line3, Line4, are as defined in the Chameleon3 camera PIN IO diagram
+    def encode_gpio_data_from_camera_buffer(self, gpio_buffer: list[list[bool]]) -> None:
         '''
-        if self.camera_object == None:
-            return None
-        try:
-            self.GPIO_data = self.camera_object.get_GPIO_data().values()
-            # convert list of booleans to list of ints
-            self.GPIO_data = [int(x) for x in self.GPIO_data]
-
-        except Exception as ex:
-            print(f"Error: {ex}")
-            return None
+        This function is used to write the GPIO data to a file from the buffer. 
+        The buffer will return a list of list of booleans. 
+        The length of the outer list is the number of frames that were emptied from the buffer. 
         
+        This function is a wrapper for the `encode_gpio_data` function.
+        
+        Parameters:
+        - buffer_list: list[list[bool]] - list of GPIO data to be written to the file
+        
+        '''
+        try:
+            for gpio_data in gpio_buffer:
+                self.encode_gpio_data(gpio_data)
+        except Exception as e:
+            print(f"Error encoding GPIO data: {e}")
+        
+
     def create_metadata_file(self):
         '''Function to creat the metadata file and write its initial information to json'''
         #create metadata file
@@ -506,9 +518,8 @@ class Viewfinder(QWidget):
         # Set the recording flag to True
         self.recording = True
         # Reset the number of recorded frames to zero
-        self.recorded_frames = 0
         self.create_metadata_file()
-        
+        self.recorded_frames = 0
         # update labels on GUI
         self.stop_recording_button.setEnabled(True)
         self.camera_dropdown.setEnabled(False)

@@ -21,7 +21,7 @@ class CameraTemplate():
     
         self.camera = camera
         self.logger = logging.getLogger(__name__)
-        
+        self.buffer_list = []
     def is_initialized(self) -> bool:
         return False
     
@@ -52,6 +52,8 @@ class SpinnakerCamera(CameraTemplate):
         
         print('Camera:', self.cam)
         self.cam.Init()
+        self.set_buffer_handling_mode()
+        self.stream_nodemap = self.cam.GetTLStreamNodeMap()
 
         if self.camera_config is not None:
             self.set_frame_rate(self.camera_config.fps)
@@ -96,11 +98,80 @@ class SpinnakerCamera(CameraTemplate):
         return PySpin.CIntegerPtr(nodemap.GetNode("DeviceLinkThroughputLimit")).GetValue()
     
     def get_unique_id(self) -> str:
+        '''Returns the unique id of the camera that is used in the pyCamera application'''
         return self.unique_id
     
-    ##
     
+    ## Buffer handling functions
+    
+    def set_buffer_handling_mode(self, mode: str = 'OldestFirst') -> None:
+        '''
+        Sets the buffer handling mode.
+        
+        By default, the buffer handling mode is set to 'OldestFirst'. This means that the oldest image in the buffer is the first to be retrieved.
+        
+        Alternative modes are:
+        - NewestFirst
+        - NewestOnly
+        - OldestFirstOverwrite
+        
+        See: https://www.teledynevisionsolutions.com/en-gb/support/support-center/application-note/iis/accessing-the-on-camera-frame-buffer/
+        '''
+        try:
+            
+            # Access the Transport Layer Stream (TLStream) node map
+            stream_nodemap = self.cam.GetTLStreamNodeMap()
+
+            # Set buffer handling mode
+            node_buffer_handling_mode = PySpin.CEnumerationPtr(stream_nodemap.GetNode("StreamBufferHandlingMode"))
+
+            # Check if the node exists and is writable
+            if PySpin.IsAvailable(node_buffer_handling_mode) and PySpin.IsWritable(node_buffer_handling_mode):
+                node_mode_value = node_buffer_handling_mode.GetEntryByName(mode)  # Change to desired mode
+                if PySpin.IsAvailable(node_mode_value) and PySpin.IsReadable(node_mode_value):
+                    node_buffer_handling_mode.SetIntValue(node_mode_value.GetValue())
+                    print(f"Buffer Handling Mode set to: {node_mode_value.GetSymbolic()}")
+    
+        except PySpin.SpinnakerException as ex:
+            print(f"Error setting buffer handling mode: {ex}")
+
+    def get_buffer_handling_mode(self) -> str:
+        pass
+
+    def get_current_buffer_count(self) -> int:
+        '''
+        Function that returns the total number of images in the buffer at the moment.
+        '''
+        
+        node_buffer_count = PySpin.CIntegerPtr(self.stream_nodemap.GetNode("StreamAnnouncedBufferCount"))
+        try:
+            if PySpin.IsAvailable(node_buffer_count) and PySpin.IsReadable(node_buffer_count):
+                buffer_count = node_buffer_count.GetValue()
+                # print(f"Total number of images in buffer: {buffer_count}")
+            else:
+                # print("Unable to retrieve the number of images in the buffer.")
+                pass
+        except PySpin.SpinnakerException as ex:
+            print(f"Error retrieving buffer count: {ex}")
+
+        return buffer_count
+
+    def get_buffer_count(self) -> int:
+        
+        
+        buffer_queued = PySpin.CIntegerPtr(self.stream_nodemap.GetNode("StreamBufferCountQueued"))
+        try:
+            # if PySpin.IsAvailable(buffer_queued) and PySpin.IsReadable(buffer_queued):
+            print(f"Current frames in buffer: {buffer_queued.GetValue()}")
+
+        except PySpin.SpinnakerException as ex:
+            print(f"Error retrieving buffer count: {ex}")
+            
     def getCameraSettingsConfig(self) -> CameraSettingsConfig:
+        '''
+        Returns the camera settings as a CameraSettingsConfig object.        
+        '''
+
         return CameraSettingsConfig(
             name = 'Config returned from SpinnakerCamera wrapper. This does not have access to the name variable. Consider implementing.',
             unique_id = self.get_unique_id(),
@@ -138,6 +209,22 @@ class SpinnakerCamera(CameraTemplate):
         except PySpin.SpinnakerException as ex:
             print(f"Error Setting Frame Rate: {ex}")
         
+        
+    def get_dropped_frames(self) -> int:
+        '''
+        Function to get the number of dropped frames from the nodemap
+        '''
+        node_dropped_frames = PySpin.CIntegerPtr(self.stream_nodemap.GetNode("StreamDroppedFrameCount"))
+        try:
+            if PySpin.IsAvailable(node_dropped_frames) and PySpin.IsReadable(node_dropped_frames):
+                dropped_frames = node_dropped_frames.GetValue()
+                print(f"Number of dropped frames: {dropped_frames}")
+                
+        except PySpin.SpinnakerException as ex:
+            print(f"Error retrieving dropped frames: {ex}")
+            
+        return dropped_frames
+    
     # Function to aquire images from the camera
           
     def begin_capturing(self) -> None:
@@ -181,41 +268,59 @@ class SpinnakerCamera(CameraTemplate):
         self.next_image = next_image.GetNDArray()
 
         # This function is not going to release data from the buffer since it will only be used to display the current image.
+        next_image.Release()
 
         # Return the image
         return self.next_image
 
     def retrieve_buffered_data(self) -> tuple[list[np.ndarray], list[dict[str, bool]]]:
         '''
-        This function retrieves all the images in the buffer and the GPIO data aquired during the same time from the camera.
-        
-        NOTE: This function does not work as expected. I am not aquring images fast enough to empty the buffer.
-        I have added a hard stop of aquiring images from the buffer after 1s. 
-        
-        The calling of this function freezes the function that calls for collecting a frame. 
-        
-        '''
-        # (Re) Initialize the lists
-        self.image_list = []
-        self.gpio_list = []
-        # check if the camera is in acquisition mode
-        if not self.cam.IsStreaming():
-            raise Exception(f"Camera {self.serial_number} is not in acquisition mode.")
-        # For all the images in the buffer or if 1s has passed
-        
-        while not self.cam.GetNextImage().IsIncomplete():
-            # This part of the function is not overwriting the self.next_image variable.
-            # This is because the self.next_image variable is only used to display the current image.
-            next_image = self.cam.GetNextImage()
-            self.image_list.append(next_image.GetNDArray())
-            # next_image.Release()
-            self.gpio_list.append(self.get_GPIO_data())
+        This function returns a list of images and a corresponding list of the GPIO data
+        This is passed to a function that will saved the data to a file in batches of the lengths of theses lists. 
 
-            
-        assert len(self.image_list) == len(self.gpio_list); 'The number of images and GPIO data do not match. So one of them is not being fetched correctly.'
-            
-        return self.image_list, self.gpio_list
+
+        How this function works 
+        =======================
+        self.cam.GetNextImage() is a blocking function. This means that it will wait until the next image is available before returning.
+        The '0' argument in the GetNextImage() function is the timeout. This is set to 0 to make the function non-blocking.
+        It will therefore get images as fast as possible. If there are no images available, the function will raise an exception.
+        This is the signal that the buffer is empty.
         
+        We handle the exception and return the buffer of images (and corresponding GPIO data). This is sent the encoder in the main logic of the GUI.
+        
+
+        The format of the GPIO pin states is a dictionary. Therefore the data itself is the dict.value() of this dictionary.
+        The current implemenation requires that you are just sending the GPIO data to the function that saves it to disk. 
+        The writer function requires a list of bools to be passed to it.
+        '''
+        self.img_buffer = []
+        self.gpio_buffer = []
+
+        try:
+            while True:
+                # Get the next image
+                next_image = self.cam.GetNextImage(0)
+                next_image.Release()
+                self.img_buffer.append(
+                    next_image.GetNDArray()
+                    )
+                # Get the GPIO data
+                self.gpio_buffer.append(
+                    list(self.get_GPIO_data().values())
+                    )
+        except PySpin.SpinnakerException as e:
+            # When the buffer is empty, the 'GetNextImage' function will raise an exception.
+            # This marks the end of the buffer.
+            # print(f"Error getting next image: {e}")
+            pass
+        finally:
+
+            return self.img_buffer, self.gpio_buffer
+
+    def return_measurement(self) -> tuple[list[float], list[float], list[float], list[float]]:
+        return self.frame_rate_list, self.frame_interval_list, self.buffer_list 
+            
+            
     def stop_capturing(self) -> None:
         if self.cam.IsStreaming():
             print(f'Camera {self.serial_number} has stopped aquisiton.')
