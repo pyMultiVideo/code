@@ -218,14 +218,20 @@ class VideoCaptureTab(QWidget):
         
         # Change the text of the button based on the visibility of the groupbox
         if is_visible:
-            self.toggle_page_control_button.setText('Show Controls')
+            self.toggle_page_control_button.setText('Show Page Control')
         else:
-            self.toggle_page_control_button.setText('Hide Controls')
+            self.toggle_page_control_button.setText('Hide Page Controls')
     
     def toggle_all_viewfinder_control_visiblity(self):
         '''Function that toggles the visibility of all the camera control widgets'''
         for camera in self.camera_groupboxes:
             camera.toggle_control_visibility()
+            
+        is_visible = self.camera_groupboxes[0].camera_setup_groupbox.isVisible()
+        if is_visible:
+            self.toggle_widget_controls_button.setText('Hide Camera Controls')
+        else:
+            self.toggle_widget_controls_button.setText('Show Camera Controls')
     
 ### Timer Functions
     

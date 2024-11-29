@@ -70,30 +70,65 @@ class SpinnakerCamera(CameraTemplate):
     # Functions to get the camera parameters
     
     def get_exposure_time(self) -> int:
+        """
+        This Python function retrieves the exposure time value from a camera node map.
+        :return: The `get_exposure_time` function returns an integer value representing the exposure
+        time of a camera.
+        """
         nodemap = self.cam.GetNodeMap()       
         return PySpin.CFloatPtr(nodemap.GetNode("ExposureTime")).GetValue()
     
     def get_width(self) -> int:
+        """
+        This Python function retrieves the width value from a node map using the PySpin library.
+        :return: The `get_width` method returns the width value of the camera image as an integer. It
+        retrieves the width node from the camera node map and returns its integer value.
+        """
         nodemap = self.cam.GetNodeMap()
         return PySpin.CIntegerPtr(nodemap.GetNode("Width")).GetValue()
     
     def get_height(self) -> int:
+        """
+        This Python function retrieves the height value from a camera node map.
+        :return: The `get_height` method returns the height value of the camera image as an integer. It
+        retrieves the height node from the camera node map and returns its integer value.
+        """
         nodemap = self.cam.GetNodeMap()
         return PySpin.CIntegerPtr(nodemap.GetNode("Height")).GetValue()
     
     def get_frame_rate(self) -> int:
+        """
+        This Python function retrieves the frame rate value from a camera node map.
+        :return: The `get_frame_rate` method returns the frame rate value as an integer.
+        """
         nodemap = self.cam.GetNodeMap()
         return PySpin.CFloatPtr(nodemap.GetNode("AcquisitionFrameRate")).GetValue()
     
     def get_gain(self) -> int:
+        """
+        This Python function retrieves the gain value from a camera node map using the PySpin library.
+        :return: The `get_gain` method returns the current gain value of the camera.
+        """
         nodemap = self.cam.GetNodeMap()
         return PySpin.CFloatPtr(nodemap.GetNode("Gain")).GetValue()
     
     def get_pixel_format(self) -> str:
+        """
+        This Python function retrieves the current pixel format of an image using the PySpin library.
+        :return: The `get_pixel_format` method returns a string representing the current pixel format of
+        the camera. It retrieves the pixel format from the camera's node map and returns the symbolic
+        representation of the current pixel format.
+        """
         nodemap = self.cam.GetNodeMap()
         return PySpin.CEnumerationPtr(nodemap.GetNode("PixelFormat")).GetCurrentEntry().GetSymbolic()
     
     def get_bitrate(self) -> int:
+        """
+        This Python function retrieves the bitrate value from a camera node map using the PySpin
+        library.
+        :return: The `get_bitrate` method returns an integer value representing the bitrate obtained
+        from the node "DeviceLinkThroughputLimit" in the camera's node map.
+        """
         nodemap = self.cam.GetNodeMap()
         return PySpin.CIntegerPtr(nodemap.GetNode("DeviceLinkThroughputLimit")).GetValue()
     
@@ -116,7 +151,15 @@ class SpinnakerCamera(CameraTemplate):
         - OldestFirstOverwrite
         
         See: https://www.teledynevisionsolutions.com/en-gb/support/support-center/application-note/iis/accessing-the-on-camera-frame-buffer/
+        
+        For this implementation, use of oldest first is important as the camera releases the images in the order they are collected.
+        If the buffer is not emptied in this order then the images will be encoded in the wrong order which is bad
+        
         '''
+        if mode not in ['OldestFirst']:
+            # Raise a warning if the mode is not set to 'OldestFirst'
+            self.logger.warning(f"Buffer handling mode '{mode}' is not 'OldestFirst'.")
+        
         try:
             
             # Access the Transport Layer Stream (TLStream) node map
@@ -136,7 +179,24 @@ class SpinnakerCamera(CameraTemplate):
             print(f"Error setting buffer handling mode: {ex}")
 
     def get_buffer_handling_mode(self) -> str:
-        pass
+        '''Function that returns the current buffer handling mode'''
+        try:
+            # Access the Transport Layer Stream (TLStream) node map
+            stream_nodemap = self.cam.GetTLStreamNodeMap()
+
+            # Get buffer handling mode
+            node_buffer_handling_mode = PySpin.CEnumerationPtr(stream_nodemap.GetNode("StreamBufferHandlingMode"))
+
+            # Check if the node exists and is readable
+            if PySpin.IsAvailable(node_buffer_handling_mode) and PySpin.IsReadable(node_buffer_handling_mode):
+                mode = node_buffer_handling_mode.GetCurrentEntry().GetSymbolic()
+                print(f"Buffer Handling Mode: {mode}")
+                return mode
+            
+        except PySpin.SpinnakerException as ex:
+            print(f"Error getting buffer handling mode: {ex}")
+            return None
+        
 
     def get_current_buffer_count(self) -> int:
         '''
@@ -317,9 +377,6 @@ class SpinnakerCamera(CameraTemplate):
 
             return self.img_buffer, self.gpio_buffer
 
-    def return_measurement(self) -> tuple[list[float], list[float], list[float], list[float]]:
-        return self.frame_rate_list, self.frame_interval_list, self.buffer_list 
-            
             
     def stop_capturing(self) -> None:
         if self.cam.IsStreaming():

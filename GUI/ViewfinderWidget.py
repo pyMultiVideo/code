@@ -416,7 +416,9 @@ class Viewfinder(QWidget):
         
         
     def encode_frame_from_camera_buffer(self, frame_buffer: list[np.ndarray]) -> None:    
-
+        '''
+        Encodes the frames from the camera buffer and writes them to the file. 
+        '''
         try: 
             while frame_buffer:
                 # Get the frame from the buffer (front of the queue)
@@ -438,6 +440,8 @@ class Viewfinder(QWidget):
         :type gpio_data: list[bool]
         """
         try:
+            # Converts the list of bools to a list of ints, because writing ints takes a smaller number of charaters than 
+            # writing the string 'True' or 'False'. 
             gpio_data = [int(x) for x in gpio_data]
             # Write the GPIO data to the file
             with open(self.GPIO_filename, mode = 'a', newline='') as self.f:
@@ -507,19 +511,17 @@ class Viewfinder(QWidget):
             self.start_recording_button.setEnabled(False)
         else:
             self.start_recording_button.setEnabled(True)
-
-### Visibility Controls 
-
-    def toggle_control_visibility(self) -> None:
-        '''Toggle the visibility of the camera controls'''
-        # add a button to connect to this funciton. 
-        is_visible = self.camera_setup_groupbox.isVisible()
-        self.camera_setup_groupbox.setVisible(not is_visible)
-
-### Recording Controls
+    ### Recording Controls
 
     def start_recording(self) -> None:
-        '''Start recording the video'''
+        '''
+        Function to start the recording of the video.
+        
+        - Set the recording flag to True
+        - Initalise the ffmpeg process
+        - Create the metadata file
+        - Update the GUI buttons to the correct state
+        '''    
         # Get the filenames
         self.get_mp4_filename()
         self.get_gpio_filename()
@@ -546,10 +548,16 @@ class Viewfinder(QWidget):
         self.view_finder.GUI.tab_widget.tabBar().setEnabled(False)
         
     def stop_recording(self) -> None:
+        '''
+        Function to stop the recording of the video.
         
+        - Set the recording flag to False
+        - Closes the metadata file (by writing the relevent information to it and saving it)
+        - Sets the GUI buttons to the correct state
+        - De-inits the ffmpeg process        
+        '''        
         self.recording = False  
         self.close_metadata_file()
-        
         # Set other buttons to now be enabled
         self.stop_recording_button.setEnabled(False)
         self.start_recording_button.setEnabled(True)
@@ -560,15 +568,11 @@ class Viewfinder(QWidget):
         self.pxl_fmt_label.setEnabled(True)
         self.downsampling_factor_text.setEnabled(True)
         # Tabs can be changed
-        self.view_finder.GUI.tab_widget.tabBar().setEnabled(True)
-        
+        self.view_finder.GUI.tab_widget.tabBar().setEnabled(True)        
         self.logger.info('Recording Stopped')
-        
         self.ffmpeg_process.stdin.close()
         self.ffmpeg_process.wait()
-        
-        
-        
+
     def change_camera(self) -> None:
 
         self.logger.info('Changing camera')
@@ -650,7 +654,6 @@ class Viewfinder(QWidget):
         fps = int(self.fps_text.currentText())
         # Set the new FPS
         self.fps = fps
-        
         # This function requires reinitalisation of the camera with the new FPS
         self.camera_object.set_frame_rate(fps)
         
@@ -661,20 +664,30 @@ class Viewfinder(QWidget):
         pxl_fmt = str(self.pxl_fmt_cbox.currentText())
         # Set the new pixel format
         self.pxl_fmt = pxl_fmt
-        
         # This function requires reinitalisation of the camera with the new pixel format
         self.camera_object.set_pixel_format(pxl_fmt)
     
+    ### Visibility Controls 
+
+    def toggle_control_visibility(self) -> None:
+        '''
+        Toggle the visibility of the camera controls
+        '''
+        # add a button to connect to this funciton. 
+        is_visible = self.camera_setup_groupbox.isVisible()
+        self.camera_setup_groupbox.setVisible(not is_visible)
+
     ### Functions for disconnecting the camera from the GUI
     
     def disconnect(self):
         '''Function for disconnecting the camera from the GUI. 
-        
         This function does the following:
         - Ends the recording from the camera object
         - Removes the camera from the grid layout
-        - Removes the camera from the camera groupboxes list
-        - Deletes the camera widget when PyQt6 is ready to delete it'''
+        - Deletes the camera widget when PyQt6 is ready to delete it
+        It should be possible to also remove the camera from the groupboxes list from this function, however
+        I have done this after this function is called, in the other places this function is called. 
+        '''
         self.camera_object.stop_capturing()
         self.view_finder.camera_layout.removeWidget(self)
         self.deleteLater()
