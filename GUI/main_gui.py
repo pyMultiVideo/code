@@ -14,7 +14,7 @@ import logging
 import sys, os
 
 # import tab classes
-from GUI.VideoCapture  import VideoCapture
+from GUI.VideoCaptureTab  import VideoCaptureTab
 from GUI.CameraSetupTab      import CamerasTab
 
 if os.name == 'nt':
@@ -54,7 +54,7 @@ class GUIApp(QMainWindow):
     def _init_tabs(self):
         '''Initialize tab classes'''
         self.camera_setup_tab     = CamerasTab(parent = self)
-        self.video_capture_tab = VideoCapture(parent = self)
+        self.video_capture_tab = VideoCaptureTab(parent = self)
         
         self._add_tabs()
 

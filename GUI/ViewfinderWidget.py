@@ -189,48 +189,40 @@ class Viewfinder(QWidget):
         self.camera_object.begin_capturing()
         # self.display_frame(self.camera_object.get_next_image())
 
-    def fetch_display_frame(self):
-        '''Function that gets the next frame that is then displayed on the GUI'''
-        self.display_frame(
-            image_data = self._image_data
-        )
         
     def fetch_image_data(self) -> None:
         '''
         Function that gets both the GPIO and the image data from the camera and sends them 
         to the encodeing function to be saved to disk.
         '''
-        USE_BUFFER = True
 
-        if USE_BUFFER:
-            
-            try:
-                # Retrieve the latest image from the camera
-                self.img_buffer, self.gpio_buffer = self.camera_object.retrieve_buffered_data()
-                # Assign the first image of to the data to be displayed
-                # print(f'Number of frames: {len(self.img_buffer)}')
-                self._image_data = self.img_buffer[0]
-
-                if self.recording == True:
-                    # encode the frames
-                    self.encode_frame_from_camera_buffer(
-                        frame_buffer = self.img_buffer
-                        )
-                    # encode the GPIO data
-                    self.encode_gpio_data_from_camera_buffer(
-                        gpio_buffer = self.gpio_buffer
-                        )
-                    # update the number of recorded frames
-                    self.recorded_frames += len(self.img_buffer)
-        
-            except Exception as e:
-                print(f"Error fetching image data: {e}")
-                print(self.camera_object.buffer_list)
+        try:
+            # Retrieve the latest image from the camera
+            self.img_buffer, self.gpio_buffer = self.camera_object.retrieve_buffered_data()
+            if len(self.img_buffer) == 0:
+                return # exit the function and wait to be called by the viewfinder tab. 
+            # Assign the first image of to the data to be displayed
+            self._image_data = self.img_buffer[0]
+            # If the recording flag is True
+            if self.recording == True:
+                self.recorded_frames += len(self.img_buffer)
+                # encode the frames
+                self.encode_frame_from_camera_buffer(
+                    frame_buffer = self.img_buffer
+                    )
+                # encode the GPIO data
+                self.write_gpio_data_from_buffer(
+                    gpio_buffer = self.gpio_buffer
+                    )
+        except Exception as e:
+            # print(f"Error fetching image data: {e}")
+            # print(self.camera_object.buffer_list)
+            pass
 
                 
 
     def get_mp4_filename(self) -> str:
-        '''Get the filename for the mp4 file'''
+        '''Get the filename for the mp4 file. This is done using GUI information'''
         self.subject_id = self.subject_id_text.toPlainText()
         
         self.recording_filename = \
@@ -242,7 +234,6 @@ class Viewfinder(QWidget):
     def update_camera_dropdown(self):
         '''Update the camera options
         NOTE: this function is wrapped in functions to disconnect and reconnect the signal to the dropdown when the function changes the text in the dropdown
-        BUG: This function does not have a selected text when it is called from initialisation from a config file. This doesnt majorly affect functionality,however
         the combobox is filled with the other camera label and the correct camera is not an option in the dropdown. 
         '''
         # disconnect self.camera_dropdown from the current function
@@ -278,7 +269,7 @@ class Viewfinder(QWidget):
             writer.writerow(header)
     
     def get_metadata_filename(self) -> str:
-        
+        '''Get the filename for the metadata file'''
         self.subject_id = self.subject_id_text.toPlainText()
         
         self.metadata_filename = \
@@ -287,7 +278,11 @@ class Viewfinder(QWidget):
         
         
     def display_frame(self, image_data: np.array) -> None:
+        '''
+        Display the image on the GUI
         
+        This function also calls the the relevent functions to add overlays on the image.
+        '''
         try:
             # Display the image on the GUI
             self.video_feed.setImage(image_data.T)
@@ -303,7 +298,10 @@ class Viewfinder(QWidget):
             
             
     def draw_status_overlay(self):
-        
+        '''
+        Draw the status of the recording on the image. This simply changes the color of an attribute that is been placed
+        onto the image during initialisation.
+        '''
         if self.recording == True:
             status = 'RECORDING'
             color = 'g'
@@ -351,17 +349,23 @@ class Viewfinder(QWidget):
         self.ellipse.setPen(pg.mkPen(color=self.gpio_over_lay_color, width=2))
 
     def refresh(self):
-        # update the labels of the camera dropdown
+        '''Refresh the camera widget'''
         self.update_camera_dropdown()
 
+        
 
-    def refresh_display(self):
-        '''
-        This function will display the self._image_data on the GUI
-        '''
-        self.display_frame(self._image_data)
         
     def _init_ffmpeg_process(self) -> None:
+        '''
+        This function initalising the ffmpeg process.
+        
+        This uses the ffmpeg-python API. This api does little more than make the syntax for ffmpeg nicer.
+        
+        The FFMPEG process is a separate process (according to task-manager) that is running in the background.
+        It runs on the GPU (if you let the encoder be a GPU encoder) and is not blocking the main thread.
+        
+        '''
+        
         self.get_mp4_filename()
         self.get_gpio_filename()
 
@@ -415,7 +419,7 @@ class Viewfinder(QWidget):
 
         try: 
             while frame_buffer:
-                # Get the frame from the buffer
+                # Get the frame from the buffer (front of the queue)
                 frame = frame_buffer.pop(0)
                 # Encode the frame
                 self.encode_frame_ffmpeg_process(frame)
@@ -423,7 +427,7 @@ class Viewfinder(QWidget):
         except Exception as e:
             print(f"Error encoding frame: {e}")
         
-    def encode_gpio_data(self, gpio_data: list[bool]) -> None:
+    def write_gpio_data_to_csv(self, gpio_data: list[bool]) -> None:
         """
         The function `encode_gpio_data` writes GPIO data to a file in CSV format.
         
@@ -433,8 +437,6 @@ class Viewfinder(QWidget):
         occurs during the encoding
         :type gpio_data: list[bool]
         """
-        
-        
         try:
             gpio_data = [int(x) for x in gpio_data]
             # Write the GPIO data to the file
@@ -445,7 +447,7 @@ class Viewfinder(QWidget):
         except Exception as e:
             print(f"Error encoding GPIO data: {e}")
         
-    def encode_gpio_data_from_camera_buffer(self, gpio_buffer: list[list[bool]]) -> None:
+    def write_gpio_data_from_buffer(self, gpio_buffer: list[list[bool]]) -> None:
         '''
         This function is used to write the GPIO data to a file from the buffer. 
         The buffer will return a list of list of booleans. 
@@ -459,7 +461,7 @@ class Viewfinder(QWidget):
         '''
         try:
             for gpio_data in gpio_buffer:
-                self.encode_gpio_data(gpio_data)
+                self.write_gpio_data_to_csv(gpio_data)
         except Exception as e:
             print(f"Error encoding GPIO data: {e}")
         
@@ -506,7 +508,17 @@ class Viewfinder(QWidget):
         else:
             self.start_recording_button.setEnabled(True)
 
-    def start_recording(self):
+### Visibility Controls 
+
+    def toggle_control_visibility(self) -> None:
+        '''Toggle the visibility of the camera controls'''
+        # add a button to connect to this funciton. 
+        is_visible = self.camera_setup_groupbox.isVisible()
+        self.camera_setup_groupbox.setVisible(not is_visible)
+
+### Recording Controls
+
+    def start_recording(self) -> None:
         '''Start recording the video'''
         # Get the filenames
         self.get_mp4_filename()
@@ -518,8 +530,9 @@ class Viewfinder(QWidget):
         # Set the recording flag to True
         self.recording = True
         # Reset the number of recorded frames to zero
-        self.create_metadata_file()
         self.recorded_frames = 0
+        # Create the metadata file
+        self.create_metadata_file()
         # update labels on GUI
         self.stop_recording_button.setEnabled(True)
         self.camera_dropdown.setEnabled(False)
@@ -528,10 +541,11 @@ class Viewfinder(QWidget):
         self.subject_id_text.setEnabled(False)
         self.fps_label.setEnabled(False)
         self.pxl_fmt_label.setEnabled(False)
+        self.downsampling_factor_text.setEnabled(False)
         # Tabs can't be changed
         self.view_finder.GUI.tab_widget.tabBar().setEnabled(False)
         
-    def stop_recording(self):
+    def stop_recording(self) -> None:
         
         self.recording = False  
         self.close_metadata_file()
@@ -544,6 +558,7 @@ class Viewfinder(QWidget):
         self.downsampling_factor_label.setEnabled(True)
         self.fps_label.setEnabled(True)
         self.pxl_fmt_label.setEnabled(True)
+        self.downsampling_factor_text.setEnabled(True)
         # Tabs can be changed
         self.view_finder.GUI.tab_widget.tabBar().setEnabled(True)
         
@@ -552,7 +567,9 @@ class Viewfinder(QWidget):
         self.ffmpeg_process.stdin.close()
         self.ffmpeg_process.wait()
         
-    def change_camera(self):
+        
+        
+    def change_camera(self) -> None:
 
         self.logger.info('Changing camera')
         # shut down old camera
@@ -566,7 +583,7 @@ class Viewfinder(QWidget):
             )
         self._change_camera(camera_unique_id, new_camera_label)
 
-    def _change_camera(self, new_unique_id, new_camera_label):
+    def _change_camera(self, new_unique_id, new_camera_label) -> None:
         # Set the new camera name
         self.unique_id  = new_unique_id
         self.label      = new_camera_label
@@ -581,7 +598,7 @@ class Viewfinder(QWidget):
         #  Update the list cameras that are currently being used. 
         self.camera_setup_groupbox.setTitle(self.label)
         
-    def change_downsampling_factor(self):
+    def change_downsampling_factor(self) -> None:
         '''Change the downsampling factor of the camera'''
         self.logger.info('Changing downsampling factor')
         # Get the new downsampling factor

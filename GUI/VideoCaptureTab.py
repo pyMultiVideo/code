@@ -33,10 +33,10 @@ from GUI.error_message import show_info_message
 import db as database
 
 
-class VideoCapture(QWidget):
+class VideoCaptureTab(QWidget):
     '''Tab used to display the viewfinder and control the cameras'''
     def __init__(self, parent=None):
-        super(VideoCapture, self).__init__(parent)
+        super(VideoCaptureTab, self).__init__(parent)
         self.GUI = parent
         self.camera_setup_tab: CamerasTab = self.GUI.camera_setup_tab
         self.logging = logging.getLogger(__name__)
@@ -44,6 +44,7 @@ class VideoCapture(QWidget):
         self.camera_database = load_saved_setups(database) # list of camera_configs
         self._init_header_groupbox()
         self._init_viewfinder_groupbox()
+        self._init_visibility_control_groupbox()
         self._page_layout()
         self._init_timers()
         print('Viewfinder tab initialised')
@@ -65,10 +66,26 @@ class VideoCapture(QWidget):
         self.header_hlayout.addWidget(self.control_all_groupbox)
         self.header_groupbox.setLayout(self.header_hlayout)        
 
+    def _init_visibility_control_groupbox(self):
+        '''Groupbox that contains the button to toggle the visibility of the control groupbox'''
+        # Header controls
+        self.control_visibility_groupbox = QGroupBox()
+        self.toggle_page_control_button = QPushButton('Hide Page Controls')
+        self.toggle_page_control_button.clicked.connect(self.toggle_control_header_visibilty)
+        
+        self.toggle_widget_controls_button = QPushButton('Hide Camera Controls')
+        self.toggle_widget_controls_button.clicked.connect(self.toggle_all_viewfinder_control_visiblity)
+                
+        self.control_visibility_layout = QHBoxLayout()
+        self.control_visibility_layout.addWidget(self.toggle_page_control_button)
+        self.control_visibility_layout.addWidget(self.toggle_widget_controls_button)
+        self.control_visibility_groupbox.setLayout(self.control_visibility_layout)
 
     def _page_layout(self):        
         self.page_layout = QVBoxLayout()
+        
         self.page_layout.addWidget(self.header_groupbox)
+        self.page_layout.addWidget(self.control_visibility_groupbox)
         self.page_layout.addWidget(self.viewfinder_groupbox)
         self.setLayout(self.page_layout)
 
@@ -78,7 +95,7 @@ class VideoCapture(QWidget):
         # dropdown for camera selection
         self.encoder_selection = QComboBox()
         self.encoder_selection.addItems(database.this.encoder_dict['ffmpeg']) # replace with camera names
-        self.encoder_selection.setCurrentText('h264_nvenc')
+        self.encoder_selection.setCurrentIndex(0)
         self.encoder = self.encoder_selection.currentText()
         self.encoder_selection.currentIndexChanged.connect(self.change_encoder)
         self._set_aquire_layout()
@@ -192,6 +209,26 @@ class VideoCapture(QWidget):
         self.control_all_hlayout.addWidget(self.stop_recording_button)
         self.control_all_groupbox.setLayout(self.control_all_hlayout)
     
+### Visibility Controls 
+    
+    def toggle_control_header_visibilty(self):
+        '''Toggle the visibility of the control groupbox'''
+        is_visible = self.header_groupbox.isVisible()
+        self.header_groupbox.setVisible(not is_visible)
+        
+        # Change the text of the button based on the visibility of the groupbox
+        if is_visible:
+            self.toggle_page_control_button.setText('Show Controls')
+        else:
+            self.toggle_page_control_button.setText('Hide Controls')
+    
+    def toggle_all_viewfinder_control_visiblity(self):
+        '''Function that toggles the visibility of all the camera control widgets'''
+        for camera in self.camera_groupboxes:
+            camera.toggle_control_visibility()
+    
+### Timer Functions
+    
     def _init_timers(self):
         '''Initialise the timers for the viewfinder tab'''
         self.display_update_timer = QTimer()
@@ -217,7 +254,7 @@ class VideoCapture(QWidget):
         if self.GUI.startup_config == None:         
             useable_cameras = sorted(list(set(self.connected_cameras()) - set(self.camera_groupbox_labels())), key=str.lower)
             print('useable_cameras - init', useable_cameras)
-            for camera_index, camera_label in enumerate(useable_cameras[:1]): # One camera by default
+            for camera_label in useable_cameras[:1]: # One camera by default
                 self.initialize_camera_widget(
                     label=camera_label,
                     )
@@ -315,6 +352,7 @@ class VideoCapture(QWidget):
         'Function to change the encoder'
         self.encoder = self.encoder_selection.currentText()
         self.logging.info('Encoder changed to {}'.format(self.encoder))
+    
     ### Functions
             
     def get_page_config(self) -> ExperimentConfig:
