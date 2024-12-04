@@ -26,7 +26,7 @@ except ImportError as e:
     sys.exit()
         
 # Import GUI now that dependancies are installed        
-import GUI.main_gui as mg
+import GUI.GUI_main as mg
 import PyQt6.QtWidgets as QtWidgets
 
 def main(parsed_args, unparsed_args):

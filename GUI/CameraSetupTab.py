@@ -187,8 +187,6 @@ class CamerasTab(QtWidgets.QWidget):
         This functions refreshes the setups table. It checks for new cameras and updates the setups table.
         It will also remove any setups that are no longer connected.
         
-        BUG: The setups table causes the GUI to stutter. I think this is because of the `get_unique_ids` function.
-        
         '''
         # Get a list of connected cameras (based on their unique id)
         connected_cameras = get_unique_ids()

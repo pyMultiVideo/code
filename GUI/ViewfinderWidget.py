@@ -11,7 +11,6 @@ from tools.camera_options import cbox_update_options
 from tools.camera import SpinnakerCamera as CameraObject
 from tools.data_classes import CameraSetupConfig
 # gui
-
 from PyQt6.QtWidgets import (
     QGroupBox, 
     QWidget,
@@ -33,7 +32,7 @@ from PyQt6.QtCore import (
 import ffmpeg
 
 
-class Viewfinder(QWidget):
+class ViewfinderWidget(QWidget):
     '''
     Widget for each camera to be viewed
     '''
@@ -42,7 +41,7 @@ class Viewfinder(QWidget):
         label, 
         subject_id,
         ):
-        super(Viewfinder, self).__init__(parent)
+        super(ViewfinderWidget, self).__init__(parent)
         self.view_finder = parent
         self.camera_setup_tab: CamerasTab = self.view_finder.GUI.camera_setup_tab
         # Camera object is the camera api that is being used that has generic versions of the core functions
@@ -349,7 +348,7 @@ class Viewfinder(QWidget):
         self.ellipse.setPen(pg.mkPen(color=self.gpio_over_lay_color, width=2))
 
     def refresh(self):
-        '''Refresh the camera widget'''
+        ''' h the camera widget'''
         self.update_camera_dropdown()
 
         

@@ -1,5 +1,6 @@
 from PyQt6.QtGui import (
-    QIcon
+    QIcon,
+    QAction
 )
 from PyQt6.QtWidgets import (
     QMainWindow, QTabWidget
@@ -36,6 +37,7 @@ class GUIApp(QMainWindow):
         # Initialise the tab classess
         self._set_icons()
         self._init_tabs()
+        self._init_menu_bar()
         self._init_timers() 
         # Could add log in here
 
@@ -74,6 +76,30 @@ class GUIApp(QMainWindow):
             setattr(self, name, json.load(open(f'config/{setup}')))
                 
         logging.info('Loaded configurations: ' + ', '.join(json_files))
+
+
+    def _init_menu_bar(self):
+        '''
+        Initialises a menu bar for the application 
+        '''
+        main_menu = self.menuBar()
+        # View menu
+        view_menu = main_menu.addMenu('View')
+        
+        hide_camera_controls_action = QAction("Toggle &Camera Controls", self)
+        hide_camera_controls_action.setShortcut('Ctrl+C')
+        hide_camera_controls_action.triggered.connect(
+            self.video_capture_tab.toggle_control_header_visibilty
+            )
+        
+        hide_tab_controls_action = QAction('Toggle &Viewfinder Tab Controls', self)
+        hide_tab_controls_action.setShortcut('Ctrl+V')
+        hide_tab_controls_action.triggered.connect(
+            self.video_capture_tab.toggle_all_viewfinder_control_visiblity
+            )
+        
+        view_menu.addAction(hide_camera_controls_action)
+        view_menu.addAction(hide_tab_controls_action)
 
 
     def _init_experiments(self):

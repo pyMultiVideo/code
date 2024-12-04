@@ -27,9 +27,9 @@ from PyQt6.QtCore import (
 from dataclasses import asdict
 from tools.data_classes import ExperimentConfig, CameraSetupConfig
 from tools.load_camera import load_saved_setups
-from GUI.ViewfinderWidget import Viewfinder
+from GUI.ViewfinderWidget import ViewfinderWidget
 from GUI.CameraSetupTab import CamerasTab
-from GUI.error_message import show_info_message
+from GUI.dialogs import show_info_message
 import db as database
 
 
@@ -40,11 +40,11 @@ class VideoCaptureTab(QWidget):
         self.GUI = parent
         self.camera_setup_tab: CamerasTab = self.GUI.camera_setup_tab
         self.logging = logging.getLogger(__name__)
-        self.camera_groupboxes: List[Viewfinder] = []
+        self.camera_groupboxes: List[ViewfinderWidget] = []
         self.camera_database = load_saved_setups(database) # list of camera_configs
         self._init_header_groupbox()
         self._init_viewfinder_groupbox()
-        self._init_visibility_control_groupbox()
+        # self._init_visibility_control_groupbox()
         self._page_layout()
         self._init_timers()
         print('Viewfinder tab initialised')
@@ -66,26 +66,11 @@ class VideoCaptureTab(QWidget):
         self.header_hlayout.addWidget(self.control_all_groupbox)
         self.header_groupbox.setLayout(self.header_hlayout)        
 
-    def _init_visibility_control_groupbox(self):
-        '''Groupbox that contains the button to toggle the visibility of the control groupbox'''
-        # Header controls
-        self.control_visibility_groupbox = QGroupBox()
-        self.toggle_page_control_button = QPushButton('Hide Page Controls')
-        self.toggle_page_control_button.clicked.connect(self.toggle_control_header_visibilty)
-        
-        self.toggle_widget_controls_button = QPushButton('Hide Camera Controls')
-        self.toggle_widget_controls_button.clicked.connect(self.toggle_all_viewfinder_control_visiblity)
-                
-        self.control_visibility_layout = QHBoxLayout()
-        self.control_visibility_layout.addWidget(self.toggle_page_control_button)
-        self.control_visibility_layout.addWidget(self.toggle_widget_controls_button)
-        self.control_visibility_groupbox.setLayout(self.control_visibility_layout)
 
     def _page_layout(self):        
         self.page_layout = QVBoxLayout()
         
         self.page_layout.addWidget(self.header_groupbox)
-        self.page_layout.addWidget(self.control_visibility_groupbox)
         self.page_layout.addWidget(self.viewfinder_groupbox)
         self.setLayout(self.page_layout)
 
@@ -216,23 +201,11 @@ class VideoCaptureTab(QWidget):
         is_visible = self.header_groupbox.isVisible()
         self.header_groupbox.setVisible(not is_visible)
         
-        # Change the text of the button based on the visibility of the groupbox
-        if is_visible:
-            self.toggle_page_control_button.setText('Show Page Control')
-        else:
-            self.toggle_page_control_button.setText('Hide Page Controls')
-    
     def toggle_all_viewfinder_control_visiblity(self):
         '''Function that toggles the visibility of all the camera control widgets'''
         for camera in self.camera_groupboxes:
             camera.toggle_control_visibility()
-            
-        is_visible = self.camera_groupboxes[0].camera_setup_groupbox.isVisible()
-        if is_visible:
-            self.toggle_widget_controls_button.setText('Hide Camera Controls')
-        else:
-            self.toggle_widget_controls_button.setText('Show Camera Controls')
-    
+
 ### Timer Functions
     
     def _init_timers(self):
@@ -302,7 +275,7 @@ class VideoCaptureTab(QWidget):
             ):
         '''Create a new camera widget and add it to the viewfinder tab'''
         self.camera_groupboxes.append(
-                Viewfinder(
+                ViewfinderWidget(
                     parent      = self,
                     label       = label,
                     subject_id  = subject_id,
