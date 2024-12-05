@@ -1,10 +1,8 @@
 import pandas as pd
 from tools.data_classes import CameraSettingsConfig
 from tools.load_camera import get_unique_ids, load_saved_setups
-import PyQt6.QtGui as QtGui, PyQt6.QtWidgets as QtWidgets
-import PyQt6.QtCore as QtCore
+import PyQt6.QtWidgets as QtWidgets
 from PyQt6.QtWidgets import (
-    QVBoxLayout,
     QGroupBox,
     QVBoxLayout,
     QTableWidget,
@@ -31,7 +29,7 @@ class Camera():
         self.pxl_fmt        = pxl_fmt
 
         
-        self.label = self.label if self.label != None else self.unique_id
+        self.label = self.label if self.label is not None else self.unique_id
         
         # Edit name 
         self.name_edit = QLineEdit()

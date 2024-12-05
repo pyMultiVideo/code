@@ -1,4 +1,5 @@
-import json, logging
+import json
+import logging
 from typing import List
 from PyQt6.QtWidgets import (
     QVBoxLayout, 
@@ -230,7 +231,7 @@ class VideoCaptureTab(QWidget):
         self.viewfinder_groupbox = QGroupBox("Viewfinder")
         self.viewfinder_groupbox.setLayout(self.camera_layout)
 
-        if self.GUI.startup_config == None:         
+        if self.GUI.startup_config is None:         
             useable_cameras = sorted(list(set(self.connected_cameras()) - set(self.camera_groupbox_labels())), key=str.lower)
             print('useable_cameras - init', useable_cameras)
             for camera_label in useable_cameras[:1]: # One camera by default
@@ -461,7 +462,7 @@ class VideoCaptureTab(QWidget):
         disable the global start recording button'''
         for camera in self.camera_groupboxes:
             # If any camera is not ready to start recording, turn off the global start recording button
-            if camera.start_recording_button.isEnabled() == False:
+            if camera.start_recording_button.isEnabled() is False:
                 self.start_recording_button.setEnabled(False)
             else:
                 self.start_recording_button.setEnabled(True)
@@ -469,7 +470,7 @@ class VideoCaptureTab(QWidget):
     def check_to_enable_global_stop_recording(self):
         '''Check if any camera is recording. If so enable the stop recording button'''
         for camera in self.camera_groupboxes:
-            if camera.recording == True:
+            if camera.recording is True:
                 self.stop_recording_button.setEnabled(True)
             else:
                 self.stop_recording_button.setEnabled(False)

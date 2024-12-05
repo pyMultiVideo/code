@@ -12,7 +12,8 @@ from PyQt6.QtCore import (
 import ctypes
 import json
 import logging
-import sys, os
+import sys
+import os
 
 # import tab classes
 from GUI.VideoCaptureTab  import VideoCaptureTab
@@ -85,7 +86,6 @@ class GUIApp(QMainWindow):
         main_menu = self.menuBar()
         # View menu
         view_menu = main_menu.addMenu('View')
-        
         hide_camera_controls_action = QAction("Toggle &Camera Controls", self)
         hide_camera_controls_action.setShortcut('Ctrl+C')
         hide_camera_controls_action.triggered.connect(

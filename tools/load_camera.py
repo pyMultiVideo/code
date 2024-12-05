@@ -13,12 +13,12 @@ else:
         )
     from tools.data_classes import CameraSettingsConfig
 
+import cv2_enumerate_cameras
 import PySpin
 import logging
 logging.basicConfig(level=logging.INFO)
 
 # Library for handling usb cameras
-import cv2_enumerate_cameras
 
 def get_usb_cameras_list() -> list[str]:
     'Get a list of the USB cameras connected to the machine'

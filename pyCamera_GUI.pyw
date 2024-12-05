@@ -1,6 +1,8 @@
 import logging
-import sys, argparse
-
+import sys
+import argparse
+# Dependancy Mangement
+import importlib.util
 
 # Set up logging
 logging.basicConfig(
@@ -11,19 +13,19 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
     )
 
-# Dependancy Mangement
-try:
-    import PyQt6
-    import pyqtgraph
-    import ffmpeg
-    import PySpin
-    # for handling usb cameras
-    import cv2_enumerate_cameras
-    import cv2
 
-except ImportError as e:
-    logging.error("  Unable to import dependencies:\n\n" + str(e) + "\n\n")
-    sys.exit()
+# Dependancy Mangement
+def check_module(module_name):
+    if importlib.util.find_spec(module_name) is None:
+        logging.error(f"Unable to import dependency: {module_name}")
+        sys.exit()
+
+check_module('PyQt6')
+check_module('pyqtgraph')
+check_module('ffmpeg')
+check_module('PySpin')
+check_module('cv2_enumerate_cameras')
+check_module('cv2')
         
 # Import GUI now that dependancies are installed        
 import GUI.GUI_main as mg

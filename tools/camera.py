@@ -1,10 +1,7 @@
 
 import numpy as np
 
-import time
-import json
 import logging
-import serial
 
 import PySpin
 import cv2_enumerate_cameras
@@ -246,7 +243,7 @@ class SpinnakerCamera(CameraTemplate):
         Function to set the frame rate of the camera.
         '''
         ## Make sure that frame rate is an int
-        if type(frame_rate)==str:
+        if type(frame_rate) is str:
             frame_rate = int(frame_rate)
         
         nodemap = self.cam.GetNodeMap()
@@ -309,9 +306,9 @@ class SpinnakerCamera(CameraTemplate):
         '''
         Function to get the next image from the camera (one at a time).
         
-        This function is used to to update thed display, without interacting with the biffer.
+        In the PySpin API, this function is a blocking function. i.e. running this function will stop the rest of the program
+        running until is has completed its own task. 
         '''
-        
         
         # Check if the camera is not in aquistion mode
         if not self.cam.IsStreaming():
@@ -371,7 +368,7 @@ class SpinnakerCamera(CameraTemplate):
         except PySpin.SpinnakerException as e:
             # When the buffer is empty, the 'GetNextImage' function will raise an exception.
             # This marks the end of the buffer.
-            # print(f"Error getting next image: {e}")
+            print(f"Error getting next image: {e}")
             pass
         finally:
 
@@ -416,7 +413,6 @@ class SpinnakerCamera(CameraTemplate):
             self.logger.error(f"Error getting GPIO data: {e}")
         
         return self.GPIO_data
-    
     
     def is_initialized(self) -> bool:
         return self.cam.IsInitialized()
@@ -480,13 +476,4 @@ class USBCamera(CameraTemplate):
         return [self.get_next_image()]
     
 if __name__ == '__main__':
-    # load the camera config
-    # Testing functions here
-    
-    
-    
-    spinnaker_camera = SpinnakerCamera("18360350-spinnaker")
-    
-    
-    
     pass
