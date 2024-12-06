@@ -1,13 +1,10 @@
 
 import numpy as np
-
 import logging
-
 import PySpin
 import cv2_enumerate_cameras
 import cv2
-
-
+# Import the dataclass
 from tools.data_classes import CameraSettingsConfig
 
 # Documentation for the Camera Object
@@ -228,7 +225,6 @@ class SpinnakerCamera(CameraTemplate):
         '''
         Returns the camera settings as a CameraSettingsConfig object.        
         '''
-
         return CameraSettingsConfig(
             name = 'Config returned from SpinnakerCamera wrapper. This does not have access to the name variable. Consider implementing.',
             unique_id = self.get_unique_id(),
@@ -368,10 +364,9 @@ class SpinnakerCamera(CameraTemplate):
         except PySpin.SpinnakerException as e:
             # When the buffer is empty, the 'GetNextImage' function will raise an exception.
             # This marks the end of the buffer.
-            print(f"Error getting next image: {e}")
+            # print(f'PySpin Exeception Raised {e}. The buffer has been emptied.')
             pass
         finally:
-
             return self.img_buffer, self.gpio_buffer
 
             

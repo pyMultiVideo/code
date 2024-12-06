@@ -223,6 +223,7 @@ class VideoCaptureTab(QWidget):
         for camera in self.camera_groupboxes:
             camera.fetch_image_data()
             camera.display_frame(camera._image_data)
+            camera.update_gpio_overlay()
     
     
     def _init_viewfinder_groupbox(self):

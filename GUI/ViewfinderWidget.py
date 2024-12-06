@@ -21,7 +21,9 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
+from PyQt6.QtGui import(
+    QFont
+)
 from GUI.CameraSetupTab import CamerasTab
 from tools.camera import SpinnakerCamera as CameraObject
 from tools.camera_options import cbox_update_options
@@ -208,6 +210,7 @@ class ViewfinderWidget(QWidget):
                 return  # exit the function and wait to be called by the viewfinder tab.
             # Assign the first image of to the data to be displayed
             self._image_data = self.img_buffer[0]
+            self._GPIO_data = [int(x) for x in self.gpio_buffer[0]]
             # If the recording flag is True
             if self.recording is True:
                 self.recorded_frames += len(self.img_buffer)
@@ -317,42 +320,39 @@ class ViewfinderWidget(QWidget):
         """Initialise the GPIO data"""
 
         # Initial state of the colour painted to the image
-        self.gpio_over_lay_color: list[int, int, int] = [0, 0, 0]
+        self.gpio_over_lay_color = np.random.randint(0,256, size=3)
 
-        x_position = 100
-        y_position = 100
-        self.ellipse = pg.EllipseROI(
-            [x_position, y_position],
-            [50, 50],
-            pen=pg.mkPen(color=self.gpio_over_lay_color, width=2),
-            movable=False,
-            rotatable=False,
-            resizable=False,
-            aspectLocked=True,
-        )
+
+        self.ellipse = pg.TextItem()
+        self.ellipse_font = QFont()
+        self.ellipse_font.setPixelSize(100)
+        self.ellipse.setPos(0,100)
         self.video_feed.addItem(self.ellipse)
+        self.ellipse.setFont(self.ellipse_font)
+        self.text.setText(".", color=self.gpio_over_lay_color)
 
-    def draw_GPIO_overlay(self) -> None:
+        
+
+    def update_gpio_overlay(self, DECAY = 0.01) -> None:
         """Draw the GPIO data on the image"""
-        DECAY = 0.9
-        if self.GPIO_data is None:
+        # self.gpio_over_lay_color = np.random.randint(0,256, size=3)
+        
+        if self._GPIO_data is None:
             self.gpio_over_lay_color = DECAY * np.array(self.gpio_over_lay_color)
-        elif self.GPIO_data is not None:
-            for i, line in enumerate(self.GPIO_data):
+        elif self._GPIO_data is not None:
+            new_color = self.gpio_over_lay_color.copy()
+            for i, line in enumerate(self._GPIO_data):
                 if i == 3:
                     # skip the last line
                     continue
-                new_color = self.gpio_over_lay_color.copy()
                 if line == 1:
                     new_color[i] = 255
                 elif line == 0:
                     new_color[i] = 0
-            self.gpio_over_lay_color = DECAY * np.array(new_color) + (
-                1 - DECAY
-            ) * np.array(self.gpio_over_lay_color)
+            self.gpio_over_lay_color = DECAY * np.array(new_color) + (1 - DECAY) * np.array(self.gpio_over_lay_color)
 
         # update the color of the ellipse
-        self.ellipse.setPen(pg.mkPen(color=self.gpio_over_lay_color, width=2))
+        self.ellipse.setText('.', color = self.gpio_over_lay_color)
 
     def refresh(self):
         """h the camera widget"""
