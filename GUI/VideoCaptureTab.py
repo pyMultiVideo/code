@@ -1,3 +1,4 @@
+import time
 import json
 import logging
 from typing import List
@@ -220,11 +221,26 @@ class VideoCaptureTab(QWidget):
         self.refresh_timer.start(1000)
         
     def update_display(self):
+        '''
+        Function that calls the required functions to collect, encode and display the images from the camera. 
+        '''
+        TESTING = False
+        if TESTING is True:
+            for camera in self.camera_groupboxes:
+                # check if the camera is in the performance_table as a column
+                if camera.unique_id not in self.GUI.performance_table.columns:
+                    self.GUI.performance_table[camera.unique_id] = []
+        
         for camera in self.camera_groupboxes:
+            if TESTING is True:
+                start_time = time.time()
             camera.fetch_image_data()
             camera.display_frame(camera._image_data)
             camera.update_gpio_overlay()
-    
+            if TESTING is True:
+                end_time = time.time()
+                # Append the time taken to the performance table
+                self.GUI.performance_table.loc[time.time(), camera.unique_id] = end_time - start_time
     
     def _init_viewfinder_groupbox(self):
 

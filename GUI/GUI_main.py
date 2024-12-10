@@ -14,7 +14,7 @@ import json
 import logging
 import sys
 import os
-
+import pandas as pd
 # import tab classes
 from GUI.VideoCaptureTab  import VideoCaptureTab
 from GUI.CameraSetupTab      import CamerasTab
@@ -40,8 +40,8 @@ class GUIApp(QMainWindow):
         self._init_tabs()
         self._init_menu_bar()
         self._init_timers() 
+        # self.init_performance_table()
         # Could add log in here
-
         self.setGeometry(100, 100, 700, 800) # x, y, width, height
         self.setWindowTitle('pyCamera') # default window title
         self.setCentralWidget(self.tab_widget)
@@ -134,9 +134,20 @@ class GUIApp(QMainWindow):
     def closeEvent(self, event):
         '''Close the GUI'''
         logging.info('Closing the GUI')
+        # self.close_performance_table()
         event.accept()
         sys.exit(0)
         
+    def init_performance_table(self):
+        '''Initialises a pandas dataframe that can keep track of how long a function takes to run'''
+        self.performance_table = pd.DataFrame()
+        
+    def close_performance_table(self):
+        '''Function to close the pandas dataframe to disk'''
+        data_dir = 'data'
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+        self.performance_table.to_csv(os.path.join(data_dir, 'performance_table.csv'), index=False)
     # Exception handling    
         
     def exception_hook(exctype, value, traceback):

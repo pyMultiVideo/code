@@ -299,7 +299,6 @@ class ViewfinderWidget(QWidget):
             # self.draw_GPIO_overlay()
             # # # Recording status overlay
             self.draw_status_overlay()
-
         except Exception as e:
             print(f"Error displaying image: {e}")
 
@@ -321,8 +320,6 @@ class ViewfinderWidget(QWidget):
 
         # Initial state of the colour painted to the image
         self.gpio_over_lay_color = np.random.randint(0,256, size=3)
-
-
         self.ellipse = pg.TextItem()
         self.ellipse_font = QFont()
         self.ellipse_font.setPixelSize(100)
@@ -330,12 +327,10 @@ class ViewfinderWidget(QWidget):
         self.video_feed.addItem(self.ellipse)
         self.ellipse.setFont(self.ellipse_font)
         self.text.setText(".", color=self.gpio_over_lay_color)
-
         
 
     def update_gpio_overlay(self, DECAY = 0.01) -> None:
         """Draw the GPIO data on the image"""
-        # self.gpio_over_lay_color = np.random.randint(0,256, size=3)
         
         if self._GPIO_data is None:
             self.gpio_over_lay_color = DECAY * np.array(self.gpio_over_lay_color)
@@ -361,21 +356,13 @@ class ViewfinderWidget(QWidget):
     def _init_ffmpeg_process(self) -> None:
         """
         This function initalising the ffmpeg process.
-
         This uses the ffmpeg-python API. This api does little more than make the syntax for ffmpeg nicer.
-
         The FFMPEG process is a separate process (according to task-manager) that is running in the background.
         It runs on the GPU (if you let the encoder be a GPU encoder) and is not blocking the main thread.
-
         """
-
-        self.get_mp4_filename()
-        self.get_gpio_filename()
-
         # Calculate downsampled width and height. The preset value is one.
         downsampled_width = int(self.cam_width / self.downsampling_factor)
         downsampled_height = int(self.cam_height / self.downsampling_factor)
-
         # Set up an ffmpeg encoding pipeline
         self.ffmpeg_process = (
             ffmpeg.input(
@@ -427,7 +414,6 @@ class ViewfinderWidget(QWidget):
     def write_gpio_data_to_csv(self, gpio_data: list[bool]) -> None:
         """
         The function `encode_gpio_data` writes GPIO data to a file in CSV format.
-
         :param gpio_data: The `gpio_data` parameter is a list of boolean values representing the GPIO
         data that needs to be encoded and written to a file. The `encode_gpio_data` method takes this
         list of boolean values and writes them to a file specified by `self.GPIO_filename`. If an error
@@ -451,9 +437,7 @@ class ViewfinderWidget(QWidget):
         This function is used to write the GPIO data to a file from the buffer.
         The buffer will return a list of list of booleans.
         The length of the outer list is the number of frames that were emptied from the buffer.
-
         This function is a wrapper for the `encode_gpio_data` function.
-
         Parameters:
         - buffer_list: list[list[bool]] - list of GPIO data to be written to the file
 
@@ -511,7 +495,6 @@ class ViewfinderWidget(QWidget):
     def start_recording(self) -> None:
         """
         Function to start the recording of the video.
-
         - Set the recording flag to True
         - Initalise the ffmpeg process
         - Create the metadata file
@@ -521,7 +504,6 @@ class ViewfinderWidget(QWidget):
         self.get_mp4_filename()
         self.get_gpio_filename()
         self.get_metadata_filename()
-
         # Initalise ffmpeg process
         self._init_ffmpeg_process()
         # Set the recording flag to True
@@ -539,13 +521,12 @@ class ViewfinderWidget(QWidget):
         self.fps_label.setEnabled(False)
         self.pxl_fmt_label.setEnabled(False)
         self.downsampling_factor_text.setEnabled(False)
-        # Tabs can't be changed
+        # Tabs can't be changed whilst recording
         self.view_finder.GUI.tab_widget.tabBar().setEnabled(False)
 
     def stop_recording(self) -> None:
         """
         Function to stop the recording of the video.
-
         - Set the recording flag to False
         - Closes the metadata file (by writing the relevent information to it and saving it)
         - Sets the GUI buttons to the correct state
@@ -675,7 +656,8 @@ class ViewfinderWidget(QWidget):
     ### Functions for disconnecting the camera from the GUI
 
     def disconnect(self):
-        """Function for disconnecting the camera from the GUI.
+        """
+        Function for disconnecting the camera from the GUI.
         This function does the following:
         - Ends the recording from the camera object
         - Removes the camera from the grid layout
