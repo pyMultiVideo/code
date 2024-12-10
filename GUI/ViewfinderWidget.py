@@ -3,6 +3,7 @@ import csv
 import json
 import logging
 from datetime import datetime
+import os
 
 # video
 import ffmpeg
@@ -223,17 +224,6 @@ class ViewfinderWidget(QWidget):
             # print(self.camera_object.buffer_list)
             pass
 
-    def get_mp4_filename(self) -> str:
-        """Get the filename for the mp4 file. This is done using GUI information"""
-        self.subject_id = self.subject_id_text.toPlainText()
-
-        self.recording_filename = (
-            self.view_finder.save_dir_textbox.toPlainText()
-            + "/"
-            + f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
-        )
-
-        self.logger.info(f"Saving recording to: {type(self.recording_filename)}")
 
     def update_camera_dropdown(self):
         """Update the camera options
@@ -252,6 +242,17 @@ class ViewfinderWidget(QWidget):
         )
         self.camera_dropdown.currentTextChanged.connect(self.change_camera)
 
+    def get_mp4_filename(self) -> str:
+        """Get the filename for the mp4 file. This is done using GUI information"""
+        self.subject_id = self.subject_id_text.toPlainText()
+
+        self.recording_filename = os.path.join(
+            self.view_finder.save_dir_textbox.toPlainText(),
+            f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
+        )
+
+        self.logger.info(f"Saving recording to: {type(self.recording_filename)}")
+        
     def get_gpio_filename(self, header=None) -> str:
         """
         This Python function creates a CSV file with a specified header containing GPIO data.
@@ -264,10 +265,9 @@ class ViewfinderWidget(QWidget):
         # Get the subject ID from the text field
         self.subject_id = self.subject_id_text.toPlainText()
 
-        self.GPIO_filename = (
-            self.view_finder.save_dir_textbox.toPlainText()
-            + "/"
-            + f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_GPIO_data.csv"
+        self.GPIO_filename = os.path.join(
+            self.view_finder.save_dir_textbox.toPlainText(),
+            f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_GPIO_data.csv"
         )
         if header is None:
             header = ["Line1", "Line2", "Line3", "Line4"]
@@ -279,10 +279,9 @@ class ViewfinderWidget(QWidget):
         """Get the filename for the metadata file"""
         self.subject_id = self.subject_id_text.toPlainText()
 
-        self.metadata_filename = (
-            self.view_finder.save_dir_textbox.toPlainText()
-            + "/"
-            + f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_metadata.json"
+        self.metadata_filename = os.path.join(
+            self.view_finder.save_dir_textbox.toPlainText(),
+            f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_metadata.json"
         )
 
     def display_frame(self, image_data: np.array) -> None:

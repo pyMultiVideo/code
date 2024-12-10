@@ -12,16 +12,7 @@
 
 ## Installation
 
-Important required libraries
-
-- PySpin: install ([link](https://stackoverflow.com/questions/77704588/no-module-named-pyspin) the stack exchange post and the actual [website](https://www.teledynevisionsolutions.com/products/spinnaker-sdk/?model=Spinnaker%20SDK&vertical=machine%20vision&segment=iis))
-- `OpenCV`
-- [ffmpeg](https://www.ffmpeg.org/download.html) installation required
-- `ffmpeg-python` API is how is it called
-- GUI in `PyQT6`
-- `pyqtgraph`
-
-- USB camera support handled by `cv2_enumerate_cameras`
+See [Installation Help](/installation-guide.md) for information how to install the application.
 
 ## Camera support
 

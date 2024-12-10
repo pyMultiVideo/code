@@ -13,7 +13,7 @@ import db as database
 from dataclasses import asdict
 
 class Camera():
-    '''Class that contains the setup for the camera'''
+    '''Class that contains the setup for the camera widget inside the Camera Tab'''
     def __init__(self, 
                 setups_table, 
                 name, 
@@ -211,7 +211,7 @@ class CamerasTab(QtWidgets.QWidget):
                         name            = None, 
                         unique_id       = unique_id, 
                         fps             = '30',
-                        pxl_fmt         = 'yuv420'
+                        pxl_fmt         = 'yuv420p'
                         )
                     
                 self.update_saved_setups(self.setups[unique_id])
