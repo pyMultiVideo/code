@@ -1,9 +1,17 @@
-# Notes on how to install this application
+# How to install pyMultiCamera
 
 ## Batch file for installation of the application dependancies
 
-There is a file that you can run to install these things. The things described below for easy installation.
-You can do this yourself as well.
+To install this application you can run two powershell installation scripts.
+
+  1. [INSTALL_MINICONDA.ps1](/_installation/INSTALL_MINICONDA.ps1)
+  2. [INSTALL_PYSPIN.ps1](/_installation/INSTALL_PYSPIN.ps1).  
+  3. [INSTALL_FFMPEG.ps1](/_installation/INSTALL_FFMPEG.ps1)
+   
+You can check the requirements of the installation were met with the following scripts
+  1. [CHECK_SPINNAKER_INSTALLATION.ps1](/_installation/CHECK_SPINNAKER_INSTALLATION.ps1)
+  2. [CHECK_FFMPEG_INSTALLATION.ps1](/_installation/CHECK_FFMPEG_INSTALLATION.ps1)
+  
 
 ## Spinnaker SDK
 
@@ -18,7 +26,7 @@ For these reasons I would suggest that you use create a different virtural envir
 
 ## FFMPEG Installation
 
-The encoder in this application uses ffmpeg so you need ffmpeg installed as well as the ffmpeg api ([`pip install ffmpeg-python`](https://pypi.org/project/ffmpeg-python/))
+The encoder in this application uses ffmpeg so you need ffmpeg installed (by simply running [this](/_installation/CHECK_FFMPEG_INSTALLATION.ps1) script.) as well as the ffmpeg api ([`pip install ffmpeg-python`](https://pypi.org/project/ffmpeg-python/))
 
 ## Supporting USB cameras
 
