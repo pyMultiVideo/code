@@ -12,7 +12,7 @@
 
 ## Installation
 
-See [Installation Help](/installation-guide.md) for information how to install the application.
+See [Installation Help](/_installation/installation-guide.md) for information how to install the application.
 
 ## Camera support
 

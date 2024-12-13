@@ -309,42 +309,13 @@ class VideoCaptureTab(QWidget):
             self.camera_groupboxes[-1], 
             position%2,
             position//2
-        )
-        
-        # if self.layout_checkbox.isChecked(): # grid is selected
-        #     position = len(self.camera_groupboxes) - 1
-        #     self.camera_layout.addWidget(
-        #         self.camera_groupboxes[-1], 
-        #         position%2, 
-        #         position//2
-        #     )
-            
-        # else:
-        #     self.camera_layout.addWidget(
-        #         self.camera_groupboxes[-1]
-        #     )
-        
+        )       
         self.refresh()
     
     def change_layout(self):
         '''Function to change the layout of the camera widgets'''
-        # # remove the old layout
-        # # self.viewfinder_groupbox.layout().removeWidget(self.camera_layout)
-                
-        # if self.layout_checkbox.isChecked():
-        #     self.camera_layout = QGridLayout()
-        # else:
-        #     self.camera_layout = QVBoxLayout()
-        
-        # self.setLayout(self.camera_layout)
-        
-        # # remove all camera widgets from the layout
-        # for camera in self.camera_groupboxes:
-        #     self.layout().removeWidget(camera)
-        
-        # for camera in self.camera_groupboxes:
-        #     self.add_widget_to_layout()
         pass
+    
     def change_encoder(self):
         'Function to change the encoder'
         self.encoder = self.encoder_selection.currentText()

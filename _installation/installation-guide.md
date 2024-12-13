@@ -1,5 +1,10 @@
 # Notes on how to install this application
 
+## Batch file for installation of the application dependancies
+
+There is a file that you can run to install these things. The things described below for easy installation.
+You can do this yourself as well.
+
 ## Spinnaker SDK
 
 Get the Spinnaker SDK from their [website](https://www.teledynevisionsolutions.com/products/spinnaker-sdk/?model=Spinnaker%20SDK&vertical=machine%20vision&segment=iis). A login is required to download this.
@@ -26,10 +31,12 @@ To support USB cameras :
 
 The GUI is made using the QT framework
 
-- `PyQt6` 
-- `pyqtgraph` 
+- `PyQt6`
+- `pyqtgraph`
 
 ## Known Bugs
+
+> Check the ErrorLog.txt if it is generated for error messages from python.
 
 - Installation is hard because
   - ffmpeg-python is not automatically installed from the requirements file
@@ -41,4 +48,4 @@ The GUI is made using the QT framework
     More generally there should be ways of showing these error messages to the user so they can debug...
   - need to rename the to the release name
   - Automatically running the pyw file from the file explorer opens it in 3.11**
-- Flickering from the cameras in the lab i am not sure why though... 
+- Flickering from the cameras in the lab i am not sure why though...

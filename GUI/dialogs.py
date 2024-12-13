@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QMessageBox
 
 
-def show_info_message(input_text):
+def show_info_message(input_text:str):
     info_dialog = QMessageBox()
     info_dialog.setIcon(QMessageBox.Icon.Information)
     info_dialog.setWindowTitle("Information")

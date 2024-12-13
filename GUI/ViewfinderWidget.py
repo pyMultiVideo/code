@@ -26,10 +26,12 @@ from PyQt6.QtGui import(
     QFont
 )
 from GUI.CameraSetupTab import CamerasTab
+from GUI.dialogs import show_info_message
 from tools.camera import SpinnakerCamera as CameraObject
 from tools.camera_options import cbox_update_options
 from tools.data_classes import CameraSetupConfig
 from tools.load_camera import init_camera
+from tools.custom_error_classes import FFMpegInitializationError
 
 
 class ViewfinderWidget(QWidget):
@@ -358,10 +360,14 @@ class ViewfinderWidget(QWidget):
         This uses the ffmpeg-python API. This api does little more than make the syntax for ffmpeg nicer.
         The FFMPEG process is a separate process (according to task-manager) that is running in the background.
         It runs on the GPU (if you let the encoder be a GPU encoder) and is not blocking the main thread.
+        
+        TODO: There needs to be proper error handling for the ffmpeg process. At the moment, if the process fails, the user will not know.
+        
         """
         # Calculate downsampled width and height. The preset value is one.
-        downsampled_width = int(self.cam_width / self.downsampling_factor)
+        downsampled_width  = int(self.cam_width / self.downsampling_factor)
         downsampled_height = int(self.cam_height / self.downsampling_factor)
+        
         # Set up an ffmpeg encoding pipeline
         self.ffmpeg_process = (
             ffmpeg.input(
@@ -378,10 +384,13 @@ class ViewfinderWidget(QWidget):
                 preset="fast",
                 crf=23,
             )
-            .run_async(pipe_stdin=True)
+            .run_async(pipe_stdin=True,
+                        pipe_stdout=True, 
+                        pipe_stderr=True)
         )
-        print("FFmpeg pipeline initialized")
-        self.logger.info("FFmpeg pipeline initialized")
+
+
+            
 
     def encode_frame_ffmpeg_process(self, frame: np.array) -> None:
         """
