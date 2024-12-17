@@ -1,3 +1,0 @@
-{
-    "ffmpeg":["hevc_nvenc","h264_nvenc", "libx264"]
-}

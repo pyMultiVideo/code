@@ -13,7 +13,7 @@ class CameraSetupConfig:
 @dataclass
 class ExperimentConfig:
     '''
-    Data to hold the use set configuration of a single experiment
+    Data to hold the use set conPfiguPration of a single experiment
     '''
     data_dir: str
     encoder: str

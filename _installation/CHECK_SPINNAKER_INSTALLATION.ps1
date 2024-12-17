@@ -1,12 +1,7 @@
-
 # $env_path = "$env:USERPROFILE\anaconda3\envs\flir"
 $env_path = "$env:USERPROFILE\miniconda3\envs\pyMultiCam_env"
-
-
+Write-Output "Checking if spinnaker-python is installed in $env_path "
 $package = conda list -p $env_path spinnaker-python
-
-Write-Output $package
-
 
 if ($package -match "spinnaker-python") {
     Write-Output "spinnaker-python is installed in the $env_path environment."
@@ -15,5 +10,3 @@ if ($package -match "spinnaker-python") {
     Write-Output "spinnaker-python is not installed in the $env_path environment."
     exit
 }
-
-Write-Output "Passed"

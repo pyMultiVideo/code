@@ -97,11 +97,10 @@ def load_saved_setups(database) -> list[CameraSettingsConfig]:
                 name      = cam['name'],
                 unique_id = cam['unique_id'],
                 fps       = cam['fps'],
-                pxl_fmt   = cam['pxl_fmt']
+                pxl_fmt   = cam['pxl_fmt'],
                 )
             )
     return setups_from_database
-
 
 
 if __name__ =='__main__':

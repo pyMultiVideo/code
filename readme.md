@@ -1,4 +1,6 @@
-# pyCamera
+# pyMultiVideo
+
+- What it is this application for 
 
 > Description of the application and relevent features. 
 
@@ -12,7 +14,7 @@
 
 ## Installation
 
-See [Installation Help](/_installation/installation-guide.md) for information how to install the application.
+See [Installation Help](/_installation/README.md) for information how to install the application.
 
 ## Camera support
 
@@ -29,9 +31,9 @@ USB Camera
 
 - Inheriting from the Camera template class and redefining functions
 
-## Opening pyCamera from config file
+## Opening pyMultiVideo from config file
 
 - Get the config file from the `/experiments` folder and use that as the input to the `--config` argument
 
-`--config /path/to/config.json` argument and example usage. for example: `C:/Users/alifa/Anaconda3/envs/flir/python.exe "c:/Users/alifa/OneDrive - Nexus365/Documents/Video Aquisition Application/pyCamera/code/pyCamera_GUI.pyw" --config "C:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyCamera\code\experiments\fps-3.json"`
+`--config /path/to/config.json` argument and example usage. for example: `C:/Users/alifa/Anaconda3/envs/flir/python.exe "c:/Users/alifa/OneDrive - Nexus365/Documents/Video Aquisition Application/pyMultiVideo/code/pyMultiVideo_GUI.pyw" --config "C:\Users\alifa\OneDrive - Nexus365\Documents\Video Aquisition Application\pyMultiVideo\code\experiments\fps-3.json"`
 

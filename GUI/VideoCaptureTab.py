@@ -81,7 +81,9 @@ class VideoCaptureTab(QWidget):
         self.encoder_settings_group_box = QGroupBox("FFMPEG Settings")
         # dropdown for camera selection
         self.encoder_selection = QComboBox()
-        self.encoder_selection.addItems(database.this.encoder_dict['ffmpeg']) # replace with camera names
+        self.encoder_selection.addItems(
+            self.camera_setup_tab.ffmpeg_config['output']['encoder'].keys()
+            )
         self.encoder_selection.setCurrentIndex(0)
         self.encoder = self.encoder_selection.currentText()
         self.encoder_selection.currentIndexChanged.connect(self.change_encoder)
@@ -214,7 +216,7 @@ class VideoCaptureTab(QWidget):
         '''Initialise the timers for the viewfinder tab'''
         self.display_update_timer = QTimer()
         self.display_update_timer.timeout.connect(self.update_display)
-        self.display_update_timer.start(int(1000 / 30))  # 30 fps
+        self.display_update_timer.start(int(1000 / database.gui_dict['display_refresh_rate']))  # 30 fps by default. Can be edited in the .json file
         
         self.refresh_timer = QTimer()
         self.refresh_timer.timeout.connect(self.refresh)
@@ -250,7 +252,6 @@ class VideoCaptureTab(QWidget):
 
         if self.GUI.startup_config is None:         
             useable_cameras = sorted(list(set(self.connected_cameras()) - set(self.camera_groupbox_labels())), key=str.lower)
-            print('useable_cameras - init', useable_cameras)
             for camera_label in useable_cameras[:1]: # One camera by default
                 self.initialize_camera_widget(
                     label=camera_label,
@@ -270,7 +271,6 @@ class VideoCaptureTab(QWidget):
         '''
         # Get the set of useable cameras
         useable_cameras = sorted(list(set(self.connected_cameras()) - set(self.camera_groupbox_labels())), key=str.lower)
-        print('useable_cameras', useable_cameras)
         
         # value of spinbox
         if self.camera_quantity_spin_box.value() > len(self.camera_groupboxes): # If the number of cameras is being reduced
@@ -420,7 +420,6 @@ class VideoCaptureTab(QWidget):
                 unique_id = self.camera_setup_tab.get_camera_unique_id_from_label(label)
                 # if the unique id is not in the list of camera groupboxes is it a uninitialized camera
                 if unique_id in [camera.unique_id for camera in self.camera_groupboxes]:
-                    print('camera unique id', [camera.unique_id for camera in self.camera_groupboxes], 'queried unique id', unique_id)
                     camera_widget = [camera for camera in self.camera_groupboxes if camera.unique_id == unique_id][0]
                     # Rename the camera with the queried label
                     camera_widget.rename(new_label = label)
@@ -465,7 +464,6 @@ class VideoCaptureTab(QWidget):
 
     def disconnect(self):
         '''Disconnect all cameras'''
-        print('disconnecting the following cameras', [cam.unique_id for cam in self.camera_groupboxes])
         while self.camera_groupboxes:
             camera = self.camera_groupboxes.pop()
             camera.disconnect()

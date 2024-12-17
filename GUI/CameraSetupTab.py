@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
     QLineEdit
     )
 import json
+import os
 import db as database
 from dataclasses import asdict
 
@@ -110,11 +111,14 @@ class CamerasTab(QtWidgets.QWidget):
         self.GUI = parent
         
         self._initialize_camera_groupbox()
-        self.saved_setups_file = database.this.paths['camera_dir'] + '/cameras_configs.json'
+        self.saved_setups_file           = os.path.join(database.this.paths['camera_dir'] , '/cameras_configs.json')
+        # self.ffmpeg_config_options_file  = os.path.join(database.this.paths['camera_dir'] , '/ffmpeg_configs.json' )
         # 
         self.setups: dict[str, Camera] = {} # Dict of setups: {Unique_id: Setup}
         # Get a list of the saved setups from the database
         self.saved_setups = self.load_saved_setups()
+        # self.ffmpeg_config = self.load_ffmpeg_config_dict()
+        self.ffmpeg_config: dict = database.ffmpeg_dict
         self.refresh()
         # flag to check if the setups have changed (which can be used to update things about the viewfinder tab)
         self.setups_changed = False
@@ -140,7 +144,12 @@ class CamerasTab(QtWidgets.QWidget):
     def load_saved_setups(self) -> list[CameraSettingsConfig]:
         '''Function to load the saved setups from the database as a list of Setup objects'''
         return load_saved_setups(database)
-
+    
+    def load_ffmpeg_config_dict(self) -> dict:
+        '''Function to load the ffmpeg config dictionary'''
+        with open(self.ffmpeg_config_options_file, 'r') as f:
+            return json.load(f)
+    
     def get_saved_setups(self, unique_id: str = None, name: str = None) -> CameraSettingsConfig:
         '''
         Get a saved Setup_info object from a name or unique_id from self.saved_setups

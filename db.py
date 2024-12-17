@@ -16,10 +16,15 @@ def load_data() -> Tuple[pd.DataFrame]:
     camera_tables = json.load(open(camera_file_path))
     # When loading in the database we should be able to check things about the data (are there any repeated values for the unique idenifiers. )
     
-    encoder_file_path = os.path.join(this.paths['encoder_dir'], 'encoders.json')
-    encoder_dict = json.load(open(encoder_file_path))
+    ffmpeg_file_path = os.path.join(this.paths['encoder_dir'], 'ffmpeg_config.json')
+    ffmpeg_dict = json.load(open(ffmpeg_file_path))
     
-    return camera_tables,  encoder_dict
+    gui_file_path = os.path.join(this.paths['encoder_dir'], 'ffmpeg_config.json')
+    gui_dict = json.load(open(gui_file_path))
+    
+    
+    
+    return camera_tables,  ffmpeg_dict, gui_dict
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
@@ -37,7 +42,7 @@ this.paths = {
 
 # Load pandas dataframes
 
-this.camera_dict, this.encoder_dict = load_data()
+this.camera_dict, this.ffmpeg_dict, this.gui_dict = load_data()
 
 # Print the user_name column as a list
 # print(this.camera_data)

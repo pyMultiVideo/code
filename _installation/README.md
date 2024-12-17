@@ -2,18 +2,20 @@
 
 ## Batch file for installation of the application dependancies
 
-To install this application you can run two powershell installation scripts.
+To install this application you can run these powershell installation scripts.
 
-  1. [INSTALL_MINICONDA.ps1](/_installation/INSTALL_MINICONDA.ps1)
+  1. [INSTALL_MINICONDA_ADMIN.ps1](/_installation/INSTALL_MINICONDA_ADMIN.ps1)
   2. [INSTALL_PYSPIN.ps1](/_installation/INSTALL_PYSPIN.ps1).  
   3. [INSTALL_FFMPEG.ps1](/_installation/INSTALL_FFMPEG.ps1)
-   
+
 You can check the requirements of the installation were met with the following scripts
+
   1. [CHECK_SPINNAKER_INSTALLATION.ps1](/_installation/CHECK_SPINNAKER_INSTALLATION.ps1)
   2. [CHECK_FFMPEG_INSTALLATION.ps1](/_installation/CHECK_FFMPEG_INSTALLATION.ps1)
-  
 
-## Spinnaker SDK
+## What the scripts do
+
+### Spinnaker SDK
 
 Get the Spinnaker SDK from their [website](https://www.teledynevisionsolutions.com/products/spinnaker-sdk/?model=Spinnaker%20SDK&vertical=machine%20vision&segment=iis). A login is required to download this.
 *It has only be tested using python 3.10*
@@ -24,18 +26,18 @@ The Spinnaker SDK has some specific requirements that mean installing the applic
 2. The SDK does not support numpy version 2 or above.
 For these reasons I would suggest that you use create a different virtural environment specifically for running this application (I used [anaconda](https://www.anaconda.com/) to do this)
 
-## FFMPEG Installation
+### FFMPEG Installation
 
 The encoder in this application uses ffmpeg so you need ffmpeg installed (by simply running [this](/_installation/CHECK_FFMPEG_INSTALLATION.ps1) script.) as well as the ffmpeg api ([`pip install ffmpeg-python`](https://pypi.org/project/ffmpeg-python/))
 
-## Supporting USB cameras
+### Supporting USB cameras
 
 To support USB cameras :
 
 - `cv2_enumerate_cameras` library is used for listing the USB cameras that are connected to the computer
 - `opencv-python` library is used to get the images from the USB camera
 
-## Other dependancies
+### Other dependancies
 
 The GUI is made using the QT framework
 

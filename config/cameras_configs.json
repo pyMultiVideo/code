@@ -6,8 +6,8 @@
         "pxl_fmt": "yuv420p"
     },
     {
-        "name": "testb",
-        "unique_id": "18360350-spinnaker",
+        "name": "Setup2",
+        "unique_id": "20073102-spinnaker",
         "fps": "30",
         "pxl_fmt": "yuv420p"
     },
@@ -18,9 +18,9 @@
         "pxl_fmt": "yuv420p"
     },
     {
-        "name": "Setup2",
-        "unique_id": "20073102-spinnaker",
-        "fps": "30",
+        "name": "Setup3",
+        "unique_id": "18360350-spinnaker",
+        "fps": "60",
         "pxl_fmt": "yuv420p"
     }
 ]

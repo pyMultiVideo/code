@@ -1,0 +1,6 @@
+# Ignore all contents of folder except .gitignore needed to ensure folder is version controlled.
+*
+!.gitignore
+# !./encoders.json
+# !./ffmpeg_config.json
+# !./readme.md

@@ -1,5 +1,6 @@
 
 import numpy as np
+from datetime import datetime
 import logging
 import PySpin
 import cv2_enumerate_cameras
@@ -9,8 +10,10 @@ from tools.data_classes import CameraSettingsConfig
 
 # Documentation for the Camera Object
 
-class CameraTemplate():
-    'Wrapper around the camera class. This exists for allowing more flexibility for different, unsupported cameras.'
+class GenericCamera():
+    '''
+    Parent class for implementing new cameras. This class will include generic versions if the functions that will need to be implemented for implementing new cameras with specific requirements 
+    '''
     def __init__(self, camera):
     
         self.camera = camera
@@ -31,8 +34,19 @@ class CameraTemplate():
     
     def stop_capturing(self) -> None:
         pass
+    
+    def getCameraSettingsConfig(self) -> CameraSettingsConfig: 
+        '''
+        Function that returns the CameraSettingsConfig datastructure. 
+        '''
+        return CameraSettingsConfig(
+            name = 'GenericCamera',
+            unique_id = self.get_unique_id(),
+            fps = self.get_frame_rate(),
+            pxl_fmt = self.get_pixel_format()
+        )
 
-class SpinnakerCamera(CameraTemplate):
+class SpinnakerCamera(GenericCamera):
     'Inherits from the camera class and adds the spinnaker specific functions from the PySpin library'
     def __init__(self, unique_id: str, CameraConfig = None):
         super().__init__(self)
@@ -49,9 +63,11 @@ class SpinnakerCamera(CameraTemplate):
         self.set_buffer_handling_mode()
         self.stream_nodemap = self.cam.GetTLStreamNodeMap()
 
+        self.setupChunkSelector()
+
         if self.camera_config is not None:
             self.set_frame_rate(self.camera_config.fps)
-            # self.set_pixel_format(self.camera_config.pxl_fmt)
+            self.set_pixel_format(self.camera_config.pxl_fmt)
         else:   
             self.fps            = self.get_frame_rate()
             
@@ -61,7 +77,17 @@ class SpinnakerCamera(CameraTemplate):
         self.gain           = self.get_gain()
         self.pxl_fmt        = self.get_pixel_format()
         self.bitrate        = self.get_bitrate()
+    
+    def setupChunkSelector(self):
+        """
+        Setup the Chunk selector         
+        """
+        self.cam.ChunkSelector.SetValue(PySpin.ChunkSelector_Timestamp)
+        self.cam.ChunkEnable.SetValue(True)
+        self.cam.ChunkModeActive.SetValue(True)
+    
     # Functions to get the camera parameters
+    
     
     def get_exposure_time(self) -> int:
         """
@@ -98,6 +124,23 @@ class SpinnakerCamera(CameraTemplate):
         nodemap = self.cam.GetNodeMap()
         return PySpin.CFloatPtr(nodemap.GetNode("AcquisitionFrameRate")).GetValue()
     
+    def get_frame_rate_range(self) -> tuple[int, int]: 
+        """
+        Function that returns a tuple of ints that describes the minimum and maximum framerate
+
+        Returns:
+            tuple[int, int]: Minimum framerate and Maximum Frame rate 
+        """
+        
+        node_frame_rate = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("AcquisitionFrameRate"))
+        if PySpin.IsAvailable(node_frame_rate) and PySpin.IsReadable(node_frame_rate):
+            min_frame_rate = node_frame_rate.GetMin()
+            max_frame_rate = node_frame_rate.GetMax()
+        else:
+            print("Frame rate node is not readable.")
+
+        return min_frame_rate, max_frame_rate
+    
     def get_gain(self) -> int:
         """
         This Python function retrieves the gain value from a camera node map using the PySpin library.
@@ -127,7 +170,7 @@ class SpinnakerCamera(CameraTemplate):
         return PySpin.CIntegerPtr(nodemap.GetNode("DeviceLinkThroughputLimit")).GetValue()
     
     def get_unique_id(self) -> str:
-        '''Returns the unique id of the camera that is used in the pyCamera application'''
+        '''Returns the unique id of the camera that is used in the pyMultiVideo application'''
         return self.unique_id
     
     
@@ -263,21 +306,29 @@ class SpinnakerCamera(CameraTemplate):
             print(f"Error Setting Frame Rate: {ex}")
         
         
-    def get_dropped_frames(self) -> int:
-        '''
-        Function to get the number of dropped frames from the nodemap
-        '''
-        node_dropped_frames = PySpin.CIntegerPtr(self.stream_nodemap.GetNode("StreamDroppedFrameCount"))
-        try:
-            if PySpin.IsAvailable(node_dropped_frames) and PySpin.IsReadable(node_dropped_frames):
-                dropped_frames = node_dropped_frames.GetValue()
-                print(f"Number of dropped frames: {dropped_frames}")
-                
-        except PySpin.SpinnakerException as ex:
-            print(f"Error retrieving dropped frames: {ex}")
-            
-        return dropped_frames
-    
+    def set_pixel_format(self, pxl_fmt:str) -> None:
+        '''Function to set the format of the camera'''
+
+
+        
+    def get_available_pixel_fmt(self) -> list[str]:
+        '''Gets a string of the pixel formats available to the camera'''
+        
+        available_pxl_fmts = []
+        
+        node_map = self.cam.GetNodeMap()
+        pixel_format_node = PySpin.CEnumerationPtr(node_map.GetNode("PixelFormat"))
+
+        if not PySpin.IsAvailable(pixel_format_node) or not PySpin.IsReadable(pixel_format_node):
+            print("PixelFormat node is not available or readable.")
+        else:
+            pixel_format_entries = pixel_format_node.GetEntries()
+            for entry in pixel_format_entries:
+                entry = PySpin.CEnumEntryPtr(entry)
+                if PySpin.IsReadable(entry):
+                    available_pxl_fmts.append(entry.GetSymbolic())
+        print(available_pxl_fmts)
+        return available_pxl_fmts
     # Function to aquire images from the camera
           
     def begin_capturing(self) -> None:
@@ -326,7 +377,7 @@ class SpinnakerCamera(CameraTemplate):
         # Return the image
         return self.next_image
 
-    def retrieve_buffered_data(self) -> tuple[list[np.ndarray], list[dict[str, bool]]]:
+    def retrieve_buffered_data(self) -> dict[list[np.ndarray], list[dict[str, bool]], list[int]]:
         '''
         This function returns a list of images and a corresponding list of the GPIO data
         This is passed to a function that will saved the data to a file in batches of the lengths of theses lists. 
@@ -346,13 +397,16 @@ class SpinnakerCamera(CameraTemplate):
         The current implemenation requires that you are just sending the GPIO data to the function that saves it to disk. 
         The writer function requires a list of bools to be passed to it.
         '''
-        self.img_buffer = []
-        self.gpio_buffer = []
-
+        self.img_buffer=[]
+        self.gpio_buffer=[]
+        self.timestamps_buffer=[]
         try:
             while True:
                 # Get the next image
                 next_image = self.cam.GetNextImage(0)
+                # Get information about the image
+
+                
                 next_image.Release()
                 self.img_buffer.append(
                     next_image.GetNDArray()
@@ -361,15 +415,34 @@ class SpinnakerCamera(CameraTemplate):
                 self.gpio_buffer.append(
                     list(self.get_GPIO_data().values())
                     )
+                # Get chunk data
+                self.timestamps_buffer.append(
+                    self.get_image_time_stamp(
+                        next_image = next_image
+                    )
+                )
+                
         except PySpin.SpinnakerException as e:
             # When the buffer is empty, the 'GetNextImage' function will raise an exception.
             # This marks the end of the buffer.
             # print(f'PySpin Exeception Raised {e}. The buffer has been emptied.')
             pass
         finally:
-            return self.img_buffer, self.gpio_buffer
+            return {
+                "images": self.img_buffer,
+                "gpio_data": self.gpio_buffer,
+                "timestamps": self.timestamps_buffer
+            }
 
-            
+
+    def get_image_time_stamp(self, next_image) -> datetime:
+        '''Function for getting the timestamp of an image as a datetime object'''
+        chunk_data = next_image.GetChunkData()
+        # Convert to datetime-readable number
+        time_stamp_int = chunk_data.GetTimestamp() / 1e9
+        # return the datetime object
+        return datetime.fromtimestamp(time_stamp_int)  
+              
     def stop_capturing(self) -> None:
         if self.cam.IsStreaming():
             print(f'Camera {self.serial_number} has stopped aquisiton.')
@@ -414,7 +487,7 @@ class SpinnakerCamera(CameraTemplate):
         
     def is_streaming(self) -> bool:
         return self.cam.IsStreaming()
-class USBCamera(CameraTemplate):
+class USBCamera(GenericCamera):
     '''Class for handling USB cameras. This implementation used the cv2 and cv2_enumerate_cameras libraries'''
 
     def __init__(self, unique_id: str, color: bool = True):

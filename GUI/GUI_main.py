@@ -20,7 +20,7 @@ from GUI.VideoCaptureTab  import VideoCaptureTab
 from GUI.CameraSetupTab      import CamerasTab
 
 if os.name == 'nt':
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('pyCamera')
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('pyMultiVideo')
 
 
 class GUIApp(QMainWindow):
@@ -29,28 +29,25 @@ class GUIApp(QMainWindow):
     '''
     def __init__(self, parsed_args):
         super().__init__()
-        print('Starting GUI')  
         self.startup_config = parsed_args.config
-        print('Startup config:', self.startup_config)
         self.logger = logging.getLogger(__name__)
         self._load_camera_names() 
-        
         # Initialise the tab classess
         self._set_icons()
         self._init_tabs()
         self._init_menu_bar()
         self._init_timers() 
         # self.init_performance_table()
-        # Could add log in here
+        # Could add logger  here
         self.setGeometry(100, 100, 700, 800) # x, y, width, height
-        self.setWindowTitle('pyCamera') # default window title
+        self.setWindowTitle('pyMultiVideo') # default window title
         self.setCentralWidget(self.tab_widget)
         self.show() # show the GUI
         
         
     def _set_icons(self):
         '''Set the icons for the GUI'''
-        icon = QIcon('assets/logo/pyCamera.svg')
+        icon = QIcon('assets/logo/pyMultiVideo.svg')
         self.setWindowIcon(icon)
         self.statusBar().showMessage('Ready')
                         
@@ -86,20 +83,23 @@ class GUIApp(QMainWindow):
         main_menu = self.menuBar()
         # View menu
         view_menu = main_menu.addMenu('View')
-        hide_camera_controls_action = QAction("Toggle &Camera Controls", self)
-        hide_camera_controls_action.setShortcut('Ctrl+C')
-        hide_camera_controls_action.triggered.connect(
-            self.video_capture_tab.toggle_control_header_visibilty
-            )
+        full_screen_controls_action = QAction("Toggle Fullscreen", self)
+        full_screen_controls_action.setShortcut('Ctrl+F')       
+        # hide_camera_controls_action = QAction("Toggle &Camera Controls", self)
+        # hide_camera_controls_action.setShortcut('Ctrl+C')
+        # hide_camera_controls_action.triggered.connect(
+        #     self.video_capture_tab.toggle_control_header_visibilty
+        #     )
         
-        hide_tab_controls_action = QAction('Toggle &Viewfinder Tab Controls', self)
-        hide_tab_controls_action.setShortcut('Ctrl+V')
-        hide_tab_controls_action.triggered.connect(
-            self.video_capture_tab.toggle_all_viewfinder_control_visiblity
-            )
+        # hide_tab_controls_action = QAction('Toggle &Viewfinder Tab Controls', self)
+        # hide_tab_controls_action.setShortcut('Ctrl+V')
+        # hide_tab_controls_action.triggered.connect(
+        #     self.video_capture_tab.toggle_all_viewfinder_control_visiblity
+        #     )
         
-        view_menu.addAction(hide_camera_controls_action)
-        view_menu.addAction(hide_tab_controls_action)
+        # view_menu.addAction(full_screen_controls_actino)
+        # view_menu.addAction(hide_camera_controls_action)
+        # view_menu.addAction(hide_tab_controls_action)
 
 
     def _init_experiments(self):
