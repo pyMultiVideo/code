@@ -6,7 +6,6 @@ class CameraSetupConfig:
     Data class to hold the configuration of a single user set camera settings
     '''
     label: str
-    downsample_factor: int
     subject_id: str
     
 
@@ -30,3 +29,4 @@ class CameraSettingsConfig:
     unique_id: str
     fps: str
     pxl_fmt: str
+    downsample_factor: int

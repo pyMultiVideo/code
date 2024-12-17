@@ -48,8 +48,6 @@ The GUI is made using the QT framework
 
 > Check the ErrorLog.txt if it is generated for error messages from python.
 
-- Installation is hard because
-  - ffmpeg-python is not automatically installed from the requirements file
 - Fixes required:
   - Should be verticallly scaling hot horizontally scaling
   - Handle with error message what happens when recording does not start ( because the error message that is being give)

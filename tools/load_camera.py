@@ -98,6 +98,7 @@ def load_saved_setups(database) -> list[CameraSettingsConfig]:
                 unique_id = cam['unique_id'],
                 fps       = cam['fps'],
                 pxl_fmt   = cam['pxl_fmt'],
+                downsample_factor=cam['downsample_factor']
                 )
             )
     return setups_from_database

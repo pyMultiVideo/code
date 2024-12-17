@@ -23,16 +23,14 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PyQt6.QtGui import(
-    QFont
-)
+from PyQt6.QtGui import QFont
 from GUI.CameraSetupTab import CamerasTab
 from GUI.dialogs import show_warning_message
 from tools.camera import SpinnakerCamera as CameraObject
 from tools.camera_options import cbox_update_options
 from tools.data_classes import CameraSetupConfig
 from tools.load_camera import init_camera
-from tools.custom_error_classes import FFMpegInitializationError
+import config.ffmpeg_config as ffmpeg_config
 
 
 class ViewfinderWidget(QWidget):
@@ -54,7 +52,6 @@ class ViewfinderWidget(QWidget):
         # Camera attributes
         self.label = label
         self.subject_id = subject_id
-
         # Check if the camera label is in the database. If is it, we can use the Settings Config information
         # to set the camera settings.
 
@@ -65,6 +62,7 @@ class ViewfinderWidget(QWidget):
         self.fps = self.camera_settings.fps
         self.pxl_fmt = self.camera_settings.pxl_fmt
         self.unique_id = self.camera_settings.unique_id
+        self.downsampling_factor = 1
 
         self.camera_object: CameraObject = init_camera(
             self.unique_id, self.camera_settings
@@ -91,30 +89,32 @@ class ViewfinderWidget(QWidget):
         self.camera_header_layout = QHBoxLayout()
 
         # Downsampling factor
-        self.downsampling_factor_label = QLabel("Downsampling Factor:")
-        self.downsampling_factor_text = QComboBox()
-        self.downsampling_factor_text.addItems(["1", "2", "4", "8"])
-        self.downsampling_factor_text.setCurrentText("1")
-        self.downsampling_factor = 1
-        self.downsampling_factor_text.currentTextChanged.connect(
-            self.change_downsampling_factor
-        )
+        # self.downsampling_factor_label = QLabel("Downsampling Factor:")
+        # self.downsampling_factor_text = QComboBox()
+        # self.downsampling_factor_text.addItems(["1", "2", "4", "8"])
+        # self.downsampling_factor_text.setCurrentText("1")
+        # self.downsampling_factor = 1
+        # self.downsampling_factor_text.currentTextChanged.connect(
+        #     self.change_downsampling_factor
+        # )
 
         # Pxl fmt
-        self.pxl_fmt_label = QLabel("Pixel Format:")
-        self.pxl_fmt_cbox = QComboBox()
-        self.pxl_fmt_cbox.addItems(self.camera_object.get_available_pixel_fmt())
-        self.pxl_fmt_cbox.setCurrentText(self.camera_settings.pxl_fmt)  # default settings
-        self.pxl_fmt_cbox.currentTextChanged.connect(self.change_pxl_fmt)
+        # self.pxl_fmt_label = QLabel("Pixel Format:")
+        # self.pxl_fmt_cbox = QComboBox()
+        # self.pxl_fmt_cbox.addItems(self.camera_object.get_available_pixel_fmt())
+        # self.pxl_fmt_cbox.setCurrentText(
+        #     self.camera_settings.pxl_fmt
+        # )  # default settings
+        # self.pxl_fmt_cbox.currentTextChanged.connect(self.change_pxl_fmt)
         # self.pxl_fmt_cbox.setEnabled(False)
 
         # FPS
-        self.fps_label = QLabel("FPS:")
-        self.fps_cbox = QComboBox()
-        self.fps_cbox.addItems(["30", "60", "120"])
-        self.fps_cbox.setCurrentText(self.camera_settings.fps)
-        self.fps_cbox.currentTextChanged.connect(self.change_fps)
-        self.fps_cbox.setEnabled(False)
+        # self.fps_label = QLabel("FPS:")
+        # self.fps_cbox = QComboBox()
+        # self.fps_cbox.addItems(["30", "60", "120"])
+        # self.fps_cbox.setCurrentText(self.camera_settings.fps)
+        # self.fps_cbox.currentTextChanged.connect(self.change_fps)
+        # self.fps_cbox.setEnabled(False)
 
         # Subject ID
         self.subject_id_label = QLabel("Subject ID:")
@@ -127,7 +127,7 @@ class ViewfinderWidget(QWidget):
         self.start_recording_button = QPushButton("")
         self.start_recording_button.setIcon(QIcon("assets/icons/record.svg"))
         self.start_recording_button.setFixedWidth(30)
-        self.start_recording_button.setFixedHeight(30)
+        # self.start_recording_button.setFixedHeight(30)
         self.start_recording_button.setEnabled(False)
         self.start_recording_button.clicked.connect(self.start_recording)
 
@@ -135,7 +135,7 @@ class ViewfinderWidget(QWidget):
         self.stop_recording_button = QPushButton("")
         self.stop_recording_button.setIcon(QIcon("assets/icons/stop.svg"))
         self.stop_recording_button.setFixedWidth(30)
-        self.stop_recording_button.setFixedHeight(30)
+        # self.stop_recording_button.setFixedHeight(30)
         self.stop_recording_button.setEnabled(False)
         self.stop_recording_button.clicked.connect(self.stop_recording)
 
@@ -149,19 +149,19 @@ class ViewfinderWidget(QWidget):
         # Add the widgets to the layout
         self.camera_header_layout.addWidget(self.camera_id_label)
         self.camera_header_layout.addWidget(self.camera_dropdown)
-        self.camera_header_layout.addWidget(self.downsampling_factor_label)
-        self.camera_header_layout.addWidget(self.downsampling_factor_text)
-        self.camera_header_layout.addWidget(self.fps_label)
-        self.camera_header_layout.addWidget(self.fps_cbox)
-        self.camera_header_layout.addWidget(self.pxl_fmt_label)
-        self.camera_header_layout.addWidget(self.pxl_fmt_cbox)
+        # self.camera_header_layout.addWidget(self.downsampling_factor_label)
+        # self.camera_header_layout.addWidget(self.downsampling_factor_text)
+        # self.camera_header_layout.addWidget(self.fps_label)
+        # self.camera_header_layout.addWidget(self.fps_cbox)
+        # self.camera_header_layout.addWidget(self.pxl_fmt_label)
+        # self.camera_header_layout.addWidget(self.pxl_fmt_cbox)
         self.camera_header_layout.addWidget(self.subject_id_label)
         self.camera_header_layout.addWidget(self.subject_id_text)
         self.camera_header_layout.addWidget(self.start_recording_button)
         self.camera_header_layout.addWidget(self.stop_recording_button)
         # Set the layout for the groupbox
         self.camera_setup_groupbox.setLayout(self.camera_header_layout)
-        self.camera_setup_groupbox.setFixedHeight(100)
+        self.camera_setup_groupbox.setFixedHeight(75)
 
     def _initialise_video_feed(self):
         self.video_feed = pg.ImageView()
@@ -180,8 +180,7 @@ class ViewfinderWidget(QWidget):
         self.frame_rate_text = pg.TextItem()
         self.frame_rate_text.setPos(10, 40)
         self.video_feed.addItem(self.frame_rate_text)
-        self.frame_rate_text.setText('FPS:', color = 'r')
-        
+        self.frame_rate_text.setText("FPS:", color="r")
 
     def _set_camera_setup_layout(self):
         self.camera_setup_hlayout = QVBoxLayout()
@@ -202,77 +201,99 @@ class ViewfinderWidget(QWidget):
         # self.display_frame(self.camera_object.get_next_image())
 
         # initialise an object for keeping track of framerates
-        self.frame_timestamps=deque(maxlen=10)
+        self.frame_timestamps = deque(maxlen=10)
         self.FRAMERATEWARNINGSUPPRESSED = False
+
     def fetch_image_data(self) -> None:
         """
         Function that gets both the GPIO and the image data from the camera and sends them
         to the encoding function to be saved to disk.
-        
-        The current implementation calls the camera API to empty its buffer. 
-        The first image from this buffer is saved to the attribute 'self.img_buffer'
-        This can then be used to display the image to the GUI. 
-        
-        """
 
+        The current implementation calls the camera API to empty its buffer.
+        The first image from this buffer is saved to the attribute 'self.img_buffer'
+        This can then be used to display the image to the GUI.
+
+        """
         try:
             # Retrieve the latest image from the camera
-            self.buffered_data = (
-                self.camera_object.retrieve_buffered_data()
-            )
-            if len(self.buffered_data['images']) == 0:
+            self.buffered_data = self.camera_object.retrieve_buffered_data()
+            if len(self.buffered_data["images"]) == 0:
                 return  # exit the function and wait to be called by the viewfinder tab.
             # Assign the first image of to the data to be displayed
-            self._image_data = self.buffered_data['images'][0]
-            self._GPIO_data = [int(x) for x in self.buffered_data['gpio_data'][0]]
-            self.check_frame_rate()
+            self._image_data = self.buffered_data["images"][0]
+            self._GPIO_data = [int(x) for x in self.buffered_data["gpio_data"][0]]
+            self.display_average_frame_rate()
             # If the recording flag is True
             if self.recording is True:
                 self.recorded_frames += len(self.img_buffer)
                 # encode the frames
-                self.encode_frame_from_camera_buffer(frame_buffer=self.buffered_data['images'])
+                self.encode_frame_from_camera_buffer(
+                    frame_buffer=self.buffered_data["images"]
+                )
                 # encode the GPIO data
-                self.write_gpio_data_from_buffer(gpio_buffer=self.buffered_data['gpio_data'])
+                self.write_gpio_data_from_buffer(
+                    gpio_buffer=self.buffered_data["gpio_data"]
+                )
         except Exception as e:
             print(f"Error fetching image data: {e}")
             # print(self.camera_object.buffer_list)
-            
+
             pass
 
+    def check_for_lost_frames(self, CAMERA_BUFFER_SIZE: int = 10):
+        """Function to check whether the application is loosing frames. This is done by calculating the time difference between two frames
+        and if it exceeds 50% of the allowed time to completely fill up the buffer.
+        """
+        TIME_GAP = 1 / (2 * (self.fps / CAMERA_BUFFER_SIZE))
 
-    def check_frame_rate(self):
+        if len(self.frame_timestamps) < 2:
+            return
+
+        time_diff = (
+            self.frame_timestamps[-1] - self.frame_timestamps[-2]
+        ).total_seconds()
+        if time_diff > TIME_GAP:
+            show_warning_message(
+                input_text="The time gap between frames is too large. Frames might be getting lost.",
+                okayButtonPresent=True,
+                ignoreButtonPresent=False,
+            )
+
+    def display_average_frame_rate(self):
         """
-        Function that checks if the rate of frame aquisiton is as correct. 
+        Function that checks if the rate of frame aquisiton is as correct.
         This is being done using the `self.timestamps` list.
-        
-        Note: The framerate being less than the required framerate is good because is it aquring faster than required. 
-        
+
+        Note: The framerate being less than the required framerate is good because is it aquring faster than required.
+
         """
-        self.frame_timestamps.extend(self.buffered_data['timestamps'])
+        self.frame_timestamps.extend(self.buffered_data["timestamps"])
 
         # Calculate the time differences between consecutive timestamps
-        time_diffs = [(self.frame_timestamps[i + 1] - self.frame_timestamps[i]).total_seconds() for i in range(len(self.frame_timestamps) - 1)]
+        time_diffs = [
+            (self.frame_timestamps[i + 1] - self.frame_timestamps[i]).total_seconds()
+            for i in range(len(self.frame_timestamps) - 1)
+        ]
         # Calculate the average time difference
         avg_time_diff = sum(time_diffs) / len(time_diffs)
 
         # Calculate the framerate
         calculated_framerate = 1 / avg_time_diff
-        
+
         if calculated_framerate > int(self.fps) + 1:
-            color = 'r'
-            if self.FRAMERATEWARNINGSUPPRESSED is False: 
+            color = "r"
+            if self.FRAMERATEWARNINGSUPPRESSED is False:
                 # if the framerate is too low raise a warining to the user?
                 self.FRAMERATEWARNINGSUPPRESSED = show_warning_message(
-                    input_text = 'The required aquisition framerate is note being met. You could be dropping frames. ',
-                    okayButtonPresent = False
+                    input_text="The required aquisition framerate is note being met. You could be dropping frames. ",
+                    okayButtonPresent=False,
+                    ignoreButtonPresent=True,
                 )
         else:
-            color = 'g'
-
-        
+            color = "g"
         # Display the implied framerate from the calcualtion
-        self.frame_rate_text.setText(f'FPS: {calculated_framerate:.2f}', color=color)
-        
+        self.frame_rate_text.setText(f"FPS: {calculated_framerate:.2f}", color=color)
+
     def update_camera_dropdown(self):
         """Update the camera options
         NOTE: this function is wrapped in functions to disconnect and reconnect the signal to the dropdown when the function changes the text in the dropdown
@@ -296,11 +317,11 @@ class ViewfinderWidget(QWidget):
 
         self.recording_filename = os.path.join(
             self.view_finder.save_dir_textbox.toPlainText(),
-            f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
+            f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.mp4",
         )
 
         self.logger.info(f"Saving recording to: {type(self.recording_filename)}")
-        
+
     def get_gpio_filename(self, header=None) -> str:
         """
         This Python function creates a CSV file with a specified header containing GPIO data.
@@ -312,10 +333,9 @@ class ViewfinderWidget(QWidget):
         """
         # Get the subject ID from the text field
         self.subject_id = self.subject_id_text.toPlainText()
-
         self.GPIO_filename = os.path.join(
             self.view_finder.save_dir_textbox.toPlainText(),
-            f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_GPIO_data.csv"
+            f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_GPIO_data.csv",
         )
         if header is None:
             header = ["Line1", "Line2", "Line3", "Line4"]
@@ -326,16 +346,14 @@ class ViewfinderWidget(QWidget):
     def get_metadata_filename(self) -> str:
         """Get the filename for the metadata file"""
         self.subject_id = self.subject_id_text.toPlainText()
-
         self.metadata_filename = os.path.join(
             self.view_finder.save_dir_textbox.toPlainText(),
-            f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_metadata.json"
+            f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_metadata.json",
         )
 
     def display_frame(self, image_data: np.array) -> None:
         """
         Display the image on the GUI
-
         This function also calls the the relevent functions to add overlays on the image.
         """
         try:
@@ -364,21 +382,19 @@ class ViewfinderWidget(QWidget):
 
     def _init_GPIO_overlay(self):
         """Initialise the GPIO data"""
-
         # Initial state of the colour painted to the image
-        self.gpio_over_lay_color = np.random.randint(0,256, size=3)
+        self.gpio_over_lay_color = np.random.randint(0, 256, size=3)
         self.ellipse = pg.TextItem()
         self.ellipse_font = QFont()
         # self.ellipse_font.setPixelSize(100)
         self.ellipse.setPos(10, 100)
         self.video_feed.addItem(self.ellipse)
         # self.ellipse.setFont(self.ellipse_font)
-        self.text.setText("GPIO Status: \u2B24", color=self.gpio_over_lay_color)
-        
+        self.text.setText("GPIO Status: \u2b24", color=self.gpio_over_lay_color)
 
-    def update_gpio_overlay(self, DECAY = 0.01) -> None:
+    def update_gpio_overlay(self, DECAY=0.01) -> None:
         """Draw the GPIO data on the image"""
-        
+
         if self._GPIO_data is None:
             self.gpio_over_lay_color = DECAY * np.array(self.gpio_over_lay_color)
         elif self._GPIO_data is not None:
@@ -391,10 +407,12 @@ class ViewfinderWidget(QWidget):
                     new_color[i] = 255
                 elif line == 0:
                     new_color[i] = 0
-            self.gpio_over_lay_color = DECAY * np.array(new_color) + (1 - DECAY) * np.array(self.gpio_over_lay_color)
+            self.gpio_over_lay_color = DECAY * np.array(new_color) + (
+                1 - DECAY
+            ) * np.array(self.gpio_over_lay_color)
 
         # update the color of the ellipse
-        self.ellipse.setText("GPIO Status: \u2B24", color = self.gpio_over_lay_color)
+        self.ellipse.setText("GPIO Status: \u2b24", color=self.gpio_over_lay_color)
 
     def refresh(self):
         """h the camera widget"""
@@ -406,63 +424,49 @@ class ViewfinderWidget(QWidget):
         This uses the ffmpeg-python API. This api does little more than make the syntax for ffmpeg nicer.
         The FFMPEG process is a separate process (according to task-manager) that is running in the background.
         It runs on the GPU (if you let the encoder be a GPU encoder) and is not blocking the main thread.
-        
+
         TODO: There needs to be proper error handling for the ffmpeg process. At the moment, if the process fails, the user will not know.
-        
+
         """
-        
+
         # Check that the camera settings that have been selected are compatible with the ffmpeg encodering settings that are going to be used
         ffmpeg_input_config, ffmpeg_output_config = self.ffmpeg_settings(
             # self.camera_settings,
             # self.camera_setup_tab.getCameraSetupConfig(label)
         )
-        
-        
-        
+
         # Set up an ffmpeg encoding pipeline
         self.ffmpeg_process = (
-            ffmpeg.input(
-                "pipe:",
-                **ffmpeg_input_config
-            )
-            .output(
-                self.recording_filename,
-                **ffmpeg_output_config
-            )
-            .run_async(pipe_stdin=True,
-                        pipe_stdout=True, 
-                        pipe_stderr=True)
+            ffmpeg.input("pipe:", **ffmpeg_input_config)
+            .output(self.recording_filename, **ffmpeg_output_config)
+            .run_async(pipe_stdin=True, pipe_stdout=True, pipe_stderr=True)
         )
 
-    def ffmpeg_settings(self,
-                        # CameraSettingsConfig, 
-                        # CameraSetupConfig 
-                        ) -> tuple[dict, dict]:
-        '''Function that returns the two dictionaries that are used get the parameters that are used to setup the ffmpeg process.'''
-        
-        
-        
-        
+    def ffmpeg_settings(
+        self,
+        # CameraSettingsConfig,
+        # CameraSetupConfig
+    ) -> tuple[dict, dict]:
+        """Function that returns the two dictionaries that are used get the parameters that are used to setup the ffmpeg process."""
+
         # Calculate downsampled width and height. The preset value is one.
-        downsampled_width  = int(self.cam_width / self.downsampling_factor)
+        downsampled_width = int(self.cam_width / self.downsampling_factor)
         downsampled_height = int(self.cam_height / self.downsampling_factor)
-        
-        
+
         ffmpeg_input_config = {
-            'format': 'rawVideo',
-            'pxl_fmt': 'gray',
-            's' : f"{downsampled_width}x{downsampled_height}",
-            'framerate': self.fps
-            
+            "format": "rawVideo",
+            "pxl_fmt": "gray",
+            "s": f"{downsampled_width}x{downsampled_height}",
+            "framerate": self.fps,
         }
-        
+
         ffmpeg_output_config = {
-            'vcodec': self.camera_setup_tab.ffmpeg_config['output']['encoder'][self.view_finder.encoder],
-            'pix_fmt': self.camera_setup_tab.ffmpeg_config['output']['pxl_fmt'][self.pxl_fmt],
-            'preset':'fast',
-            'crf':23
-            }
-            
+            "vcodec": ffmpeg_config.dict["output"]["encoder"][self.view_finder.encoder],
+            "pix_fmt": ffmpeg_config.dict["output"]["pxl_fmt"][self.pxl_fmt],
+            "preset": "fast",
+            "crf": 23,
+        }
+
         return ffmpeg_input_config, ffmpeg_output_config
 
     def encode_frame_ffmpeg_process(self, frame: np.array) -> None:
@@ -599,9 +603,9 @@ class ViewfinderWidget(QWidget):
         self.downsampling_factor_label.setEnabled(False)
         self.start_recording_button.setEnabled(False)
         self.subject_id_text.setEnabled(False)
-        self.fps_label.setEnabled(False)
-        self.pxl_fmt_label.setEnabled(False)
-        self.downsampling_factor_text.setEnabled(False)
+        # self.fps_label.setEnabled(False)
+        # self.pxl_fmt_label.setEnabled(False)
+        # self.downsampling_factor_text.setEnabled(False)
         # Tabs can't be changed whilst recording
         self.view_finder.GUI.tab_widget.tabBar().setEnabled(False)
 
@@ -621,9 +625,9 @@ class ViewfinderWidget(QWidget):
         self.subject_id_text.setEnabled(True)
         self.camera_dropdown.setEnabled(True)
         self.downsampling_factor_label.setEnabled(True)
-        self.fps_label.setEnabled(True)
-        self.pxl_fmt_label.setEnabled(True)
-        self.downsampling_factor_text.setEnabled(True)
+        # self.fps_label.setEnabled(True)
+        # self.pxl_fmt_label.setEnabled(True)
+        # self.downsampling_factor_text.setEnabled(True)
         # Tabs can be changed
         self.view_finder.GUI.tab_widget.tabBar().setEnabled(True)
         self.logger.info("Recording Stopped")
@@ -646,7 +650,8 @@ class ViewfinderWidget(QWidget):
         # Change the data in the header for the camera
         self.fps_cbox.setCurrentText(self.camera_settings.fps)
         # self.downsampling_factor_label.setText(self.camera_settings.downsampling_factor)
-        self.pxl_fmt_cbox.setCurrentText(self.camera_settings.pxl_fmt)
+        # self.pxl_fmt_cbox.setCurrentText(self.camera_settings.pxl_fmt)
+
     def _change_camera(self, new_unique_id, new_camera_label) -> None:
         # Set the new camera name
         self.unique_id = new_unique_id
@@ -674,9 +679,9 @@ class ViewfinderWidget(QWidget):
     def get_camera_config(self):
         """Get the camera configuration"""
         return CameraSetupConfig(
-            label               =self.label,
-            downsample_factor   =self.downsampling_factor,
-            subject_id          =self.subject_id,
+            label=self.label,
+            # downsample_factor=self.downsampling_factor,
+            subject_id=self.subject_id,
         )
 
     def set_camera_widget_config(self, camera_config: CameraSetupConfig):
@@ -689,7 +694,7 @@ class ViewfinderWidget(QWidget):
             return
 
         self.label = camera_config.label
-        self.downsampling_factor = camera_config.downsample_factor
+        # self.downsampling_factor = camera_config.downsample_factor
         self.unique_id = self.camera_setup_tab.get_camera_unique_id_from_label(
             self.label
         )

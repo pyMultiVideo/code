@@ -35,16 +35,17 @@ class GenericCamera():
     def stop_capturing(self) -> None:
         pass
     
-    def getCameraSettingsConfig(self) -> CameraSettingsConfig: 
-        '''
-        Function that returns the CameraSettingsConfig datastructure. 
-        '''
-        return CameraSettingsConfig(
-            name = 'GenericCamera',
-            unique_id = self.get_unique_id(),
-            fps = self.get_frame_rate(),
-            pxl_fmt = self.get_pixel_format()
-        )
+    # def getCameraSettingsConfig(self) -> CameraSettingsConfig: 
+    #     '''
+    #     Function that returns the CameraSettingsConfig datastructure. 
+    #     '''
+    #     return CameraSettingsConfig(
+    #         name = 'GenericCamera',
+    #         unique_id = self.get_unique_id(),
+    #         fps = self.get_frame_rate(),
+    #         pxl_fmt = self.get_pixel_format(),
+    #         downsample_factor=1
+    #     )
 
 class SpinnakerCamera(GenericCamera):
     'Inherits from the camera class and adds the spinnaker specific functions from the PySpin library'
@@ -264,16 +265,17 @@ class SpinnakerCamera(GenericCamera):
         except PySpin.SpinnakerException as ex:
             print(f"Error retrieving buffer count: {ex}")
             
-    def getCameraSettingsConfig(self) -> CameraSettingsConfig:
-        '''
-        Returns the camera settings as a CameraSettingsConfig object.        
-        '''
-        return CameraSettingsConfig(
-            name = 'Config returned from SpinnakerCamera wrapper. This does not have access to the name variable. Consider implementing.',
-            unique_id = self.get_unique_id(),
-            fps = self.get_frame_rate(),
-            pxl_fmt = self.get_pixel_format()
-        )
+    # def getCameraSettingsConfig(self) -> CameraSettingsConfig:
+    #     '''
+    #     Returns the camera settings as a CameraSettingsConfig object.        
+    #     '''
+    #     return CameraSettingsConfig(
+    #         name = 'Config returned from SpinnakerCamera wrapper. This does not have access to the name variable. Consider implementing.',
+    #         unique_id = self.get_unique_id(),
+    #         fps = self.get_frame_rate(),
+    #         pxl_fmt = self.get_pixel_format(),
+    #         downsample_factor=1
+    #     )
     
     # Functions to set the camera parameters
 
