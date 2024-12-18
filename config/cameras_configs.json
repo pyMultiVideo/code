@@ -1,23 +1,23 @@
 [
     {
-        "name": "18360350-spinnaker",
+        "name": "Setup1",
         "unique_id": "18360350-spinnaker",
         "fps": "30",
         "pxl_fmt": "yuv420p",
         "downsample_factor": 1
     },
     {
-        "name": "21013407-spinnaker",
-        "unique_id": "21013407-spinnaker",
-        "fps": "30",
-        "pxl_fmt": "yuv420p",
-        "downsample_factor": 4
-    },
-    {
-        "name": "20073102-spinnaker",
+        "name": "Camera2",
         "unique_id": "20073102-spinnaker",
         "fps": "120",
         "pxl_fmt": "yuv420p",
         "downsample_factor": 1
+    },
+    {
+        "name": "Camera 3",
+        "unique_id": "21013407-spinnaker",
+        "fps": "30",
+        "pxl_fmt": "yuv420p",
+        "downsample_factor": 4
     }
 ]

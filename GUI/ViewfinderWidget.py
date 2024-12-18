@@ -1,6 +1,7 @@
 # core python
 import csv
 import json
+import subprocess
 import logging
 from datetime import datetime
 import os
@@ -31,6 +32,7 @@ from tools.camera_options import cbox_update_options
 from tools.data_classes import CameraSetupConfig
 from tools.load_camera import init_camera
 import config.ffmpeg_config as ffmpeg_config
+import config.gui_config as gui_config
 
 
 class ViewfinderWidget(QWidget):
@@ -225,7 +227,7 @@ class ViewfinderWidget(QWidget):
             self.display_average_frame_rate()
             # If the recording flag is True
             if self.recording is True:
-                self.recorded_frames += len(self.img_buffer)
+                self.recorded_frames += len(self.buffered_data['timestamps'])
                 # encode the frames
                 self.encode_frame_from_camera_buffer(
                     frame_buffer=self.buffered_data["images"]
@@ -424,50 +426,34 @@ class ViewfinderWidget(QWidget):
         This uses the ffmpeg-python API. This api does little more than make the syntax for ffmpeg nicer.
         The FFMPEG process is a separate process (according to task-manager) that is running in the background.
         It runs on the GPU (if you let the encoder be a GPU encoder) and is not blocking the main thread.
-
         TODO: There needs to be proper error handling for the ffmpeg process. At the moment, if the process fails, the user will not know.
-
         """
-
-        # Check that the camera settings that have been selected are compatible with the ffmpeg encodering settings that are going to be used
-        ffmpeg_input_config, ffmpeg_output_config = self.ffmpeg_settings(
-            # self.camera_settings,
-            # self.camera_setup_tab.getCameraSetupConfig(label)
-        )
-
-        # Set up an ffmpeg encoding pipeline
-        self.ffmpeg_process = (
-            ffmpeg.input("pipe:", **ffmpeg_input_config)
-            .output(self.recording_filename, **ffmpeg_output_config)
-            .run_async(pipe_stdin=True, pipe_stdout=True, pipe_stderr=True)
-        )
-
-    def ffmpeg_settings(
-        self,
-        # CameraSettingsConfig,
-        # CameraSetupConfig
-    ) -> tuple[dict, dict]:
-        """Function that returns the two dictionaries that are used get the parameters that are used to setup the ffmpeg process."""
-
-        # Calculate downsampled width and height. The preset value is one.
         downsampled_width = int(self.cam_width / self.downsampling_factor)
         downsampled_height = int(self.cam_height / self.downsampling_factor)
+        
+        ffmpeg_command = [
+            gui_config.dict['PATH_TO_FFMPEG'],
+            '-y',  # overwrite output file if it exists
+            '-f', 'rawvideo',
+            '-vcodec', 'rawvideo',
+            '-pix_fmt', 'gray',
+            '-s', f"{downsampled_width}x{downsampled_height}",
+            '-r', str(self.fps),
+            '-i', 'pipe:',  # input comes from a pipe
+            # '-vcodec', 'libx264',
+            '-vcodec', ffmpeg_config.dict['output']['encoder'][self.view_finder.encoder],
+            '-pix_fmt', ffmpeg_config.dict['output']['pxl_fmt'][self.pxl_fmt],
+            # '-pix_fmt', 'yuv420p',  # Set pixel format before output file
+            '-preset', 'fast',
+            '-crf', '23',
+            self.recording_filename  # Output filename
+        ]
 
-        ffmpeg_input_config = {
-            "format": "rawVideo",
-            "pxl_fmt": "gray",
-            "s": f"{downsampled_width}x{downsampled_height}",
-            "framerate": self.fps,
-        }
-
-        ffmpeg_output_config = {
-            "vcodec": ffmpeg_config.dict["output"]["encoder"][self.view_finder.encoder],
-            "pix_fmt": ffmpeg_config.dict["output"]["pxl_fmt"][self.pxl_fmt],
-            "preset": "fast",
-            "crf": 23,
-        }
-
-        return ffmpeg_input_config, ffmpeg_output_config
+        print(ffmpeg_command)
+        self.ffmpeg_process = subprocess.Popen(
+            ffmpeg_command,
+            stdin=subprocess.PIPE
+        )
 
     def encode_frame_ffmpeg_process(self, frame: np.array) -> None:
         """
@@ -600,7 +586,7 @@ class ViewfinderWidget(QWidget):
         # update labels on GUI
         self.stop_recording_button.setEnabled(True)
         self.camera_dropdown.setEnabled(False)
-        self.downsampling_factor_label.setEnabled(False)
+        # self.downsampling_factor_label.setEnabled(False)
         self.start_recording_button.setEnabled(False)
         self.subject_id_text.setEnabled(False)
         # self.fps_label.setEnabled(False)
@@ -624,7 +610,7 @@ class ViewfinderWidget(QWidget):
         self.start_recording_button.setEnabled(True)
         self.subject_id_text.setEnabled(True)
         self.camera_dropdown.setEnabled(True)
-        self.downsampling_factor_label.setEnabled(True)
+        # self.downsampling_factor_label.setEnabled(True)
         # self.fps_label.setEnabled(True)
         # self.pxl_fmt_label.setEnabled(True)
         # self.downsampling_factor_text.setEnabled(True)
@@ -648,7 +634,7 @@ class ViewfinderWidget(QWidget):
         self._change_camera(camera_unique_id, new_camera_label)
 
         # Change the data in the header for the camera
-        self.fps_cbox.setCurrentText(self.camera_settings.fps)
+        # self.fps_cbox.setCurrentText(self.camera_settings.fps)
         # self.downsampling_factor_label.setText(self.camera_settings.downsampling_factor)
         # self.pxl_fmt_cbox.setCurrentText(self.camera_settings.pxl_fmt)
 
