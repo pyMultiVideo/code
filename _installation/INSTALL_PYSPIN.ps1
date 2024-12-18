@@ -2,7 +2,7 @@
 # Download
 ########################################################################################
 Write-Output 'Downloading PySpin'
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = Get-Location
 $SDKPathDir = "$scriptDir\SDK\"
 $spinnakerSDKpath = "https://flir.netx.net/file/asset/59493/original/attachment"
 
