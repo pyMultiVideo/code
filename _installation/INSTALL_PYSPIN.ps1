@@ -13,10 +13,19 @@ if (-Not (Test-Path -Path $SDKPathDir)) {
 
 try {
     if (Test-Path -Path $SDKPathDir) {
+        $skipDownload = Read-Host "Would you like to skip downloading the SDK? (Y/N)"
+        if ($skipDownload -eq "Y") {
+            Write-Output "Skipping download as per user request."
+            
+        } else {
+        
         Write-Output "Removing any previous contents formt the \SDK\ folder"
         Remove-Item -Path "$SDKPathDir\*" -Recurse -Force
+        
+        # redownload the file
+        Invoke-WebRequest -Uri $spinnakerSDKpath -OutFile "$SDKPathDir\spinnakerSDK.zip"
+        }
     }
-    Invoke-WebRequest -Uri $spinnakerSDKpath -OutFile "$SDKPathDir\spinnakerSDK.zip"
 } catch {
     Write-Host "An error occured: $_" -ForegroundColor Red
 }

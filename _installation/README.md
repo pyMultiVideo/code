@@ -10,6 +10,8 @@ To install this application you can run these powershell installation scripts.
 
 If you don't have permission to run powershell scripts on your computer, consider running the script line by line (by copying and pasting the scripts into powershell (as administrator) and pressing enter)
 
+For the installtion to work properly, you must run the installation scripts in the directory that they are being saved in. 
+
 You can check the requirements of the installation were met with the following scripts
 
   1. [CHECK_SPINNAKER_INSTALLATION.ps1](/_installation/CHECK_SPINNAKER_INSTALLATION.ps1)
