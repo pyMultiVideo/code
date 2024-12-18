@@ -8,6 +8,8 @@ To install this application you can run these powershell installation scripts.
   2. [INSTALL_PYSPIN.ps1](/_installation/INSTALL_PYSPIN.ps1).  
   3. [INSTALL_FFMPEG.ps1](/_installation/INSTALL_FFMPEG.ps1)
 
+If you don't have permission to run powershell scripts on your computer, consider running the script line by line (by copying and pasting the scripts into powershell (as administrator) and pressing enter)
+
 You can check the requirements of the installation were met with the following scripts
 
   1. [CHECK_SPINNAKER_INSTALLATION.ps1](/_installation/CHECK_SPINNAKER_INSTALLATION.ps1)

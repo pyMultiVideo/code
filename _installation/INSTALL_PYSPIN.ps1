@@ -2,8 +2,8 @@
 # Download
 ########################################################################################
 Write-Output 'Downloading PySpin'
-
-$SDKPathDir = "$PSScriptRoot\SDK\"
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$SDKPathDir = "$scriptDir\SDK\"
 $spinnakerSDKpath = "https://flir.netx.net/file/asset/59493/original/attachment"
 
 if (-Not (Test-Path -Path $SDKPathDir)) {
