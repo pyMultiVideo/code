@@ -81,4 +81,10 @@ try {
     Write-Error "An error occurred while installing the requirements."
 }
 
+
+Write-Host "Adding miniconda to PATH..."
+$envPath = [Environment]::GetEnvironmentVariable("PATH", "Machine")
+[Environment]::SetEnvironmentVariable("PATH", $envPath + ";C:\Program Files\miniconda3\Scripts", "Machine")
+
+
 Write-Output "Finish running miniconda installation script"
