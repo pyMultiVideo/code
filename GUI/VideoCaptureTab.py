@@ -456,20 +456,31 @@ class VideoCaptureTab(QWidget):
     def check_to_enable_global_start_recording(self):
         """Check if all the cameras are ready to start recording. If any camera is not ready to start,
         disable the global start recording button"""
+        all_ready = True
         for camera in self.camera_groupboxes:
-            # If any camera is not ready to start recording, turn off the global start recording button
-            if camera.start_recording_button.isEnabled() is False:
-                self.start_recording_button.setEnabled(False)
-            else:
-                self.start_recording_button.setEnabled(True)
+            if not camera.start_recording_button.isEnabled():
+                all_ready = False
+                break
+        self.start_recording_button.setEnabled(all_ready)
+
+        # If any of the cameras are recording, the 'Change directory' button, 'Change encoder' button, Load Layout button, and change number of cameras should all be grayed out
+        any_recording = any(camera.recording for camera in self.camera_groupboxes)
+        self.save_dir_button.setEnabled(not any_recording)
+        self.encoder_selection.setEnabled(not any_recording)
+        self.load_experiment_config_button.setEnabled(not any_recording)
+        self.camera_quantity_spin_box.setEnabled(not any_recording)
 
     def check_to_enable_global_stop_recording(self):
         """Check if any camera is recording. If so enable the stop recording button"""
-        for camera in self.camera_groupboxes:
-            if camera.recording is True:
-                self.stop_recording_button.setEnabled(True)
-            else:
-                self.stop_recording_button.setEnabled(False)
+        any_recording = any(camera.recording for camera in self.camera_groupboxes)
+        self.stop_recording_button.setEnabled(any_recording)
+
+        # If any of the cameras are recording, the 'Change directory' button, 'Change encoder' button, Load Layout button, and change number of cameras should all be grayed out
+        self.save_dir_button.setEnabled(not any_recording)
+        self.encoder_selection.setEnabled(not any_recording)
+        self.load_experiment_config_button.setEnabled(not any_recording)
+        self.camera_quantity_spin_box.setEnabled(not any_recording)
+
 
     def disconnect(self):
         """Disconnect all cameras"""

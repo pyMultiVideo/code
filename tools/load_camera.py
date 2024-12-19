@@ -1,17 +1,13 @@
 'Functions for loading the camera IDs'
 # Different imports for running the script from different places
 if __name__ == '__main__':
-    from camera import (
-        SpinnakerCamera,
-        USBCamera
-        )
-    from data_classes import CameraSettingsConfig
+    from tools.camera.spinnaker_camera import SpinnakerCamera
+    from tools.camera.usb_camera       import USBCamera
+    from data_classes                  import CameraSettingsConfig
 else:   
-    from tools.camera import (
-        SpinnakerCamera,
-        USBCamera
-        )
-    from tools.data_classes import CameraSettingsConfig
+    from tools.camera.spinnaker_camera import SpinnakerCamera
+    from tools.camera.usb_camera       import USBCamera
+    from tools.data_classes            import CameraSettingsConfig
 
 import cv2_enumerate_cameras
 import PySpin

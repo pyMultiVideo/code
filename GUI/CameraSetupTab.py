@@ -3,8 +3,12 @@ from tools.data_classes import CameraSettingsConfig
 from tools.load_camera import get_unique_ids, load_saved_setups
 import PyQt6.QtWidgets as QtWidgets
 from PyQt6.QtWidgets import (
-    QGroupBox, QVBoxLayout, QTableWidget, QLineEdit,
-    QComboBox, QSpinBox
+    QGroupBox,
+    QVBoxLayout,
+    QTableWidget,
+    QLineEdit,
+    QComboBox,
+    QSpinBox,
 )
 import json
 import os
@@ -59,12 +63,10 @@ class Camera:
 
         self.downsampling_factor_edit = QComboBox()
         # Add in the choices that are possibel
-        self.downsampling_factor_edit.addItems(['1', '2', '4', '8'])
+        self.downsampling_factor_edit.addItems(["1", "2", "4", "8"])
         if self.downsampling_factor:
             self.downsampling_factor_edit.setCurrentText(str(self.downsampling_factor))
-        self.downsampling_factor_edit.activated.connect(
-            self.camera_downsampling_factor
-        )
+        self.downsampling_factor_edit.activated.connect(self.camera_downsampling_factor)
 
         self.setups_table.insertRow(0)
         self.setups_table.setCellWidget(0, 0, self.name_edit)
@@ -144,7 +146,6 @@ class CamerasTab(QtWidgets.QWidget):
         self.setups_changed = False
 
     def _initialize_camera_groupbox(self):
-
         self.camera_table_groupbox = QGroupBox("Camera Table")
         self.camera_table = CameraOverviewTable(parent=self)
 
@@ -233,19 +234,19 @@ class CamerasTab(QtWidgets.QWidget):
                         unique_id=camera_settings_config.unique_id,
                         fps=camera_settings_config.fps,
                         pxl_fmt=camera_settings_config.pxl_fmt,
-                        downsampling_factor=camera_settings_config.downsample_factor
+                        downsampling_factor=camera_settings_config.downsample_factor,
                     )
                 # If the unique_id has not been seen before, create a new setup
                 else:
                     # Note: Name == None since this is a new camera
-                    # Default parameters for a new camera class. 
+                    # Default parameters for a new camera class.
                     self.setups[unique_id] = Camera(
                         setups_table=self.camera_table,
                         name=None,
                         unique_id=unique_id,
                         fps="30",
                         pxl_fmt="yuv420p",
-                        downsampling_factor=1
+                        downsampling_factor=1,
                     )
 
                 self.update_saved_setups(self.setups[unique_id])

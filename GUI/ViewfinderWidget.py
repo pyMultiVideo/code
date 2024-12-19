@@ -27,7 +27,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QFont
 from GUI.CameraSetupTab import CamerasTab
 from GUI.dialogs import show_warning_message
-from tools.camera import SpinnakerCamera as CameraObject
+from tools.camera.spinnaker_camera import SpinnakerCamera as CameraObject
 from tools.camera_options import cbox_update_options
 from tools.data_classes import CameraSetupConfig
 from tools.load_camera import init_camera
