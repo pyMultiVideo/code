@@ -84,7 +84,8 @@ try {
 
 Write-Host "Adding miniconda to PATH..."
 $envPath = [Environment]::GetEnvironmentVariable("PATH", "Machine")
-[Environment]::SetEnvironmentVariable("PATH", $envPath + ";C:\Program Files\miniconda3\Scripts", "Machine")
+$newPath = $envPath + ";C:\Program Files\miniconda3\Scripts;C:\Program Files\miniconda3\condabin"
+[Environment]::SetEnvironmentVariable("PATH", $newPath, "Machine")
 
 
 Write-Output "Finish running miniconda installation script"
