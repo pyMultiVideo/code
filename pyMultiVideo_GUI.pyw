@@ -15,7 +15,7 @@ logging.basicConfig(
 )
 
 
-# Dependancy Mangement
+# Dependency Mangement
 def check_module(module_name):
     if importlib.util.find_spec(module_name) is None:
         logging.error(f"Unable to import dependency: {module_name}")

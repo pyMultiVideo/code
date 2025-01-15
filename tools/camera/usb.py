@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 
 # import the camera template
-from tools.camera.generic_camera import GenericCamera
+from .generic_camera import GenericCamera
 
 
 class USBCamera(GenericCamera):
@@ -58,3 +58,38 @@ class USBCamera(GenericCamera):
     def get_next_image_list(self) -> list[np.ndarray]:
         """Get all the images in the buffer. Here there is no buffer so the only image that is returned is from the normal function call , just reformatted."""
         return [self.get_next_image()]
+
+
+########### Finding Cameras
+
+
+def list_available_cameras() -> list[str]:
+    """Place holder function which returns a list of the available cameras.
+    The should be uniquly idenified as a string.
+    """
+    usb_cam_list = cv2_enumerate_cameras.enumerate_cameras()
+    # Preprocess this list because it returns duplicates sometimtes
+    for cam1 in usb_cam_list:
+        for cam2 in usb_cam_list:
+            if cam1.path == cam2.path:
+                usb_cam_list.remove(cam2)
+
+    unique_id_list=[]
+    for cam in usb_cam_list:
+        cam_id: str = f"{cam.pid}-usb"
+        # print(f"Camera ID: {cam_id}")
+        unique_id_list.append(cam_id)
+
+
+    return unique_id_list
+
+
+def initialise_by_id(_id, CameraSettingsConfig):
+    """Function that returns a camera instance based on the _id"""
+
+    return USBCamera(unique_id=_id, CameraConfig=CameraSettingsConfig)
+
+
+if __name__ == "__main__":
+    # Code for checking if the functions work
+    initialise_by_id(list_available_cameras()[0])

@@ -4,11 +4,11 @@ import logging
 import PySpin
 
 # Import the dataclass
-from tools.camera.generic_camera import GenericCamera
+from .generic_camera import GenericCamera
 
 
 class SpinnakerCamera(GenericCamera):
-    "Inherits from the camera class and adds the spinnaker specific functions from the PySpin library"
+    """Inherits from the camera class and adds the spinnaker specific functions from the PySpin library"""
 
     def __init__(self, unique_id: str, CameraConfig=None):
         super().__init__(self)
@@ -249,10 +249,6 @@ class SpinnakerCamera(GenericCamera):
         except PySpin.SpinnakerException as ex:
             print(f"Error Setting Frame Rate: {ex}")
 
-    def set_pixel_format(self, pxl_fmt: str) -> None:
-        """Function to set the format of the camera"""
-        pass
-
     def get_available_pixel_fmt(self) -> list[str]:
         """Gets a string of the pixel formats available to the camera"""
 
@@ -273,6 +269,9 @@ class SpinnakerCamera(GenericCamera):
                     available_pxl_fmts.append(entry.GetSymbolic())
         print(available_pxl_fmts)
         return available_pxl_fmts
+
+    def set_pixel_format(self, pixel_format):
+        pass
 
     # Function to aquire images from the camera
 
@@ -391,9 +390,6 @@ class SpinnakerCamera(GenericCamera):
             print(f"Camera {self.serial_number} has been deinitialized.")
         # make sure to release the camera
 
-    def isStreaming(self) -> bool:
-        return self.cam.IsStreaming()
-
     def get_GPIO_data(self) -> dict[str, bool]:
         "Get the GPIO data from the camera"
 
@@ -434,6 +430,43 @@ class SpinnakerCamera(GenericCamera):
     def is_streaming(self) -> bool:
         return self.cam.IsStreaming()
 
+
+def list_available_cameras(VERBOSE=False) -> list[str]:
+    unique_id_list = []
+    pyspin_system = PySpin.System.GetInstance()
+    pyspin_cam_list = pyspin_system.GetCameras()
+    
+    if VERBOSE:
+        print(f"Number of cameras detected: {pyspin_cam_list.GetSize()}")
+    
+    for cam in pyspin_cam_list:
+        try:
+            # Initialize the camera
+            cam.Init()
+            # Get cam serial number
+            cam_id: str = f"{cam.DeviceSerialNumber()}-spinnaker"
+            if VERBOSE:
+                print(f"Camera ID: {cam_id}")
+            unique_id_list.append(cam_id)
+        except Exception as e:
+            if VERBOSE:
+                print(f"Error accessing camera: {e}")
+        finally:
+            if cam.IsStreaming():
+                continue
+            else: 
+                cam.DeInit()
+    
+    # Release resources
+    pyspin_cam_list.Clear()
+    
+    return unique_id_list
+    
+def initialise_by_id(_id, CameraSettingsConfig):
+    return SpinnakerCamera(
+        unique_id=_id, 
+        CameraConfig=CameraSettingsConfig
+    )
 
 if __name__ == "__main__":
     pass

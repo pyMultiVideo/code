@@ -27,9 +27,9 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QFont
 from GUI.CameraSetupTab import CamerasTab
 from GUI.dialogs import show_warning_message
-from tools.camera.spinnaker_camera import SpinnakerCamera as CameraObject
+from tools.camera.spinnaker import SpinnakerCamera as CameraObject
 from tools.camera_options import cbox_update_options
-from tools.data_classes import CameraSetupConfig
+from tools.custom_data_classes import CameraSetupConfig
 from tools.load_camera import init_camera
 import config.ffmpeg_config as ffmpeg_config
 import config.gui_config as gui_config
@@ -227,7 +227,7 @@ class ViewfinderWidget(QWidget):
             self.display_average_frame_rate()
             # If the recording flag is True
             if self.recording is True:
-                self.recorded_frames += len(self.buffered_data['timestamps'])
+                self.recorded_frames += len(self.buffered_data["timestamps"])
                 # encode the frames
                 self.encode_frame_from_camera_buffer(
                     frame_buffer=self.buffered_data["images"]
@@ -430,30 +430,35 @@ class ViewfinderWidget(QWidget):
         """
         downsampled_width = int(self.cam_width / self.downsampling_factor)
         downsampled_height = int(self.cam_height / self.downsampling_factor)
-        
+
         ffmpeg_command = [
-            gui_config.dict['PATH_TO_FFMPEG'],
-            '-y',  # overwrite output file if it exists
-            '-f', 'rawvideo',
-            '-vcodec', 'rawvideo',
-            '-pix_fmt', 'gray',
-            '-s', f"{downsampled_width}x{downsampled_height}",
-            '-r', str(self.fps),
-            '-i', 'pipe:',  # input comes from a pipe
-            # '-vcodec', 'libx264',
-            '-vcodec', ffmpeg_config.dict['output']['encoder'][self.view_finder.encoder],
-            '-pix_fmt', ffmpeg_config.dict['output']['pxl_fmt'][self.pxl_fmt],
-            # '-pix_fmt', 'yuv420p',  # Set pixel format before output file
-            '-preset', 'fast',
-            '-crf', '23',
-            self.recording_filename  # Output filename
+            gui_config.dict["PATH_TO_FFMPEG"],
+            "-y",  # overwrite output file if it exists
+            "-f",
+            "rawvideo",
+            "-vcodec",
+            "rawvideo",
+            "-pix_fmt",
+            "gray",
+            "-s",
+            f"{downsampled_width}x{downsampled_height}",
+            "-r",
+            self.fps,  # Set framerate to camera resolution
+            "-i",
+            "pipe:",  # input comes from a pipe
+            "-vcodec",
+            ffmpeg_config.dict["output"]["encoder"][self.view_finder.encoder],
+            "-pix_fmt",
+            ffmpeg_config.dict["output"]["pxl_fmt"][self.pxl_fmt],
+            "-preset",
+            "fast",
+            "-crf",
+            "23",
+            self.recording_filename,  # Output filename
         ]
 
         print(ffmpeg_command)
-        self.ffmpeg_process = subprocess.Popen(
-            ffmpeg_command,
-            stdin=subprocess.PIPE
-        )
+        self.ffmpeg_process = subprocess.Popen(ffmpeg_command, stdin=subprocess.PIPE)
 
     def encode_frame_ffmpeg_process(self, frame: np.array) -> None:
         """
@@ -739,4 +744,6 @@ class ViewfinderWidget(QWidget):
         """
         self.camera_object.stop_capturing()
         self.view_finder.camera_layout.removeWidget(self)
-        self.deleteLater()
+        # This post might suggest that the self.deleteLater() function is causing the application to crash. 
+        # https://stackoverflow.com/questions/37564728/pyqt-how-to-remove-a-layout-from-a-layout
+        # self.deleteLater()

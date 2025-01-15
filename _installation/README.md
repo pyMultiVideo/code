@@ -1,4 +1,20 @@
-# How to install pyMultiCamera
+# How to install pyMultiVideo
+
+## Cloning the repository
+
+The recommended way to install this program is to clone this repository using github. If you intend on installing it for all users consider installing it in `C:/Program Files`.
+
+To install using github: 
+
+1. Install git bash if you havent already. 
+2. Open the Git Bash powershell
+3. Navigate to the folder you would like to install the repository in (using the e.g. `cd C:/Program Files/`)
+4. clone the repository `git clone https://github.com/pyMultiVideo/code.git`
+
+After this has been done, to update the repositiory: 
+
+1. Navigate to the folder you installed pyMultiVideo `cd path/to/code/`
+2. Pull changes from the repository `git pull`
 
 ## Batch file for installation of the application dependancies
 
@@ -8,9 +24,7 @@ To install this application you can run these powershell installation scripts.
   2. [INSTALL_PYSPIN.ps1](/_installation/INSTALL_PYSPIN.ps1).  
   3. [INSTALL_FFMPEG.ps1](/_installation/INSTALL_FFMPEG.ps1)
 
-If you don't have permission to run powershell scripts on your computer, consider running the script line by line (by copying and pasting the scripts into powershell (as administrator) and pressing enter)
-
-For the installtion to work properly, you must run the installation scripts in the directory that they are being saved in. 
+IMPORTANT: For the installtion to work properly, you must run the installation scripts in the directory that they are being saved in. 
 
 You can check the requirements of the installation were met with the following scripts
 
@@ -19,18 +33,24 @@ You can check the requirements of the installation were met with the following s
 
 ## What the scripts do
 
-### Spinnaker SDK
+### INSTALL_MINICONDA.ps1
 
-Get the Spinnaker SDK from their [website](https://www.teledynevisionsolutions.com/products/spinnaker-sdk/?model=Spinnaker%20SDK&vertical=machine%20vision&segment=iis). A login is required to download this.
-*It has only be tested using python 3.10*
+This script installs a virtual environment manager called miniconda. At a high level, a virtual enviroment is a separate installation of python. This is useful for avoiding dependancies conflicts that occur between different python packages that you might want to install. For more information an article is linked [here](https://medium.com/@aminasaeed223/a-comprehensive-tutorial-on-miniconda-creating-virtual-environments-and-setting-up-with-vs-code-f98d22fac8e2).
 
-The Spinnaker SDK has some specific requirements that mean installing the application has some specific requirements
-
+This is useful here because the pyMultiVideo requires the following: 
 1. The latest version of python that the SDK supports is `python==3.10`
 2. The SDK does not support numpy version 2 or above.
-For these reasons I would suggest that you use create a different virtural environment specifically for running this application (I used [anaconda](https://www.anaconda.com/) to do this)
 
-### FFMPEG Installation
+The script also creates a python 3.10 virtual environment in miniconda and installs the requirements of pyMutliVideo, with the execption of the PySpin API which is installed in `INSTALL_PYSPIN.ps1`
+
+### INSTALL_PYSPIN.ps1
+
+Get the Spinnaker SDK from their [website](https://www.teledynevisionsolutions.com/products/spinnaker-sdk/?model=Spinnaker%20SDK&vertical=machine%20vision&segment=iis).
+*It has only be tested using python 3.10*
+
+This SDK is installed on the computer and the spinnaker python api is also downloaded, and installed into the miniconda virtual environment. 
+
+### INSTALL_FFMPEG
 
 The encoder in this application uses ffmpeg so you need ffmpeg installed (by simply running [this](/_installation/CHECK_FFMPEG_INSTALLATION.ps1) script.) as well as the ffmpeg api ([`pip install ffmpeg-python`](https://pypi.org/project/ffmpeg-python/))
 
@@ -43,21 +63,6 @@ To support USB cameras :
 
 ### Other dependancies
 
-The GUI is made using the QT framework
+- `PyQt6` (Main GUI)
+- `pyqtgraph` (for displaying images to GUI)
 
-- `PyQt6`
-- `pyqtgraph`
-
-## Known Bugs
-
-> Check the ErrorLog.txt if it is generated for error messages from python.
-
-- Fixes required:
-  - Should be verticallly scaling hot horizontally scaling
-  - Handle with error message what happens when recording does not start ( because the error message that is being give)
-  - Pixel formatting is not correct for the camera recording pipe to work properly.
-    - yuv420 is not in the list of file formats so it has to be yuv420p. (Think about how to implement this)
-    More generally there should be ways of showing these error messages to the user so they can debug...
-  - need to rename the to the release name
-  - Automatically running the pyw file from the file explorer opens it in 3.11**
-- Flickering from the cameras in the lab i am not sure why though...

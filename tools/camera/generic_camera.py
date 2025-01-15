@@ -48,8 +48,8 @@ class GenericCamera:
     def get_next_image(self) -> np.ndarray:
         """Function returns an image from the camera as a numpy array
 
-        Important Note: the aquisition of the next image from the camera can be a blocking function 
-        (i.e. the function will prevent any other functions from being called without being completed). This will block the GUI from updating. 
+        Important Note: the aquisition of the next image from the camera can be a blocking function
+        (i.e. the function will prevent any other functions from being called without being completed). This will block the GUI from updating.
         Make sure that there is a timeout for the time taken to get the image if this is the case
 
         Returns:
@@ -91,3 +91,19 @@ class GenericCamera:
             "Line2": False,
             "Line3": False,
         }
+
+
+def list_available_cameras() -> list[str]:
+    """Place holder function which returns a list of the available cameras.
+    The should be uniquly idenified as a string.
+    
+    naming format requirements: NUMBERS-MODULENAME
+    type(name) == str
+    """
+    unique_id_list = []
+    return unique_id_list
+
+def initialise_by_id(_id, CameraSettingsConfig=None):
+    """Function that returns a camera instance based on the _id"""
+    
+    return GenericCamera()

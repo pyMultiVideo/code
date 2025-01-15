@@ -1,6 +1,6 @@
 import pandas as pd
-from tools.data_classes import CameraSettingsConfig
-from tools.load_camera import get_unique_ids, load_saved_setups
+from tools.custom_data_classes import CameraSettingsConfig
+from tools.load_camera import find_all_cameras
 import PyQt6.QtWidgets as QtWidgets
 from PyQt6.QtWidgets import (
     QGroupBox,
@@ -12,14 +12,16 @@ from PyQt6.QtWidgets import (
 )
 import json
 import os
-import db as database
+from tools.database import ProjectDatabase, ROOT
 from dataclasses import asdict
 import config.ffmpeg_config as ffmpeg_config
+from pyqtgraph import QtCore
+
+QtCore.pyqtClassInfo
 
 
 class Camera:
     """Class that contains the setup for the camera widget inside the Camera Tab"""
-
     def __init__(
         self, setups_table, name, unique_id, fps, pxl_fmt, downsampling_factor
     ):
@@ -132,14 +134,15 @@ class CamerasTab(QtWidgets.QWidget):
         self.GUI = parent
 
         self._initialize_camera_groupbox()
+
+        self.database = ProjectDatabase(ROOT)
         self.saved_setups_file = os.path.join(
-            database.this.paths["camera_dir"], "cameras_configs.json"
+            self.database.get_path("camera_dir"), "cameras_configs.json"
         )
-        # self.ffmpeg_config_options_file  = os.path.join(database.this.paths['camera_dir'] , '/ffmpeg_configs.json' )
         #
         self.setups: dict[str, Camera] = {}  # Dict of setups: {Unique_id: Setup}
         # Get a list of the saved setups from the database
-        self.saved_setups = self.load_saved_setups()
+        self.saved_setups = self.database.load_saved_setups()
         self.ffmpeg_config: dict = ffmpeg_config.dict
         self.refresh()
         # flag to check if the setups have changed (which can be used to update things about the viewfinder tab)
@@ -157,10 +160,6 @@ class CamerasTab(QtWidgets.QWidget):
         self.page_layout.addWidget(self.camera_table_groupbox)
         # self.setLayout(self.camera_table_layout)
         self.setLayout(self.page_layout)
-
-    def load_saved_setups(self) -> list[CameraSettingsConfig]:
-        """Function to load the saved setups from the database as a list of Setup objects"""
-        return load_saved_setups(database)
 
     def load_ffmpeg_config_dict(self) -> dict:
         """Function to load the ffmpeg config dictionary"""
@@ -217,7 +216,8 @@ class CamerasTab(QtWidgets.QWidget):
         It will also remove any setups that are no longer connected.
         """
         # Get a list of connected cameras (based on their unique id)
-        connected_cameras = get_unique_ids()
+        connected_cameras = find_all_cameras()
+        print(connected_cameras)
         # Check if the connected cameras are the same as the setups
         if not connected_cameras == self.setups.keys():
             # Add any new cameras setups to the setups (comparing unique_ids)
@@ -317,7 +317,8 @@ class CameraOverviewTable(QTableWidget):
         super(CameraOverviewTable, self).__init__(parent)
         self.parent = parent
         # Set the camera table to the camera_table in the database
-        self.camera_dict: pd.DataFrame = database.camera_dict
+        self.database = ProjectDatabase(ROOT)
+        self.camera_dict: pd.DataFrame = self.database.camera_data
         # Configure the camera table
         self.configure_camera_table()
         # table is populated row by row. Specifically when each new camera is connected view instantiation of a new Setup object
