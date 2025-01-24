@@ -1,9 +1,9 @@
 # Tabs
-from GUI.VideoCaptureTab import VideoCaptureTab
-from GUI.CameraSetupTab import CamerasTab
-from GUI.GUI_main import GUIApp
-from GUI.ViewfinderWidget import ViewfinderWidget
+from .video_capture_tab import VideoCaptureTab
+from .camera_setup_tab  import CamerasTab
+from .gui_main          import GUIMain
+from .viewfinder_widget import ViewfinderWidget
 
 # Dialogs
-from GUI.dialogs import show_warning_message
-from GUI.dialogs import show_info_message
+from .dialogs import show_warning_message
+from .dialogs import show_info_message

@@ -10,14 +10,15 @@ import os
 import pandas as pd
 
 # import tab classes
-from GUI.VideoCaptureTab import VideoCaptureTab
-from GUI.CameraSetupTab import CamerasTab
+from . import VideoCaptureTab
+from . import CamerasTab
+from config import paths_config_dict
 
 if os.name == "nt":
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("pyMultiVideo")
 
 
-class GUIApp(QMainWindow):
+class GUIMain(QMainWindow):
     """
     Class to create the main GUI window
     """
@@ -26,6 +27,7 @@ class GUIApp(QMainWindow):
         super().__init__()
         self.startup_config = parsed_args.config
         self.logger = logging.getLogger(__name__)
+        self.paths = paths_config_dict
         self._load_camera_names()
         # Initialise the tab classess
         self._set_icons()
@@ -41,7 +43,7 @@ class GUIApp(QMainWindow):
 
     def _set_icons(self):
         """Set the icons for the GUI"""
-        icon = QIcon("assets/logo/pyMultiVideo.svg")
+        icon = QIcon(os.path.join(self.paths["assets_dir"], "logo.svg"))
         self.setWindowIcon(icon)
         self.statusBar().showMessage("Ready")
 
@@ -60,11 +62,17 @@ class GUIApp(QMainWindow):
 
     def _load_camera_names(self):
         # Get list of json files in the configs folder
-        json_files = [f for f in os.listdir("config") if f.endswith(".json")]
+        json_files = [
+            f for f in os.listdir(self.paths["config_dir"]) if f.endswith(".json")
+        ]
 
-        for setup in json_files:
-            name = setup.split(".")[0]
-            setattr(self, name, json.load(open(f"config/{setup}")))
+        for config_file in json_files:
+            name = config_file.split(".")[0]
+            setattr(
+                self,
+                name,
+                json.load(open(os.path.join(self.paths["config_dir"], config_file))),
+            )
 
         logging.info("Loaded configurations: " + ", ".join(json_files))
 
@@ -116,7 +124,7 @@ class GUIApp(QMainWindow):
         """
         Refresh the pages that require it
         """
-        # self.setups_tab.refresh()
+        self.camera_setup_tab.refresh()
         self.video_capture_tab.refresh()
 
     def resizeEvent(self, event):

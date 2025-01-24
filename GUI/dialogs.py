@@ -37,7 +37,6 @@ def show_warning_message(
     if okayButtonPresent:
         warning_dialog.addButton(QMessageBox.StandardButton.Ok)
 
-    result = warning_dialog.exec()
 
     if ignoreButtonPresent and warning_dialog.clickedButton().text() == "Ignore":
         return True

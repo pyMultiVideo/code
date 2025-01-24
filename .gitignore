@@ -8,5 +8,5 @@ test_notebook.ipynb
 _installation/SDK/*
 _installation/miniconda.exe
 _installation/spinview/spinnakerSDK.exe
-config/cameras_configs.json
+config/camera_configs.json
 

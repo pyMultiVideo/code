@@ -1,4 +1,4 @@
-dict = {
+dictionary = {
     # This has no impact of the rate at which the buffer is emptied
     "update_display_rate": 30,  # (Hz) the rate at which the function for updating the display is called.
     # For the spinnaker cameras, this is always going to be fast enough when the camera buffer is set to 10.

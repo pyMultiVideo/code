@@ -1,10 +1,9 @@
 import numpy as np
 from datetime import datetime
 import logging
-import PySpin
 
-# Import the dataclass
-from .generic_camera import GenericCamera
+import PySpin
+from . import GenericCamera
 
 
 class SpinnakerCamera(GenericCamera):
@@ -50,14 +49,6 @@ class SpinnakerCamera(GenericCamera):
 
     # Functions to get the camera parameters
 
-    # def get_exposure_time(self) -> int:
-    #     """
-    #     This Python function retrieves the exposure time value from a camera node map.
-    #     :return: The `get_exposure_time` function returns an integer value representing the exposure
-    #     time of a camera.
-    #     """
-    #     nodemap = self.cam.GetNodeMap()
-    #     return PySpin.CFloatPtr(nodemap.GetNode("ExposureTime")).GetValue()
 
     def get_width(self) -> int:
         """
@@ -432,6 +423,7 @@ class SpinnakerCamera(GenericCamera):
 
 
 def list_available_cameras(VERBOSE=False) -> list[str]:
+    """PySpin specific implementation of getting a list of serial numbers from all the pyspin cameras"""
     unique_id_list = []
     pyspin_system = PySpin.System.GetInstance()
     pyspin_cam_list = pyspin_system.GetCameras()
@@ -463,6 +455,7 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
     return unique_id_list
     
 def initialise_by_id(_id, CameraSettingsConfig):
+    """Instantiate the SpinnakerCamera object based on the unique-id"""
     return SpinnakerCamera(
         unique_id=_id, 
         CameraConfig=CameraSettingsConfig

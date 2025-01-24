@@ -1,5 +1,6 @@
 # core python
 import csv
+import sys
 import json
 import subprocess
 import logging
@@ -8,10 +9,9 @@ import os
 from collections import deque
 
 # video
-import ffmpeg
 import numpy as np
 import pyqtgraph as pg
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QFont
 
 # gui
 from PyQt6.QtWidgets import (
@@ -24,15 +24,13 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PyQt6.QtGui import QFont
-from GUI.CameraSetupTab import CamerasTab
-from GUI.dialogs import show_warning_message
-from tools.camera.spinnaker import SpinnakerCamera as CameraObject
-from tools.camera_options import cbox_update_options
-from tools.custom_data_classes import CameraSetupConfig
-from tools.load_camera import init_camera
-import config.ffmpeg_config as ffmpeg_config
-import config.gui_config as gui_config
+from .dialogs import show_warning_message
+from tools import cbox_update_options
+from tools import CameraSetupConfig
+from tools import init_camera
+from config import ffmpeg_config_dict
+from config import gui_config_dict
+from config import paths_config_dict
 
 
 class ViewfinderWidget(QWidget):
@@ -48,9 +46,10 @@ class ViewfinderWidget(QWidget):
     ):
         super(ViewfinderWidget, self).__init__(parent)
         self.view_finder = parent
-        self.camera_setup_tab: CamerasTab = self.view_finder.GUI.camera_setup_tab
+        self.camera_setup_tab = self.view_finder.GUI.camera_setup_tab
         # Camera object is the camera api that is being used that has generic versions of the core functions
         self.logger = logging.getLogger(__name__)
+        self.paths = paths_config_dict
         # Camera attributes
         self.label = label
         self.subject_id = subject_id
@@ -66,7 +65,7 @@ class ViewfinderWidget(QWidget):
         self.unique_id = self.camera_settings.unique_id
         self.downsampling_factor = 1
 
-        self.camera_object: CameraObject = init_camera(
+        self.camera_object = init_camera(
             self.unique_id, self.camera_settings
         )
 
@@ -90,34 +89,6 @@ class ViewfinderWidget(QWidget):
         # Header Layout for groupbox
         self.camera_header_layout = QHBoxLayout()
 
-        # Downsampling factor
-        # self.downsampling_factor_label = QLabel("Downsampling Factor:")
-        # self.downsampling_factor_text = QComboBox()
-        # self.downsampling_factor_text.addItems(["1", "2", "4", "8"])
-        # self.downsampling_factor_text.setCurrentText("1")
-        # self.downsampling_factor = 1
-        # self.downsampling_factor_text.currentTextChanged.connect(
-        #     self.change_downsampling_factor
-        # )
-
-        # Pxl fmt
-        # self.pxl_fmt_label = QLabel("Pixel Format:")
-        # self.pxl_fmt_cbox = QComboBox()
-        # self.pxl_fmt_cbox.addItems(self.camera_object.get_available_pixel_fmt())
-        # self.pxl_fmt_cbox.setCurrentText(
-        #     self.camera_settings.pxl_fmt
-        # )  # default settings
-        # self.pxl_fmt_cbox.currentTextChanged.connect(self.change_pxl_fmt)
-        # self.pxl_fmt_cbox.setEnabled(False)
-
-        # FPS
-        # self.fps_label = QLabel("FPS:")
-        # self.fps_cbox = QComboBox()
-        # self.fps_cbox.addItems(["30", "60", "120"])
-        # self.fps_cbox.setCurrentText(self.camera_settings.fps)
-        # self.fps_cbox.currentTextChanged.connect(self.change_fps)
-        # self.fps_cbox.setEnabled(False)
-
         # Subject ID
         self.subject_id_label = QLabel("Subject ID:")
         self.subject_id_text = QTextEdit()
@@ -127,7 +98,9 @@ class ViewfinderWidget(QWidget):
 
         # Button for recording video
         self.start_recording_button = QPushButton("")
-        self.start_recording_button.setIcon(QIcon("assets/icons/record.svg"))
+        self.start_recording_button.setIcon(
+            QIcon(os.path.join(self.paths["assets_dir"], "record.svg"))
+        )
         self.start_recording_button.setFixedWidth(30)
         # self.start_recording_button.setFixedHeight(30)
         self.start_recording_button.setEnabled(False)
@@ -135,7 +108,7 @@ class ViewfinderWidget(QWidget):
 
         # Button for stopping recording
         self.stop_recording_button = QPushButton("")
-        self.stop_recording_button.setIcon(QIcon("assets/icons/stop.svg"))
+        self.stop_recording_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "stop.svg")))
         self.stop_recording_button.setFixedWidth(30)
         # self.stop_recording_button.setFixedHeight(30)
         self.stop_recording_button.setEnabled(False)
@@ -151,12 +124,6 @@ class ViewfinderWidget(QWidget):
         # Add the widgets to the layout
         self.camera_header_layout.addWidget(self.camera_id_label)
         self.camera_header_layout.addWidget(self.camera_dropdown)
-        # self.camera_header_layout.addWidget(self.downsampling_factor_label)
-        # self.camera_header_layout.addWidget(self.downsampling_factor_text)
-        # self.camera_header_layout.addWidget(self.fps_label)
-        # self.camera_header_layout.addWidget(self.fps_cbox)
-        # self.camera_header_layout.addWidget(self.pxl_fmt_label)
-        # self.camera_header_layout.addWidget(self.pxl_fmt_cbox)
         self.camera_header_layout.addWidget(self.subject_id_label)
         self.camera_header_layout.addWidget(self.subject_id_text)
         self.camera_header_layout.addWidget(self.start_recording_button)
@@ -431,8 +398,13 @@ class ViewfinderWidget(QWidget):
         downsampled_width = int(self.cam_width / self.downsampling_factor)
         downsampled_height = int(self.cam_height / self.downsampling_factor)
 
+        if getattr(sys, 'frozen', False):
+            ffmpeg_path = gui_config_dict["PATH_TO_FFMPEG_FROZEN"]
+        else:
+            ffmpeg_path = gui_config_dict["PATH_TO_FFMPEG_SOURCE"]
+
         ffmpeg_command = [
-            gui_config.dict["PATH_TO_FFMPEG"],
+            ffmpeg_path,
             "-y",  # overwrite output file if it exists
             "-f",
             "rawvideo",
@@ -447,9 +419,9 @@ class ViewfinderWidget(QWidget):
             "-i",
             "pipe:",  # input comes from a pipe
             "-vcodec",
-            ffmpeg_config.dict["output"]["encoder"][self.view_finder.encoder],
+            ffmpeg_config_dict["output"]["encoder"][self.view_finder.encoder],
             "-pix_fmt",
-            ffmpeg_config.dict["output"]["pxl_fmt"][self.pxl_fmt],
+            ffmpeg_config_dict["output"]["pxl_fmt"][self.pxl_fmt],
             "-preset",
             "fast",
             "-crf",
@@ -615,10 +587,6 @@ class ViewfinderWidget(QWidget):
         self.start_recording_button.setEnabled(True)
         self.subject_id_text.setEnabled(True)
         self.camera_dropdown.setEnabled(True)
-        # self.downsampling_factor_label.setEnabled(True)
-        # self.fps_label.setEnabled(True)
-        # self.pxl_fmt_label.setEnabled(True)
-        # self.downsampling_factor_text.setEnabled(True)
         # Tabs can be changed
         self.view_finder.GUI.tab_widget.tabBar().setEnabled(True)
         self.logger.info("Recording Stopped")
@@ -638,10 +606,6 @@ class ViewfinderWidget(QWidget):
         )
         self._change_camera(camera_unique_id, new_camera_label)
 
-        # Change the data in the header for the camera
-        # self.fps_cbox.setCurrentText(self.camera_settings.fps)
-        # self.downsampling_factor_label.setText(self.camera_settings.downsampling_factor)
-        # self.pxl_fmt_cbox.setCurrentText(self.camera_settings.pxl_fmt)
 
     def _change_camera(self, new_unique_id, new_camera_label) -> None:
         # Set the new camera name
@@ -744,6 +708,6 @@ class ViewfinderWidget(QWidget):
         """
         self.camera_object.stop_capturing()
         self.view_finder.camera_layout.removeWidget(self)
-        # This post might suggest that the self.deleteLater() function is causing the application to crash. 
+        # This post might suggest that the self.deleteLater() function is causing the application to crash.
         # https://stackoverflow.com/questions/37564728/pyqt-how-to-remove-a-layout-from-a-layout
         # self.deleteLater()

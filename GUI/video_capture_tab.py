@@ -1,4 +1,5 @@
 import time
+import os
 from math import sqrt, ceil
 import json
 import logging
@@ -22,12 +23,11 @@ from PyQt6.QtGui import QFont, QIcon
 from PyQt6.QtCore import QTimer
 
 from dataclasses import asdict
-from tools.custom_data_classes import ExperimentConfig, CameraSetupConfig
-from GUI.ViewfinderWidget import ViewfinderWidget
-from GUI.CameraSetupTab import CamerasTab
-from GUI.dialogs import show_info_message
-from tools.database import ProjectDatabase, ROOT
-import config.gui_config as gui_config
+from .viewfinder_widget import ViewfinderWidget
+from .dialogs import show_info_message
+from tools import ExperimentConfig, CameraSetupConfig
+from config import gui_config_dict
+from config import paths_config_dict
 
 
 class VideoCaptureTab(QWidget):
@@ -36,13 +36,10 @@ class VideoCaptureTab(QWidget):
     def __init__(self, parent=None):
         super(VideoCaptureTab, self).__init__(parent)
         self.GUI = parent
-        self.camera_setup_tab: CamerasTab = self.GUI.camera_setup_tab
+        self.camera_setup_tab = self.GUI.camera_setup_tab
         self.logging = logging.getLogger(__name__)
-        self.camera_groupboxes: List[ViewfinderWidget] = []
-        self.database = ProjectDatabase(ROOT)
-        self.camera_database = (
-            self.database.load_saved_setups()
-        )  # list of camera_configs
+        self.camera_groupboxes = []
+        self.paths = paths_config_dict
         self._init_header_groupbox()
         self._init_viewfinder_groupbox()
         # self._init_visibility_control_groupbox()
@@ -110,7 +107,9 @@ class VideoCaptureTab(QWidget):
         self.camera_quantity_spin_box.setValue(1)
         #
         self.save_camera_config_button = QPushButton("Save Layout")
-        self.save_camera_config_button.setIcon(QIcon("assets/icons/save.svg"))
+        self.save_camera_config_button.setIcon(
+            QIcon(os.path.join(self.paths["assets_dir"], "save.svg"))
+        )
         self.save_camera_config_button.setFixedHeight(30)
         self.save_camera_config_button.clicked.connect(self.save_experiment_config)
 
@@ -142,7 +141,9 @@ class VideoCaptureTab(QWidget):
 
         # Buttons for saving and loading camera configurations
         self.save_dir_button = QPushButton("")
-        self.save_dir_button.setIcon(QIcon("assets/icons/folder.svg"))
+        self.save_dir_button.setIcon(
+            QIcon(os.path.join(self.paths["assets_dir"], "save.svg"))
+        )
         self.save_dir_button.setFixedWidth(30)
         self.save_dir_button.setFixedHeight(30)
         self.save_dir_button.clicked.connect(self.get_save_dir)
@@ -152,9 +153,7 @@ class VideoCaptureTab(QWidget):
         self.save_dir_textbox.setMaximumBlockCount(1)
         self.save_dir_textbox.setFont(QFont("Courier", 12))
         self.save_dir_textbox.setReadOnly(True)
-        self.save_dir_textbox.setPlainText(self.database.get_path(key="data_dir"))
-        # self.save_dir_textbox.setPlainText(database.this.paths["data_dir"])
-
+        self.save_dir_textbox.setPlainText(self.paths["data_dir"])
         self._set_save_dir_layout()
 
     def _set_save_dir_layout(self):
@@ -168,14 +167,18 @@ class VideoCaptureTab(QWidget):
 
         # Button for recording video
         self.start_recording_button = QPushButton("")
-        self.start_recording_button.setIcon(QIcon("assets/icons/record.svg"))
+        self.start_recording_button.setIcon(
+            QIcon(os.path.join(self.paths["assets_dir"], "record.svg"))
+        )
         self.start_recording_button.setFixedWidth(30)
         self.start_recording_button.setFixedHeight(30)
         self.start_recording_button.clicked.connect(self.start_recording)
 
         # Button for stopping recording
         self.stop_recording_button = QPushButton("")
-        self.stop_recording_button.setIcon(QIcon("assets/icons/stop.svg"))
+        self.stop_recording_button.setIcon(
+            QIcon(os.path.join(self.paths["assets_dir"], "stop.svg"))
+        )
         self.stop_recording_button.setFixedWidth(30)
         self.stop_recording_button.setFixedHeight(30)
         self.stop_recording_button.clicked.connect(self.stop_recording)
@@ -212,7 +215,7 @@ class VideoCaptureTab(QWidget):
         self.display_update_timer = QTimer()
         self.display_update_timer.timeout.connect(self.update_display)
         self.display_update_timer.start(
-            int(1000 / gui_config.dict["update_display_rate"])
+            int(1000 / gui_config_dict["update_display_rate"])
         )  # 30 fps by default. Can be edited in the .json file
 
         self.refresh_timer = QTimer()
@@ -298,11 +301,11 @@ class VideoCaptureTab(QWidget):
                 camera.disconnect()
                 camera.deleteLater()
 
-            
         self.refresh()
 
     def initialize_camera_widget(self, label: str, subject_id=None):
         """Create a new camera widget and add it to the viewfinder tab"""
+        # create_new_viewfinder(self, label, subject_id)
         self.camera_groupboxes.append(
             ViewfinderWidget(
                 parent=self,

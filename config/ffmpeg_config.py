@@ -1,4 +1,4 @@
-dict = {
+dictionary = {
     "input": {},
     "output": {
         # Encoders available to ffmpeg 

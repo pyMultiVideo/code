@@ -3,28 +3,14 @@ File for installing the miniconda environment
 - This can be done for a local user or globally (Globally this required administrator privileges) for all account on the machine.
 #>
 
-# Would you like to install for all users (Administrator privileges required)
-$installAllUsersInput = Read-Host "Would you like to install for all users (Administrator privileges required)? (Y/N)"
-$installAllUsers = $false
-if ($installAllUsersInput -eq "Y") {
-    $installAllUsers = $true
-}
-
-# Check if they are administrator
+# Check if the script is running with administrator privileges
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
-if ($installAllUsers -and -not $isAdmin) {
-    Write-Output "Administrator privileges are required to install for all users. Please run the script as an administrator."
+if (-not $isAdmin) {
+    Write-Output "You must run this script as an administrator."
     exit
-} elseif (-not $installAllUsers) {
-    Write-Output "Installing Miniconda locally for the current user."
 }
 
-# Check if miniconda is installed in the directory that the user wants to install it in. 
-if ($installAllUsersInput -eq "Y") {
-    $minicondaPath = [System.Environment]::GetFolderPath('ProgramFiles')
-} else {
-    $minicondaPath = $env:USERPROFILE
-}
+$minicondaPath = [System.Environment]::GetFolderPath('ProgramFiles')
 
 Write-Output "Checking if miniconda is installed..."
 # Check if the miniconda installation exists in the path
@@ -35,6 +21,8 @@ if ($minicondaOutput) {
 } else {
     Write-Output "Miniconda is not installed in $minicondaPath."
 }
+
+
 if ($minicondaOutput) {
     Write-Output "Skipping the downloading and installation of the miniconda installation "
     } else {
@@ -84,8 +72,15 @@ try {
 
 Write-Host "Adding miniconda to PATH..."
 $envPath = [Environment]::GetEnvironmentVariable("PATH", "Machine")
-$newPath = $envPath + ";C:\Program Files\miniconda3\Scripts;C:\Program Files\miniconda3\condabin"
+$newPath = $envPath + ";C:\Program Files\miniconda3;C:\Program Files\miniconda3\Scripts;C:\Program Files\miniconda3\;C:\Program Files\miniconda3\Library\bin"
+# C:\Program Files\miniconda3\Scripts;C:\Program Files\miniconda3\condabin
 [Environment]::SetEnvironmentVariable("PATH", $newPath, "Machine")
 
+Write-Output "Finish running miniconda installation script. miniconda has been installed at $minicondaPath"
 
-Write-Output "Finish running miniconda installation script"
+# Restart powershell after adding miniconda to path
+Get-Process -Id $PID |
+        Select-Object -ExpandProperty Path |
+            ForEach-Object {
+                Invoke-Command { & "$_" } -NoNewScope
+                }

@@ -1,7 +1,7 @@
-import pandas as pd
-from tools.custom_data_classes import CameraSettingsConfig
-from tools.load_camera import find_all_cameras
+import json
+import os
 import PyQt6.QtWidgets as QtWidgets
+from pyqtgraph import QtCore
 from PyQt6.QtWidgets import (
     QGroupBox,
     QVBoxLayout,
@@ -10,18 +10,20 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QSpinBox,
 )
-import json
-import os
-from tools.database import ProjectDatabase, ROOT
 from dataclasses import asdict
-import config.ffmpeg_config as ffmpeg_config
-from pyqtgraph import QtCore
+
+
+from config import ffmpeg_config_dict
+from config import paths_config_dict
+from tools import CameraSettingsConfig
+from tools import find_all_cameras, load_saved_setups, load_camera_dict
 
 QtCore.pyqtClassInfo
 
 
 class Camera:
     """Class that contains the setup for the camera widget inside the Camera Tab"""
+
     def __init__(
         self, setups_table, name, unique_id, fps, pxl_fmt, downsampling_factor
     ):
@@ -135,15 +137,19 @@ class CamerasTab(QtWidgets.QWidget):
 
         self._initialize_camera_groupbox()
 
-        self.database = ProjectDatabase(ROOT)
+        self.paths = paths_config_dict
         self.saved_setups_file = os.path.join(
-            self.database.get_path("camera_dir"), "cameras_configs.json"
-        )
-        #
+                    self.paths["camera_dir"], "camera_configs.json"
+                )
         self.setups: dict[str, Camera] = {}  # Dict of setups: {Unique_id: Setup}
         # Get a list of the saved setups from the database
-        self.saved_setups = self.database.load_saved_setups()
-        self.ffmpeg_config: dict = ffmpeg_config.dict
+
+        self.saved_setups = load_saved_setups(
+            load_camera_dict(
+                camera_config_path=self.saved_setups_file
+            )
+        )
+        self.ffmpeg_config: dict = ffmpeg_config_dict
         self.refresh()
         # flag to check if the setups have changed (which can be used to update things about the viewfinder tab)
         self.setups_changed = False
@@ -208,6 +214,8 @@ class CamerasTab(QtWidgets.QWidget):
         # else:
         #     self.save_path.unlink(missing_ok=True)
 
+        # self.paths.load_camera_data()
+
         # self.refresh()
 
     def refresh(self):
@@ -217,7 +225,6 @@ class CamerasTab(QtWidgets.QWidget):
         """
         # Get a list of connected cameras (based on their unique id)
         connected_cameras = find_all_cameras()
-        print(connected_cameras)
         # Check if the connected cameras are the same as the setups
         if not connected_cameras == self.setups.keys():
             # Add any new cameras setups to the setups (comparing unique_ids)
@@ -255,6 +262,7 @@ class CamerasTab(QtWidgets.QWidget):
             for unique_id in set(self.setups.keys()) - set(connected_cameras):
                 # Sequence for removed a setup from the table (and deleting it)
                 self.setups.pop(unique_id)
+                self.camera_table.remove(unique_id)
 
     def get_setups_labels(self) -> list[str]:
         """Function to get the labels of the setups"""
@@ -316,18 +324,21 @@ class CameraOverviewTable(QTableWidget):
     def __init__(self, parent=None):
         super(CameraOverviewTable, self).__init__(parent)
         self.parent = parent
+        self.paths = paths_config_dict
         # Set the camera table to the camera_table in the database
-        self.database = ProjectDatabase(ROOT)
-        self.camera_dict: pd.DataFrame = self.database.camera_data
+        self.camera_dict = load_camera_dict(
+            os.path.join(self.paths["config_dir"], "camera_configs.json")
+        )
         # Configure the camera table
         self.configure_camera_table()
         # table is populated row by row. Specifically when each new camera is connected view instantiation of a new Setup object
 
     def configure_camera_table(self):
         self.header_names = (
-            self.camera_dict[0].keys()
-            if len(self.camera_dict) > 0
-            else ["Name", "Unique ID"]
+            # self.camera_dict[0].keys()
+            # if len(self.camera_dict) > 0
+            # else
+            ["Name", "Unique ID", "FPS", "Pxl Fmt", "Downsample Factor"]
         )
         self.setColumnCount(len(self.header_names))
         self.setRowCount(len(self.camera_dict))
@@ -361,3 +372,9 @@ class CameraOverviewTable(QTableWidget):
         self.horizontalHeader().setSectionResizeMode(
             8, QtWidgets.QHeaderView.ResizeMode.ResizeToContents
         )
+
+    def remove(self,unique_id):
+        for row in range(self.rowCount()):
+            if self.cellWidget(row, 1).text() == unique_id:
+                self.removeRow(row)
+                break   

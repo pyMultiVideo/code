@@ -1,7 +1,6 @@
 """
 This is a template class for which a new camera's functionality can be added to this application's interface.
 """
-
 import numpy as np
 from datetime import datetime
 

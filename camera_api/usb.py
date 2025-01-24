@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 
 # import the camera template
-from .generic_camera import GenericCamera
+from . import GenericCamera
 
 
 class USBCamera(GenericCamera):

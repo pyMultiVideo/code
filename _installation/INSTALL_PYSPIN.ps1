@@ -1,6 +1,14 @@
 ########################################################################################
 # Download Spinnarker Drivers and Python API
 ########################################################################################
+
+# Check if the script is running as administrator
+$isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
+if (-not $isAdmin) {
+    Write-Error "You must run this script as an administrator as you can only install the program for all users on this machine."
+    exit 1
+}
+
 Write-Output 'Downloading PySpin'
 $scriptDir = Get-Location
 $SDKPathDir = "$scriptDir\SDK\"
@@ -16,8 +24,8 @@ if (-Not (Test-Path -Path $spinviewInstallerDir)) {
 
 try {
     if (Test-Path -Path $spinviewInstallerDir) {
-        $skipEXEDownload = Read-Host "Would you like to skip downloading the Windows Installer? (Y/N)"
-        if ($skipEXEDownload -eq "Y") {
+        $skipEXEDownload = Read-Host "Would you like to download the Windows Installer for the FLIR installer? (Y/N). If unsure, Y."
+        if ($skipEXEDownload -eq "N") {
             Write-Output "Skipping download as per user request."
             
         } else {
@@ -35,8 +43,8 @@ try {
 
 try {
     if (Test-Path -Path $SDKPathDir) {
-        $skipDownload = Read-Host "Would you like to skip downloading the SDK? (Y/N)"
-        if ($skipDownload -eq "Y") {
+        $skipDownload = Read-Host "Would you like to download the SDK? (Y/N). If unsure, Y"
+        if ($skipDownload -eq "N") {
             Write-Output "Skipping download as per user request."
             
         } else {
@@ -74,25 +82,36 @@ try {
 ########################################################################################
 # Install
 ########################################################################################
-Write-Output 'Installing PySpin'
-Write-Output 'To install the spinnaker SDK for all users (Globally) you must be an administrator'
-$installScope = Read-Host "Would you like to install this [L]ocally or [G]lobally? (L/G)"
+Write-Output 'Installing PySpin on the global environment'
+# Write-Output 'To install the spinnaker SDK for all users (Globally) you must be an administrator'
+# $installScope = Read-Host "Would you like to install this [L]ocally or [G]lobally? (L/G)"
 
-# Check if they are administrator
+# Check if they are administrator   
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 
-# If you are not an administrator raise an error
-if ($installScope -eq "g" -and -not $isAdmin) {
-    throw "You must be an administrator to install globally."
-# Ig you have a global scope, get the correct path to the pyMultiCam_env
-} elseif ($installScope -eq "g") {
-    $systemPath = [System.Environment]::GetFolderPath('ProgramFiles') 
-    $envPath = "$systemPath\miniconda3\envs\pyMultiCam_env"
-} elseif ($installScope -eq "l") {
-    $envPath = "$env:USERPROFILE\miniconda3\envs\pyMultiCam_env"
-# } else {
-    # throw "Invalid input. Please enter 'L' or 'G'."
+try {
+    # This could be the first time they run conda so run conda init
+    conda init
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to initialize Conda. This might be because conda hasn't been added to path correctly. Consider restarting your powershell for changes to take place."
+    }
+    Write-Output "Conda initialization completed successfully."
+} catch {
+    Write-Error "An error occurred during Conda initialization: $_"
 }
+Write-Output "Restarting powershell"
+# Restart the profile as they this is required for conda init to function
+Get-Process -Id $PID |
+        Select-Object -ExpandProperty Path |
+            ForEach-Object {
+                Invoke-Command { & "$_" } -NoNewScope
+                }
+
+# Path to program files
+$systemPath = [System.Environment]::GetFolderPath('ProgramFiles') 
+$envPath = "$systemPath\miniconda3\envs\pyMultiCam_env"
+
+# Install spinnaker SDK
 try {
     Write-Output "Installing the spinnaker SDK"
     & "$spinviewInstallerDir\spinnakerSDK.exe" /install /silent
@@ -110,7 +129,7 @@ try {
     # Activate the Conda environment
     conda activate $envPath
     if ($LASTEXITCODE -ne 0) {
-        throw "Failed to activate Conda environment"
+        throw "Failed to activate Conda environment. This might be because conda hasn't been added to path correctly. Consider restarting your powershell for changes to take place."
     }
     Write-Output "Installing the Spinnaker python API"
     # Install the .whl file using pip
