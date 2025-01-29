@@ -1,7 +1,7 @@
 # Script to check if Miniconda is added to PATH
 
 # Function to check PATH for Miniconda
-function Check-MinicondaInPath {
+function Test-MinicondaInPath {
     param (
         [string]$PathVariable
     )
@@ -29,10 +29,10 @@ $userPath = [Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVar
 $systemPath = [Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)
 
 # Check if Miniconda is in User PATH
-$userHasMiniconda = Check-MinicondaInPath -PathVariable $userPath
+$userHasMiniconda = Test-MinicondaInPath -PathVariable $userPath
 
 # Check if Miniconda is in System PATH
-$systemHasMiniconda = Check-MinicondaInPath -PathVariable $systemPath
+$systemHasMiniconda = Test-MinicondaInPath -PathVariable $systemPath
 
 # Output the results
 if ($userHasMiniconda -or $systemHasMiniconda) {

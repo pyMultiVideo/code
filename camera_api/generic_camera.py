@@ -1,6 +1,7 @@
 """
 This is a template class for which a new camera's functionality can be added to this application's interface.
 """
+
 import numpy as np
 from datetime import datetime
 
@@ -40,9 +41,11 @@ class GenericCamera:
 
     def stop_capturing(self) -> None:
         """Function to the aquisition of images from the camera"""
+        pass
 
     def set_buffer_handling_mode(self) -> None:
         """Consider implementing a function that sets any internal camera buffer to overwrite the oldest image from the buffer to write a new image"""
+        pass
 
     def get_next_image(self) -> np.ndarray:
         """Function returns an image from the camera as a numpy array
@@ -91,18 +94,33 @@ class GenericCamera:
             "Line3": False,
         }
 
+    def trigger_start_recording(self) -> bool:
+        """Function that sends a signal to trigger recording if the output of this function is True.
+        This function will be called from by a refresh function enough times to be fast enough to start recording if required.
+
+        For this camera, the recording will be triggered by one of the GPIO line states being set to High.
+
+        In principle this function could do anything to start recording by doing something that means this function returns True.
+        """
+        return False
+
+    def trigger_stop_recording(self) -> bool:
+        """Conceptually same as above. This function is called if the camera is recording, and will take the outcome of this function (True / False) as a Trigger to stop recording"""
+        return False
+
 
 def list_available_cameras() -> list[str]:
     """Place holder function which returns a list of the available cameras.
     The should be uniquly idenified as a string.
-    
+
     naming format requirements: NUMBERS-MODULENAME
     type(name) == str
     """
     unique_id_list = []
     return unique_id_list
 
+
 def initialise_by_id(_id, CameraSettingsConfig=None):
     """Function that returns a camera instance based on the _id"""
-    
+
     return GenericCamera()

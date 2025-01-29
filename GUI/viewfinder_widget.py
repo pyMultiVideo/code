@@ -65,12 +65,10 @@ class ViewfinderWidget(QWidget):
         self.unique_id = self.camera_settings.unique_id
         self.downsampling_factor = 1
 
-        self.camera_object = init_camera(
-            self.unique_id, self.camera_settings
-        )
+        self.camera_api = init_camera(self.unique_id, self.camera_settings)
 
-        self.cam_width = self.camera_object.width
-        self.cam_height = self.camera_object.height
+        self.cam_width = self.camera_api.width
+        self.cam_height = self.camera_api.height
 
         # Layout
         self._init_camera_setup_groupbox()
@@ -108,7 +106,9 @@ class ViewfinderWidget(QWidget):
 
         # Button for stopping recording
         self.stop_recording_button = QPushButton("")
-        self.stop_recording_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "stop.svg")))
+        self.stop_recording_button.setIcon(
+            QIcon(os.path.join(self.paths["assets_dir"], "stop.svg"))
+        )
         self.stop_recording_button.setFixedWidth(30)
         # self.stop_recording_button.setFixedHeight(30)
         self.stop_recording_button.setEnabled(False)
@@ -166,7 +166,7 @@ class ViewfinderWidget(QWidget):
 
         self.validate_subject_id_input()
 
-        self.camera_object.begin_capturing()
+        self.camera_api.begin_capturing()
         # self.display_frame(self.camera_object.get_next_image())
 
         # initialise an object for keeping track of framerates
@@ -185,7 +185,7 @@ class ViewfinderWidget(QWidget):
         """
         try:
             # Retrieve the latest image from the camera
-            self.buffered_data = self.camera_object.retrieve_buffered_data()
+            self.buffered_data = self.camera_api.retrieve_buffered_data()
             if len(self.buffered_data["images"]) == 0:
                 return  # exit the function and wait to be called by the viewfinder tab.
             # Assign the first image of to the data to be displayed
@@ -384,8 +384,10 @@ class ViewfinderWidget(QWidget):
         self.ellipse.setText("GPIO Status: \u2b24", color=self.gpio_over_lay_color)
 
     def refresh(self):
-        """h the camera widget"""
+        """refresh the camera widget"""
         self.update_camera_dropdown()
+        # Check the camera API if it would like to stop or start recording
+        self.check_trigger_recording()
 
     def _init_ffmpeg_process(self) -> None:
         """
@@ -398,7 +400,7 @@ class ViewfinderWidget(QWidget):
         downsampled_width = int(self.cam_width / self.downsampling_factor)
         downsampled_height = int(self.cam_height / self.downsampling_factor)
 
-        if getattr(sys, 'frozen', False):
+        if getattr(sys, "frozen", False):
             ffmpeg_path = gui_config_dict["PATH_TO_FFMPEG_FROZEN"]
         else:
             ffmpeg_path = gui_config_dict["PATH_TO_FFMPEG_SOURCE"]
@@ -596,8 +598,8 @@ class ViewfinderWidget(QWidget):
     def change_camera(self) -> None:
         self.logger.info("Changing camera")
         # shut down old camera
-        if self.camera_object is not None:
-            self.camera_object.stop_capturing()
+        if self.camera_api is not None:
+            self.camera_api.stop_capturing()
         # Get the new camera ID
         new_camera_label = str(self.camera_dropdown.currentText())
         # from the setups tab, get the unique id of the camera
@@ -606,7 +608,6 @@ class ViewfinderWidget(QWidget):
         )
         self._change_camera(camera_unique_id, new_camera_label)
 
-
     def _change_camera(self, new_unique_id, new_camera_label) -> None:
         # Set the new camera name
         self.unique_id = new_unique_id
@@ -614,8 +615,8 @@ class ViewfinderWidget(QWidget):
         # Get the new camera settings
         self.camera_settings = self.camera_setup_tab.getCameraSettingsConfig(self.label)
         # Set the new camera object
-        self.camera_object = init_camera(new_unique_id, self.camera_settings)
-        self.camera_object.begin_capturing()
+        self.camera_api = init_camera(new_unique_id, self.camera_settings)
+        self.camera_api.begin_capturing()
         # Call the display function once
         # self.display_frame(self.camera_object.get_next_image())
         #  Update the list cameras that are currently being used.
@@ -674,7 +675,7 @@ class ViewfinderWidget(QWidget):
         # Set the new FPS
         self.camera_settings.fps = str(self.fps_cbox.currentText())
         # This function requires reinitalisation of the camera with the new FPS
-        self.camera_object.set_frame_rate(int(self.camera_settings.fps))
+        self.camera_api.set_frame_rate(int(self.camera_settings.fps))
 
     def change_pxl_fmt(self):
         """Change the pixel format of the camera"""
@@ -682,7 +683,7 @@ class ViewfinderWidget(QWidget):
         # Set the new pixel format to the camera settings datastructure
         self.camera_settings.pxl_fmt = str(self.pxl_fmt_cbox.currentText())
         # This function requires reinitalisation of the camera with the new pixel format
-        self.camera_object.set_pixel_format(self.camera_settings.pxl_fmt)
+        self.camera_api.set_pixel_format(self.camera_settings.pxl_fmt)
 
     ### Visibility Controls
 
@@ -706,8 +707,21 @@ class ViewfinderWidget(QWidget):
         It should be possible to also remove the camera from the groupboxes list from this function, however
         I have done this after this function is called, in the other places this function is called.
         """
-        self.camera_object.stop_capturing()
+        self.camera_api.stop_capturing()
         self.view_finder.camera_layout.removeWidget(self)
         # This post might suggest that the self.deleteLater() function is causing the application to crash.
         # https://stackoverflow.com/questions/37564728/pyqt-how-to-remove-a-layout-from-a-layout
         # self.deleteLater()
+
+    def check_trigger_recording(self):
+        """Function to check whether the camera API wants to stop or start recording."""
+        # If not recording check if there is a trigger to start recording
+        if self.recording is False:
+            if self.camera_api.trigger_start_recording() is True:
+                # Trigger recording
+                self.start_recording()
+        # If recording, check if there is a trigger to stop recording.
+        if self.recording is True:
+            if self.camera_api.trigger_stop_recording() is True:
+                # Stop recording
+                self.stop_recording()

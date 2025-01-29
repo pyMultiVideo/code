@@ -13,8 +13,7 @@ from PyQt6.QtWidgets import (
 from dataclasses import asdict
 
 
-from config import ffmpeg_config_dict
-from config import paths_config_dict
+from config import ffmpeg_config_dict, paths_config_dict
 from tools import CameraSettingsConfig
 from tools import find_all_cameras, load_saved_setups, load_camera_dict
 
@@ -139,15 +138,13 @@ class CamerasTab(QtWidgets.QWidget):
 
         self.paths = paths_config_dict
         self.saved_setups_file = os.path.join(
-                    self.paths["camera_dir"], "camera_configs.json"
-                )
+            self.paths["camera_dir"], "camera_configs.json"
+        )
         self.setups: dict[str, Camera] = {}  # Dict of setups: {Unique_id: Setup}
         # Get a list of the saved setups from the database
 
         self.saved_setups = load_saved_setups(
-            load_camera_dict(
-                camera_config_path=self.saved_setups_file
-            )
+            load_camera_dict(camera_config_path=self.saved_setups_file)
         )
         self.ffmpeg_config: dict = ffmpeg_config_dict
         self.refresh()
@@ -373,8 +370,8 @@ class CameraOverviewTable(QTableWidget):
             8, QtWidgets.QHeaderView.ResizeMode.ResizeToContents
         )
 
-    def remove(self,unique_id):
+    def remove(self, unique_id):
         for row in range(self.rowCount()):
             if self.cellWidget(row, 1).text() == unique_id:
                 self.removeRow(row)
-                break   
+                break

@@ -49,7 +49,6 @@ class SpinnakerCamera(GenericCamera):
 
     # Functions to get the camera parameters
 
-
     def get_width(self) -> int:
         """
         This Python function retrieves the width value from a node map using the PySpin library.
@@ -421,16 +420,30 @@ class SpinnakerCamera(GenericCamera):
     def is_streaming(self) -> bool:
         return self.cam.IsStreaming()
 
+    def trigger_start_recording(self) -> bool:
+        """Function that sends a signal to trigger recording if the output of this function is True.
+        This function will be called from by a refresh function enough times to be fast enough to start recording if required.
+
+        For this camera, the recording will be triggered by one of the GPIO line states being set to High.
+
+        In principle this function could do anything to start recording by doing something that means this function returns True.
+        """
+        return False
+
+    def trigger_stop_recording(self) -> bool:
+        """Conceptually same as above. This function is called if the camera is recording, and will take the outcome of this function (True / False) as a Trigger to stop recording"""
+        return False
+
 
 def list_available_cameras(VERBOSE=False) -> list[str]:
     """PySpin specific implementation of getting a list of serial numbers from all the pyspin cameras"""
     unique_id_list = []
     pyspin_system = PySpin.System.GetInstance()
     pyspin_cam_list = pyspin_system.GetCameras()
-    
+
     if VERBOSE:
         print(f"Number of cameras detected: {pyspin_cam_list.GetSize()}")
-    
+
     for cam in pyspin_cam_list:
         try:
             # Initialize the camera
@@ -446,20 +459,19 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
         finally:
             if cam.IsStreaming():
                 continue
-            else: 
+            else:
                 cam.DeInit()
-    
+
     # Release resources
     pyspin_cam_list.Clear()
-    
+
     return unique_id_list
-    
+
+
 def initialise_by_id(_id, CameraSettingsConfig):
     """Instantiate the SpinnakerCamera object based on the unique-id"""
-    return SpinnakerCamera(
-        unique_id=_id, 
-        CameraConfig=CameraSettingsConfig
-    )
+    return SpinnakerCamera(unique_id=_id, CameraConfig=CameraSettingsConfig)
+
 
 if __name__ == "__main__":
     pass
