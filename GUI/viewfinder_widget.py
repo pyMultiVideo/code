@@ -401,9 +401,9 @@ class ViewfinderWidget(QWidget):
         downsampled_height = int(self.cam_height / self.downsampling_factor)
 
         if getattr(sys, "frozen", False):
-            ffmpeg_path = gui_config_dict["PATH_TO_FFMPEG_FROZEN"]
+            ffmpeg_path = gui_config_dict["PATH_TO_FFMPEG"]
         else:
-            ffmpeg_path = gui_config_dict["PATH_TO_FFMPEG_SOURCE"]
+            ffmpeg_path = gui_config_dict["PATH_TO_FFMPEG"]
 
         ffmpeg_command = [
             ffmpeg_path,
