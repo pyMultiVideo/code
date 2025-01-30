@@ -1,5 +1,7 @@
 import os
-from tools import ROOT
+
+# Get the path of the root folder dynamicallyd
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 dictionary = {
     "ROOT": ROOT,

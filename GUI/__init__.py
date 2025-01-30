@@ -1,7 +1,7 @@
 # Tabs
 from .video_capture_tab import VideoCaptureTab
 from .camera_setup_tab  import CamerasTab
-from .gui_main          import GUIMain
+from .GUI_main          import GUIMain
 from .viewfinder_widget import ViewfinderWidget
 
 # Dialogs

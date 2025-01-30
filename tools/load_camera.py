@@ -120,23 +120,6 @@ def init_camera(_id, CameraSettingsConfig=None):
     )
 
 
-def find_project_root(marker="pyMultiVideo_GUI.pyw") -> str | None:
-    """Get the directory of the root folder based on the marker"""
-    if getattr(sys, "frozen", False):  # Check if the application is frozen
-        return sys._MEIPASS
-    else:
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-
-    while current_dir != os.path.dirname(current_dir):  # Stop at the root directory
-        if marker in os.listdir(current_dir):
-            return current_dir
-        current_dir = os.path.dirname(current_dir)
-    return None
-
-# Get the directory of the root
-ROOT = find_project_root()
-
-
 def load_saved_setups(camera_data) -> list[CameraSettingsConfig]:
     """Function to load the saved setups from the database as a list of Setup objects"""
     setups_from_database = []

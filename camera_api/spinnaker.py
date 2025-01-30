@@ -427,6 +427,8 @@ class SpinnakerCamera(GenericCamera):
         For this camera, the recording will be triggered by one of the GPIO line states being set to High.
 
         In principle this function could do anything to start recording by doing something that means this function returns True.
+        
+        This could also be triggered by a pattern of vSync pulses that are triggered by pyControl to the GPIO pins. This function could look for the trigger that could be send from a hardware definition's file from pyControl custom camera hardware class. 
         """
         return False
 

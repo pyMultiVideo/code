@@ -1,16 +1,16 @@
 from .custom_data_classes import (
     CameraSettingsConfig,
     CameraSetupConfig,
-    ExperimentConfig,
+    ExperimentConfig
 )
 from .custom_error_classes import FFMpegInitializationError
 from .load_camera import (
     find_all_cameras,
-    cbox_update_options,  # , create_new_viewfinder
+    cbox_update_options, 
     get_modules_in_package,
     init_camera,
-    find_project_root,
     load_saved_setups,
-    load_camera_dict,
-    ROOT,
+    load_camera_dict
 )
+
+from .version import __version__
