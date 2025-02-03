@@ -10,3 +10,6 @@ _installation/miniconda.exe
 _installation/spinview/spinnakerSDK.exe
 config/camera_configs.json
 
+test-open-cv-mac.py
+usb-cam-testing.py
+config/gui_config.py

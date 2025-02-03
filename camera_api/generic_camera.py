@@ -58,10 +58,9 @@ class GenericCamera:
             self.next_image: np.ndarray of the next image
         """
 
-    def get_image_timestamp(self, next_image) -> datetime:
+    def get_image_timestamp(self) -> datetime:
         """Function that returns a datetime object of the timestamp when the `next_image` was aquired"""
-        timestamp = None
-        return timestamp
+        return datetime.now()
 
     def retrieve_buffered_data(
         self,

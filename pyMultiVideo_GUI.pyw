@@ -31,10 +31,12 @@ check_module("cv2")
 # Import GUI now that dependancies are installed
 import PyQt6.QtWidgets as QtWidgets
 import GUI 
+from tools import __version__
 
 def main(parsed_args, unparsed_args):
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle("Fusion")
+    app.setApplicationName(f"pyMultiVideo v{__version__}")
     # Parse the arguments to main window
     gui = GUI.GUIMain(parsed_args)
     gui.show()

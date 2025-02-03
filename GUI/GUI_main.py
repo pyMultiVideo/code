@@ -124,7 +124,7 @@ class GUIMain(QMainWindow):
         """
         Refresh the pages that require it
         """
-        self.camera_setup_tab.refresh()
+        # self.camera_setup_tab.refresh()
         self.video_capture_tab.refresh()
 
     def resizeEvent(self, event):
