@@ -13,9 +13,12 @@ import pandas as pd
 from . import VideoCaptureTab
 from . import CamerasTab
 from config import paths_config_dict
+from tools import __version__
 
 if os.name == "nt":
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("pyMultiVideo")
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+        f"pyMultiVideo v{__version__}"
+    )
 
 
 class GUIMain(QMainWindow):
@@ -37,7 +40,7 @@ class GUIMain(QMainWindow):
         # self.init_performance_table()
         # Could add logger  here
         self.setGeometry(100, 100, 700, 800)  # x, y, width, height
-        self.setWindowTitle("pyMultiVideo")  # default window title
+        self.setWindowTitle(f"pyMultiVideo v{__version__}")  # default window title
         self.setCentralWidget(self.tab_widget)
         self.show()  # show the GUI
 
@@ -118,7 +121,7 @@ class GUIMain(QMainWindow):
         """Initialise the timers"""
         self.refresh_timer = QTimer()
         self.refresh_timer.timeout.connect(self.refresh)
-        self.refresh_timer.start(1000)
+        # self.refresh_timer.start(1000)
 
     def refresh(self):
         """
@@ -148,9 +151,9 @@ class GUIMain(QMainWindow):
         data_dir = "data"
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
-        self.performance_table.to_csv(
-            os.path.join(data_dir, "performance_table.csv"), index=False
-        )
+        timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"performance_table_{timestamp}.csv"
+        self.performance_table.to_csv(os.path.join(data_dir, filename), index=False)
 
     # Exception handling
 
