@@ -79,7 +79,7 @@ class VideoCaptureTab(QWidget):
         self.encoder_selection.addItems(
             self.camera_setup_tab.ffmpeg_config["output"]["encoder"].keys()
         )
-        self.encoder_selection.setCurrentIndex(0)
+        self.encoder_selection.setCurrentIndex(1)
         self.encoder = self.encoder_selection.currentText()
         self.encoder_selection.currentIndexChanged.connect(self.change_encoder)
         self._set_aquire_layout()
@@ -227,6 +227,7 @@ class VideoCaptureTab(QWidget):
         Function that calls the required functions to collect, encode and display the images from the camera.
         """
         TESTING = False
+        # TESTING = True
         if TESTING is True:
             for camera in self.camera_groupboxes:
                 # check if the camera is in the performance_table as a column

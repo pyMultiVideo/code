@@ -209,25 +209,6 @@ class ViewfinderWidget(QWidget):
 
             pass
 
-    def check_for_lost_frames(self, CAMERA_BUFFER_SIZE: int = 10):
-        """Function to check whether the application is loosing frames. This is done by calculating the time difference between two frames
-        and if it exceeds 50% of the allowed time to completely fill up the buffer.
-        """
-        TIME_GAP = 1 / (2 * (self.fps / CAMERA_BUFFER_SIZE))
-
-        if len(self.frame_timestamps) < 2:
-            return
-
-        time_diff = (
-            self.frame_timestamps[-1] - self.frame_timestamps[-2]
-        ).total_seconds()
-        if time_diff > TIME_GAP:
-            show_warning_message(
-                input_text="The time gap between frames is too large. Frames might be getting lost.",
-                okayButtonPresent=True,
-                ignoreButtonPresent=False,
-            )
-
     def display_average_frame_rate(self):
         """
         Function that checks if the rate of frame aquisiton is as correct.
@@ -249,15 +230,16 @@ class ViewfinderWidget(QWidget):
         # Calculate the framerate
         calculated_framerate = 1 / avg_time_diff
 
-        if calculated_framerate > int(self.fps) + 1:
+        # if calculated_framerate < int(self.fps) + 1:
+        if abs(calculated_framerate - int(self.fps)) < 1:
             color = "r"
-            if self.FRAMERATEWARNINGSUPPRESSED is False:
-                # if the framerate is too low raise a warining to the user?
-                self.FRAMERATEWARNINGSUPPRESSED = show_warning_message(
-                    input_text="The required aquisition framerate is note being met. You could be dropping frames. ",
-                    okayButtonPresent=False,
-                    ignoreButtonPresent=True,
-                )
+            # if self.FRAMERATEWARNINGSUPPRESSED is False:
+            #     # if the framerate is too low raise a warining to the user?
+            #     self.FRAMERATEWARNINGSUPPRESSED = show_warning_message(
+            #         input_text="The required aquisition framerate is note being met. You could be dropping frames. ",
+            #         okayButtonPresent=False,
+            #         ignoreButtonPresent=True,
+            #     )
         else:
             color = "g"
         # Display the implied framerate from the calcualtion
@@ -361,7 +343,7 @@ class ViewfinderWidget(QWidget):
         # self.ellipse.setFont(self.ellipse_font)
         self.text.setText("GPIO Status: \u2b24", color=self.gpio_over_lay_color)
 
-    def update_gpio_overlay(self, DECAY=0.01) -> None:
+    def update_gpio_overlay(self, DECAY=0.1) -> None:
         """Draw the GPIO data on the image"""
 
         if self._GPIO_data is None:
