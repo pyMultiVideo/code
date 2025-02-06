@@ -384,30 +384,34 @@ class SpinnakerCamera(GenericCamera):
         "Get the GPIO data from the camera"
 
         try:
-            node_line_selector = PySpin.CEnumerationPtr(
-                self.cam.GetNodeMap().GetNode("LineSelector")
-            )
-            if not PySpin.IsAvailable(node_line_selector) or not PySpin.IsReadable(
-                node_line_selector
-            ):
-                raise Exception("LineSelector node not available.")
+            nodemap = self.cam.GetNodeMap()
 
-            line_entries = node_line_selector.GetEntries()
+            # Access the EventLine0AnyEdgeTimestamp node (replace with the correct name if different)
+            line_status = PySpin.CIntegerPtr(nodemap.GetNode('LineStatusAll'))
 
-            self.GPIO_data = {}
-            for line_entry in line_entries:
-                line_name = line_entry.GetName()
+            if line_status is None:
+                print("GPIO data not available.")
+                return
 
-                node_line_status = PySpin.CBooleanPtr(
-                    self.cam.GetNodeMap().GetNode("LineStatus")
-                )
-                if not PySpin.IsAvailable(node_line_status) or not PySpin.IsReadable(
-                    node_line_status
-                ):
-                    raise Exception("LineStatus node not available.")
+            # Retrieve the timestamp (it might be in microseconds or a similar unit)
+            timestamp_value = line_status.GetValue()
+            # Pad the timestamp to 8-bit binary
+            timestamp_binary = format(timestamp_value, '08b')
+            # print(f"(8-bit binary): {timestamp_binary}")
 
-                line_state = node_line_status.GetValue()
-                self.GPIO_data[line_name] = line_state
+            # Create a dictionary to store the outputs
+            self.GPIO_data = {
+                'Line0': bool(int(timestamp_binary[0])),
+                'Line1': bool(int(timestamp_binary[2])),
+                'Line2': bool(int(timestamp_binary[4])),
+                'Line3': bool(int(timestamp_binary[6]))
+            }
+
+
+        except PySpin.SpinnakerException as e:
+            print(f"Spinnaker error occurred: {e}")
+        except Exception as e:
+            print(f"General error: {e}")
 
         except Exception as e:
             self.logger.error(f"Error getting GPIO data: {e}")

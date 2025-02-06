@@ -350,15 +350,15 @@ class ViewfinderWidget(QWidget):
             self.gpio_over_lay_color = DECAY * np.array(self.gpio_over_lay_color)
         elif self._GPIO_data is not None:
             new_color = self.gpio_over_lay_color.copy()
-            for i, line in enumerate(self._GPIO_data):
-                if i == 3:
+            for line_index, gpio_state in enumerate(self._GPIO_data):
+                if line_index == 3:
                     # skip the last line
                     continue
-                if line == 1:
-                    new_color[i] = 255
-                elif line == 0:
-                    new_color[i] = 0
-            self.gpio_over_lay_color = DECAY * np.array(new_color) + (
+                if gpio_state == 1:
+                    new_color[line_index] = 255
+                elif gpio_state == 0:
+                    new_color[line_index] = 0
+            self.gpio_over_lay_color = np.array(new_color) + (
                 1 - DECAY
             ) * np.array(self.gpio_over_lay_color)
 
