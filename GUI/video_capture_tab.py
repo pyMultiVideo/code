@@ -142,7 +142,7 @@ class VideoCaptureTab(QWidget):
         # Buttons for saving and loading camera configurations
         self.save_dir_button = QPushButton("")
         self.save_dir_button.setIcon(
-            QIcon(os.path.join(self.paths["assets_dir"], "save.svg"))
+            QIcon(os.path.join(self.paths["assets_dir"], "folder.svg"))
         )
         self.save_dir_button.setFixedWidth(30)
         self.save_dir_button.setFixedHeight(30)
@@ -491,7 +491,8 @@ class VideoCaptureTab(QWidget):
     def get_save_dir(self):
         """Return the save directory"""
         save_directory = QFileDialog.getExistingDirectory(self, "Select Directory")
-        self.save_dir_textbox.setPlainText(save_directory)
+        if save_directory:
+            self.save_dir_textbox.setPlainText(save_directory)
 
     def camera_groupbox_labels(self) -> List[str]:
         """Return the labels of the camera groupboxes"""
