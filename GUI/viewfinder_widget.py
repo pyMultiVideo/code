@@ -145,6 +145,7 @@ class ViewfinderWidget(QWidget):
         self.video_feed.addItem(self.text)
         self.text.setText("NOT RECORDING", color="r")
         self._init_GPIO_overlay()
+        self._init_recording_time_overlay()
         # Framerate information
         self.frame_rate_text = pg.TextItem()
         self.frame_rate_text.setPos(10, 40)
@@ -156,6 +157,25 @@ class ViewfinderWidget(QWidget):
 
         self.camera_setup_hlayout.addWidget(self.camera_setup_groupbox)
         self.camera_setup_hlayout.addWidget(self.video_feed)
+
+    def _init_GPIO_overlay(self):
+        """Initialise the GPIO data"""
+        # Initial state of the colour painted to the image
+        self.gpio_over_lay_color = np.random.randint(0, 256, size=3)
+        self.ellipse = pg.TextItem()
+        self.ellipse_font = QFont()
+        # self.ellipse_font.setPixelSize(100)
+        self.ellipse.setPos(10, 100)
+        self.video_feed.addItem(self.ellipse)
+        # self.ellipse.setFont(self.ellipse_font)
+        self.text.setText("GPIO Status: \u2b24", color=self.gpio_over_lay_color)
+
+    def _init_recording_time_overlay(self):
+        self.recording_time_text = pg.TextItem()
+        self.recording_time_text.setPos(10, 70)
+        self.video_feed.addItem(self.recording_time_text)
+        self.recording_time_text.setText("Recording Time: 00:00:00", color="r")
+
 
     def _init_recording(self):
         # Set the recording flag to False
@@ -192,6 +212,7 @@ class ViewfinderWidget(QWidget):
             self._image_data = self.buffered_data["images"][0]
             self._GPIO_data = [int(x) for x in self.buffered_data["gpio_data"][0]]
             self.display_average_frame_rate()
+            self.display_recording_time()
             # If the recording flag is True
             if self.recording is True:
                 self.recorded_frames += len(self.buffered_data["timestamps"])
@@ -244,6 +265,20 @@ class ViewfinderWidget(QWidget):
             color = "g"
         # Display the implied framerate from the calcualtion
         self.frame_rate_text.setText(f"FPS: {calculated_framerate:.2f}", color=color)
+
+    def display_recording_time(self):
+        """
+        Function to display the length of recording time.
+        """
+        if self.recording:
+            elapsed_time = datetime.now() - datetime.strptime(self.metadata["begin_time"], "%Y-%m-%d %H:%M:%S")
+            elapsed_seconds = elapsed_time.total_seconds()
+            hours, remainder = divmod(elapsed_seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            self.recording_time_text.setText(f"Recording Time: {int(hours):02}:{int(minutes):02}:{int(seconds):02}", color="g")
+        else:
+            self.recording_time_text.setText("Recording Time: 00:00:00", color="r")
+
 
     def update_camera_dropdown(self):
         """Update the camera options
@@ -331,36 +366,28 @@ class ViewfinderWidget(QWidget):
             color = "r"
         self.text.setText(status, color=color)
 
-    def _init_GPIO_overlay(self):
-        """Initialise the GPIO data"""
-        # Initial state of the colour painted to the image
-        self.gpio_over_lay_color = np.random.randint(0, 256, size=3)
-        self.ellipse = pg.TextItem()
-        self.ellipse_font = QFont()
-        # self.ellipse_font.setPixelSize(100)
-        self.ellipse.setPos(10, 100)
-        self.video_feed.addItem(self.ellipse)
-        # self.ellipse.setFont(self.ellipse_font)
-        self.text.setText("GPIO Status: \u2b24", color=self.gpio_over_lay_color)
 
-    def update_gpio_overlay(self, DECAY=0.1) -> None:
+    def update_gpio_overlay(self, DECAY=0.9) -> None:
         """Draw the GPIO data on the image"""
 
         if self._GPIO_data is None:
             self.gpio_over_lay_color = DECAY * np.array(self.gpio_over_lay_color)
         elif self._GPIO_data is not None:
-            new_color = self.gpio_over_lay_color.copy()
-            for line_index, gpio_state in enumerate(self._GPIO_data):
-                if line_index == 3:
-                    # skip the last line
-                    continue
-                if gpio_state == 1:
-                    new_color[line_index] = 255
-                elif gpio_state == 0:
-                    new_color[line_index] = 0
-            self.gpio_over_lay_color = np.array(new_color) + (
-                1 - DECAY
-            ) * np.array(self.gpio_over_lay_color)
+            # If all of the channels are 1 normal exponential decay, if any are 0 then bump the color back to the highest point again
+            if all(state == 0 for state in self._GPIO_data):
+                self.gpio_over_lay_color = DECAY * np.array(self.gpio_over_lay_color)
+            else:
+                new_color = self.gpio_over_lay_color.copy()
+                for line_index, gpio_state in enumerate(self._GPIO_data):
+                    if line_index == 3:
+                        # skip the last line
+                        continue
+                    if gpio_state == 0:
+                        new_color[line_index] = 0
+                    elif gpio_state == 1:
+                        new_color[line_index] = 255
+                self.gpio_over_lay_color = (DECAY) * np.array(new_color) + ( 1-DECAY) * np.array(self.gpio_over_lay_color)
+            
 
         # update the color of the ellipse
         self.ellipse.setText("GPIO Status: \u2b24", color=self.gpio_over_lay_color)
