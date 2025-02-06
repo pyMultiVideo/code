@@ -10,7 +10,9 @@ from .load_camera import (
     get_modules_in_package,
     init_camera,
     load_saved_setups,
-    load_camera_dict
+    load_camera_dict,
+    gpu_available, 
+    valid_ffmpeg_encoders,
 )
 
 from .version import __version__

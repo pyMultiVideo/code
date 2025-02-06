@@ -5,6 +5,7 @@ import sys
 import os
 import json
 from typing import Dict, Any
+import subprocess
 
 from . import CameraSettingsConfig
 
@@ -32,6 +33,28 @@ def cbox_update_options(cbox, options, used_cameras_labels, selected):
     cbox.addItems(available_options)
     cbox.setCurrentIndex(i)
 
+
+def gpu_available() -> bool:
+    """Check if a GPU is available on the system running the program"""
+    try:
+        subprocess.check_output("nvidia-smi")
+        print("Nvidia GPU detected!")
+        return True
+    except Exception:  # this command not being found can raise quite a few different errors depending on the configuration
+        print("No Nvidia GPU in system!")
+        return False
+
+
+def valid_ffmpeg_encoders(GPU_AVAIALABLE: bool, encoder_dict_keys) -> list:
+    """Return list of valid encoders depending on if GPU is available"""
+    valid_encoders_keys = []
+    for key in encoder_dict_keys:
+        if "CPU" in key:
+            valid_encoders_keys.append(key)
+        elif "GPU" in key and GPU_AVAIALABLE:
+            valid_encoders_keys.append(key)
+
+    return valid_encoders_keys
 
 
 def get_modules_in_package(package_name):

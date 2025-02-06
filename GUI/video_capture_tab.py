@@ -25,7 +25,12 @@ from PyQt6.QtCore import QTimer
 from dataclasses import asdict
 from .viewfinder_widget import ViewfinderWidget
 from .dialogs import show_info_message
-from tools import ExperimentConfig, CameraSetupConfig
+from tools import (
+    ExperimentConfig,
+    CameraSetupConfig,
+    valid_ffmpeg_encoders,
+    gpu_available,
+)
 from config import gui_config_dict
 from config import paths_config_dict
 
@@ -76,9 +81,16 @@ class VideoCaptureTab(QWidget):
         self.encoder_settings_group_box = QGroupBox("FFMPEG Settings")
         # dropdown for camera selection
         self.encoder_selection = QComboBox()
+
         self.encoder_selection.addItems(
-            self.camera_setup_tab.ffmpeg_config["output"]["encoder"].keys()
+            valid_ffmpeg_encoders(
+                GPU_AVAIALABLE=gpu_available(),
+                encoder_dict_keys=self.camera_setup_tab.ffmpeg_config["output"][
+                    "encoder"
+                ].keys(),
+            )
         )
+
         self.encoder_selection.setCurrentIndex(1)
         self.encoder = self.encoder_selection.currentText()
         self.encoder_selection.currentIndexChanged.connect(self.change_encoder)
