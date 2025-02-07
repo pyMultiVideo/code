@@ -24,13 +24,16 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from .dialogs import show_warning_message
+from .dialogs import show_warning_message  # TA : imported but not used.
 from tools import cbox_update_options
 from tools import CameraSetupConfig
 from tools import init_camera
 from config import ffmpeg_config_dict
 from config import gui_config_dict
 from config import paths_config_dict
+
+# TA I don't think the code that initialses the various GUI elements in this widget needs to be split into lots of different functions
+# that only get called once each.  Just combine them into the __init__ method seperated by comment lines as necessary.
 
 
 class ViewfinderWidget(QWidget):
@@ -67,8 +70,8 @@ class ViewfinderWidget(QWidget):
 
         self.camera_api = init_camera(self.unique_id, self.camera_settings)
 
-        self.cam_width = self.camera_api.width
-        self.cam_height = self.camera_api.height
+        self.cam_width = self.camera_api.get_width()
+        self.cam_height = self.camera_api.get_height()
 
         # Layout
         self._init_camera_setup_groupbox()
@@ -76,10 +79,12 @@ class ViewfinderWidget(QWidget):
         self._page_layout()
         self._init_recording()
 
-    def _page_layout(self):
+    def _page_layout(self):  # TA does this need to be a seperate function?
         self.setLayout(self.camera_setup_hlayout)
 
-    def _init_camera_setup_groupbox(self):
+    def _init_camera_setup_groupbox(
+        self,
+    ):  # TA does this need to be a seperate function?
         self._initialise_video_feed()
 
         self.camera_setup_groupbox = QGroupBox(f"{self.label}")
@@ -132,7 +137,7 @@ class ViewfinderWidget(QWidget):
         self.camera_setup_groupbox.setLayout(self.camera_header_layout)
         self.camera_setup_groupbox.setFixedHeight(75)
 
-    def _initialise_video_feed(self):
+    def _initialise_video_feed(self):  # TA does this need to be a seperate function?
         self.video_feed = pg.ImageView()
         self.video_feed.ui.histogram.hide()
         self.video_feed.ui.roiBtn.hide()
@@ -152,13 +157,13 @@ class ViewfinderWidget(QWidget):
         self.video_feed.addItem(self.frame_rate_text)
         self.frame_rate_text.setText("FPS:", color="r")
 
-    def _set_camera_setup_layout(self):
+    def _set_camera_setup_layout(self):  # TA does this need to be a seperate function?
         self.camera_setup_hlayout = QVBoxLayout()
 
         self.camera_setup_hlayout.addWidget(self.camera_setup_groupbox)
         self.camera_setup_hlayout.addWidget(self.video_feed)
 
-    def _init_GPIO_overlay(self):
+    def _init_GPIO_overlay(self):  # TA does this need to be a seperate function?
         """Initialise the GPIO data"""
         # Initial state of the colour painted to the image
         self.gpio_over_lay_color = np.random.randint(0, 256, size=3)
@@ -170,14 +175,15 @@ class ViewfinderWidget(QWidget):
         # self.ellipse.setFont(self.ellipse_font)
         self.text.setText("GPIO Status: \u2b24", color=self.gpio_over_lay_color)
 
-    def _init_recording_time_overlay(self):
+    def _init_recording_time_overlay(
+        self,
+    ):  # TA does this need to be a seperate function?
         self.recording_time_text = pg.TextItem()
         self.recording_time_text.setPos(10, 70)
         self.video_feed.addItem(self.recording_time_text)
         self.recording_time_text.setText("Recording Time: 00:00:00", color="r")
 
-
-    def _init_recording(self):
+    def _init_recording(self):  # TA does this need to be a seperate function?
         # Set the recording flag to False
         self.recording = False
         # Default width and hieght for the camera widget
@@ -271,14 +277,18 @@ class ViewfinderWidget(QWidget):
         Function to display the length of recording time.
         """
         if self.recording:
-            elapsed_time = datetime.now() - datetime.strptime(self.metadata["begin_time"], "%Y-%m-%d %H:%M:%S")
+            elapsed_time = datetime.now() - datetime.strptime(
+                self.metadata["begin_time"], "%Y-%m-%d %H:%M:%S"
+            )
             elapsed_seconds = elapsed_time.total_seconds()
             hours, remainder = divmod(elapsed_seconds, 3600)
             minutes, seconds = divmod(remainder, 60)
-            self.recording_time_text.setText(f"Recording Time: {int(hours):02}:{int(minutes):02}:{int(seconds):02}", color="g")
+            self.recording_time_text.setText(
+                f"Recording Time: {int(hours):02}:{int(minutes):02}:{int(seconds):02}",
+                color="g",
+            )
         else:
             self.recording_time_text.setText("Recording Time: 00:00:00", color="r")
-
 
     def update_camera_dropdown(self):
         """Update the camera options
@@ -366,7 +376,6 @@ class ViewfinderWidget(QWidget):
             color = "r"
         self.text.setText(status, color=color)
 
-
     def update_gpio_overlay(self, DECAY=0.9) -> None:
         """Draw the GPIO data on the image"""
 
@@ -386,8 +395,9 @@ class ViewfinderWidget(QWidget):
                         new_color[line_index] = 0
                     elif gpio_state == 1:
                         new_color[line_index] = 255
-                self.gpio_over_lay_color = (DECAY) * np.array(new_color) + ( 1-DECAY) * np.array(self.gpio_over_lay_color)
-            
+                self.gpio_over_lay_color = (DECAY) * np.array(new_color) + (
+                    1 - DECAY
+                ) * np.array(self.gpio_over_lay_color)
 
         # update the color of the ellipse
         self.ellipse.setText("GPIO Status: \u2b24", color=self.gpio_over_lay_color)
@@ -722,7 +732,9 @@ class ViewfinderWidget(QWidget):
         # https://stackoverflow.com/questions/37564728/pyqt-how-to-remove-a-layout-from-a-layout
         # self.deleteLater()
 
-    def check_trigger_recording(self):
+    def check_trigger_recording(
+        self,
+    ):  # TA is this functionallity actually used?  If not remove.
         """Function to check whether the camera API wants to stop or start recording."""
         # If not recording check if there is a trigger to start recording
         if self.recording is False:

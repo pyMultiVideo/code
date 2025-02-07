@@ -34,6 +34,9 @@ from tools import (
 from config import gui_config_dict
 from config import paths_config_dict
 
+# TA I don't think the code that initialses the various GUI elements in this tab needs to be split into lots of different functions
+# that only get called once each.  Just combine them into the __init__ method seperated by comment lines as necessary.
+
 
 class VideoCaptureTab(QWidget):
     """Tab used to display the viewfinder and control the cameras"""
@@ -52,7 +55,7 @@ class VideoCaptureTab(QWidget):
         self._init_timers()
         print("Viewfinder tab initialised")
 
-    def _init_header_groupbox(self):
+    def _init_header_groupbox(self):  # TA does this need to be a seperate function?
         # Initialise the configuration widget
         self.header_groupbox = QGroupBox()
         self.header_groupbox.setMaximumHeight(95)
@@ -69,14 +72,14 @@ class VideoCaptureTab(QWidget):
         self.header_hlayout.addWidget(self.control_all_groupbox)
         self.header_groupbox.setLayout(self.header_hlayout)
 
-    def _page_layout(self):
+    def _page_layout(self):  # TA does this need to be a seperate function?
         self.page_layout = QVBoxLayout()
 
         self.page_layout.addWidget(self.header_groupbox)
         self.page_layout.addWidget(self.viewfinder_groupbox)
         self.setLayout(self.page_layout)
 
-    def _init_aquire_groupbox(self):
+    def _init_aquire_groupbox(self):  # TA does this need to be a seperate function?
         """List of encoders that are available"""
         self.encoder_settings_group_box = QGroupBox("FFMPEG Settings")
         # dropdown for camera selection
@@ -96,12 +99,12 @@ class VideoCaptureTab(QWidget):
         self.encoder_selection.currentIndexChanged.connect(self.change_encoder)
         self._set_aquire_layout()
 
-    def _set_aquire_layout(self):
+    def _set_aquire_layout(self):  # TA does this need to be a seperate function?
         self.aquire_hlayout = QHBoxLayout()
         self.aquire_hlayout.addWidget(self.encoder_selection)
         self.encoder_settings_group_box.setLayout(self.aquire_hlayout)
 
-    def _init_config_groupbox(self):
+    def _init_config_groupbox(self):  # TA does this need to be a seperate function?
         self.config_groupbox = QGroupBox("Experiment Configuration")
 
         # Text box for displaying the number of camera
@@ -139,7 +142,7 @@ class VideoCaptureTab(QWidget):
 
         self._set_config_layout()
 
-    def _set_config_layout(self):
+    def _set_config_layout(self):  # TA does this need to be a seperate function?
         self.config_hlayout = QHBoxLayout()
         self.config_hlayout.addWidget(self.save_camera_config_button)
         self.config_hlayout.addWidget(self.load_experiment_config_button)
@@ -148,7 +151,7 @@ class VideoCaptureTab(QWidget):
         self.config_hlayout.addWidget(self.layout_checkbox)
         self.config_groupbox.setLayout(self.config_hlayout)
 
-    def _init_save_dir_groupbox(self):
+    def _init_save_dir_groupbox(self):  # TA does this need to be a seperate function?
         self.save_dir_groupbox = QGroupBox("Save Directory")
 
         # Buttons for saving and loading camera configurations
@@ -168,13 +171,15 @@ class VideoCaptureTab(QWidget):
         self.save_dir_textbox.setPlainText(self.paths["data_dir"])
         self._set_save_dir_layout()
 
-    def _set_save_dir_layout(self):
+    def _set_save_dir_layout(self):  # TA does this need to be a seperate function?
         self.save_dir_hlayout = QHBoxLayout()
         self.save_dir_hlayout.addWidget(self.save_dir_textbox)
         self.save_dir_hlayout.addWidget(self.save_dir_button)
         self.save_dir_groupbox.setLayout(self.save_dir_hlayout)
 
-    def _init_control_all_groupbox(self):
+    def _init_control_all_groupbox(
+        self,
+    ):  # TA does this need to be a seperate function?
         self.control_all_groupbox = QGroupBox("Control All")
 
         # Button for recording video
@@ -197,7 +202,7 @@ class VideoCaptureTab(QWidget):
 
         self._set_control_all_layout()
 
-    def _set_control_all_layout(self):
+    def _set_control_all_layout(self):  # TA does this need to be a seperate function?
         self.control_all_hlayout = QHBoxLayout()
         self.control_all_hlayout.addWidget(self.start_recording_button)
         self.control_all_hlayout.addWidget(self.stop_recording_button)
@@ -330,7 +335,8 @@ class VideoCaptureTab(QWidget):
 
     def add_widget_to_layout(self):
         """Add the camera widget to the layout
-        Will try to make the camera layout as square as possible. THis will be based on the nunber of connected cameras to the setup"""
+        Will try to make the camera layout as square as possible. THis will be based on the nunber of connected cameras to the setup
+        """
         SQUARE = True
         if SQUARE:
             # Position of the new camera to be added.

@@ -1,14 +1,16 @@
 """
-This is a template class for which a new camera's functionality can be added to this application's interface.
+Generic API defining functionality needed for for camera system to interact with the GUI.
 """
 
 import numpy as np
 from datetime import datetime
 
+# GenericCamera class -------------------------------------------------------------------
+
 
 class GenericCamera:
     def __init__(self, CameraConfig=None):
-        """This function gets the nodemap for the camera and create the camera object that is required for doing downstream functions."""
+        """Template class for representing a camera. Defines functionallity that must be implemented for interaction with the GUI."""
         pass
 
     def get_width(self) -> int:
@@ -19,11 +21,13 @@ class GenericCamera:
         """Function that returns the height of the camera resolution"""
         pass
 
-    def get_frame_rate(self) -> int:
+    def get_frame_rate(self) -> int:  # TA : Does not appear to be used by GUI, remove?
         """Get the framerate of the camera"""
         pass
 
-    def get_frame_rate_range(self) -> tuple[int, int]:
+    def get_frame_rate_range(
+        self,
+    ) -> tuple[int, int]:  # TA : Does not appear to be used by GUI, remove?
         """Get the range of frame rates the camera can return
 
         Returns:
@@ -31,7 +35,7 @@ class GenericCamera:
         """
         pass
 
-    def set_frame_rate_range(self) -> None:
+    def set_frame_rate(self, frame_rate: int) -> None:
         """Function to set the aquisition frame rate of the camera"""
         pass
 
@@ -43,11 +47,14 @@ class GenericCamera:
         """Function to the aquisition of images from the camera"""
         pass
 
-    def set_buffer_handling_mode(self) -> None:
+    def set_buffer_handling_mode(
+        self,
+    ) -> None:  # TA : Does not appear to be used by GUI, remove?
         """Consider implementing a function that sets any internal camera buffer to overwrite the oldest image from the buffer to write a new image"""
         pass
 
     def get_next_image(self) -> np.ndarray:
+        # TA : Do we need two methods for getting imgages from the camera, (this and retrieve_buffered_data). Remove?
         """Function returns an image from the camera as a numpy array
 
         Important Note: the aquisition of the next image from the camera can be a blocking function
@@ -63,7 +70,7 @@ class GenericCamera:
         timestamp = None
         return timestamp
 
-    def retrieve_buffered_data(
+    def retrieve_buffered_data(  # TA : Rename as get_available_images?
         self,
     ) -> dict[list[np.ndarray], list[dict[str, bool]], list[int]]:
         """Function to returns all the data from the camera buffer as a dictionary.
@@ -85,7 +92,11 @@ class GenericCamera:
             "timestamps": self.timestamps_buffer,
         }
 
-    def get_GPIO_data(self) -> dict[str, bool]:
+    def get_GPIO_data(
+        self,
+    ) -> dict[
+        str, bool
+    ]:  # TA How to handle camera systems that dont have GPIO or have different number of pins?
         """Function to return a dictionary of the GPIO data from the camera's GPIO pins"""
         return {
             "Line0": False,
@@ -107,6 +118,9 @@ class GenericCamera:
     def trigger_stop_recording(self) -> bool:
         """Conceptually same as above. This function is called if the camera is recording, and will take the outcome of this function (True / False) as a Trigger to stop recording"""
         return False
+
+
+# Camera system utility functions -------------------------------------------------------
 
 
 def list_available_cameras() -> list[str]:

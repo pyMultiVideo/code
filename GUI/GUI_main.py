@@ -15,7 +15,7 @@ from . import CamerasTab
 from config import paths_config_dict
 from tools import __version__
 
-if os.name == "nt":
+if os.name == "nt":  # Needed on windows to get taskbar icon to display correctly.
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
         f"pyMultiVideo v{__version__}"
     )
@@ -91,21 +91,7 @@ class GUIMain(QMainWindow):
         full_screen_controls_action.triggered.connect(
             self.video_capture_tab.toggle_full_screen_mode
         )
-        # hide_camera_controls_action = QAction("Toggle &Camera Controls", self)
-        # hide_camera_controls_action.setShortcut('Ctrl+C')
-        # hide_camera_controls_action.triggered.connect(
-        #     self.video_capture_tab.toggle_control_header_visibilty
-        #     )
-
-        # hide_tab_controls_action = QAction('Toggle &Viewfinder Tab Controls', self)
-        # hide_tab_controls_action.setShortcut('Ctrl+V')
-        # hide_tab_controls_action.triggered.connect(
-        #     self.video_capture_tab.toggle_all_viewfinder_control_visiblity
-        #     )
-
         view_menu.addAction(full_screen_controls_action)
-        # view_menu.addAction(hide_camera_controls_action)
-        # view_menu.addAction(hide_tab_controls_action)
 
     def _init_experiments(self):
         # Get list of json files in the configs folder
