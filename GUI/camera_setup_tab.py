@@ -117,7 +117,7 @@ class Camera:
     def preview_camera(self):
         """Button to preview the camera in the row"""
         camera_preview = CameraPreviewDialog(
-            unique_id=self.unique_id, window_title=f"Camera {self.unique_id}"
+            gui=self.gui,unique_id=self.unique_id, window_title=f"Camera {self.unique_id}"
         )
         camera_preview.exec()
 

@@ -48,7 +48,7 @@ class GUIMain(QMainWindow):
         """Set the icons for the GUI"""
         icon = QIcon(os.path.join(self.paths["assets_dir"], "logo.svg"))
         self.setWindowIcon(icon)
-        self.statusBar().showMessage("Ready")
+        # self.statusBar().showMessage("Ready")
 
     def _init_tabs(self):
         """Initialize tab classes"""
