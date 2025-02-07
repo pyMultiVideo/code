@@ -5,7 +5,7 @@ from PyQt6.QtCore import QTimer
 from PyQt6.QtGui import QIcon
 import pyqtgraph as pg
 
-
+# Local Imports
 from tools import init_camera_api
 from config import paths_config_dict
 from config import gui_config_dict
@@ -17,7 +17,7 @@ class CameraPreviewDialog(QDialog):
     def __init__(self, gui, unique_id: str, window_title: str = "Camera Preview"):
         super().__init__()
         # self.setups_tab = parent
-        self.main_window = gui
+        self.main_gui = gui
         self.window_title = window_title
         self.unique_id = unique_id
         self.paths = paths_config_dict
@@ -29,10 +29,10 @@ class CameraPreviewDialog(QDialog):
         self.setWindowTitle(self.window_title)
         icon = QIcon(os.path.join(self.paths["assets_dir"], "logo.svg"))
         self.setWindowIcon(icon)
-        main_window_geometry = self.main_window.geometry()
+        main_gui_geometry = self.main_gui.geometry()
         self.setGeometry(
-            main_window_geometry.x() + main_window_geometry.width() + 10,
-            main_window_geometry.y(),
+            main_gui_geometry.x() + main_gui_geometry.width() + 10,
+            main_gui_geometry.y(),
             500,
             500,
         )
