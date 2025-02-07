@@ -162,21 +162,23 @@ class ViewfinderWidget(QWidget):
         """Initialise the GPIO data"""
         # Initial state of the colour painted to the image
         self.gpio_over_lay_color = np.random.randint(0, 256, size=3)
+
         self.gpio_status_item = pg.TextItem()
         self.gpio_status_font = QFont()
-        self.gpio_status_item.setPos(10, 100)
+        self.gpio_status_item.setPos(10, 70)
         self.video_feed.addItem(self.gpio_status_item)
-        
-        
-        # self.status_text_indicator.setText("\u2b24", color=self.gpio_over_lay_color)
-        
-        
+        self.gpio_status_item.setText("GPIO Status", color="purple")
+
+        self.gpio_status_indicator = pg.TextItem()
+        self.gpio_status_font = QFont()
+        self.gpio_status_indicator.setPos(170, 70)
+        self.video_feed.addItem(self.gpio_status_indicator)
+
     def _init_recording_time_overlay(self):
         self.recording_time_text = pg.TextItem()
-        self.recording_time_text.setPos(10, 70)
+        self.recording_time_text.setPos(200, 10)
         self.video_feed.addItem(self.recording_time_text)
-        self.recording_time_text.setText("Recording Time: 00:00:00", color="r")
-
+        self.recording_time_text.setText("", color="r")
 
     def _init_recording(self):
         # Set the recording flag to False
@@ -272,14 +274,17 @@ class ViewfinderWidget(QWidget):
         Function to display the length of recording time.
         """
         if self.recording:
-            elapsed_time = datetime.now() - datetime.strptime(self.metadata["begin_time"], "%Y-%m-%d %H:%M:%S")
+            elapsed_time = datetime.now() - datetime.strptime(
+                self.metadata["begin_time"], "%Y-%m-%d %H:%M:%S"
+            )
             elapsed_seconds = elapsed_time.total_seconds()
             hours, remainder = divmod(elapsed_seconds, 3600)
             minutes, seconds = divmod(remainder, 60)
-            self.recording_time_text.setText(f"Recording Time: {int(hours):02}:{int(minutes):02}:{int(seconds):02}", color="g")
+            self.recording_time_text.setText(
+                f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}", color="g"
+            )
         else:
-            self.recording_time_text.setText("Recording Time: 00:00:00", color="r")
-
+            self.recording_time_text.setText("", color="r")
 
     def update_camera_dropdown(self):
         """Update the camera options
@@ -367,7 +372,6 @@ class ViewfinderWidget(QWidget):
             color = "r"
         self.recording_status_item.setText(status, color=color)
 
-
     def update_gpio_overlay(self, DECAY=0.9) -> None:
         """Draw the GPIO data on the image"""
 
@@ -387,11 +391,12 @@ class ViewfinderWidget(QWidget):
                         new_color[line_index] = 0
                     elif gpio_state == 1:
                         new_color[line_index] = 255
-                self.gpio_over_lay_color = (DECAY) * np.array(new_color) + ( 1-DECAY) * np.array(self.gpio_over_lay_color)
-            
+                self.gpio_over_lay_color = (DECAY) * np.array(new_color) + (
+                    1 - DECAY
+                ) * np.array(self.gpio_over_lay_color)
 
         # update the color of the ellipse
-        self.gpio_status_item.setText("GPIO Status: \u2b24", color=self.gpio_over_lay_color)
+        self.gpio_status_indicator.setText("\u2b24", color=self.gpio_over_lay_color)
 
     def refresh(self):
         """refresh the camera widget"""
