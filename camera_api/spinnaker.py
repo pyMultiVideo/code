@@ -396,15 +396,15 @@ class SpinnakerCamera(GenericCamera):
             # Retrieve the timestamp (it might be in microseconds or a similar unit)
             timestamp_value = line_status.GetValue()
             # Pad the timestamp to 8-bit binary
-            timestamp_binary = format(timestamp_value, '08b')
-            # print(f"(8-bit binary): {timestamp_binary}")
+            timestamp_binary = format(timestamp_value, '04b')
+            # print(f"(4-bit binary): {timestamp_binary}")
 
             # Create a dictionary to store the outputs
             self.GPIO_data = {
                 'Line0': bool(int(timestamp_binary[0])),
-                'Line1': bool(int(timestamp_binary[2])),
-                'Line2': bool(int(timestamp_binary[4])),
-                'Line3': bool(int(timestamp_binary[6]))
+                'Line1': bool(int(timestamp_binary[1])),
+                'Line2': bool(int(timestamp_binary[2])),
+                'Line3': bool(int(timestamp_binary[3]))
             }
 
 
