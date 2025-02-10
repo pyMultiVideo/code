@@ -8,7 +8,7 @@ from .load_camera import (
     find_all_cameras,
     cbox_update_options, 
     get_modules_in_package,
-    init_camera,
+    init_camera_api,
     load_saved_setups,
     load_camera_dict,
     gpu_available, 

@@ -9,12 +9,14 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QComboBox,
     QSpinBox,
+    QPushButton,
 )
 from dataclasses import asdict
 
 from config import ffmpeg_config_dict, paths_config_dict
 from tools import CameraSettingsConfig
 from tools import find_all_cameras, load_saved_setups, load_camera_dict
+from .preview_dialog import CameraPreviewDialog
 
 QtCore.pyqtClassInfo
 
@@ -70,12 +72,16 @@ class Camera:
             self.downsampling_factor_edit.setCurrentText(str(self.downsampling_factor))
         self.downsampling_factor_edit.activated.connect(self.camera_downsampling_factor)
 
+        self.preview_camera_button = QPushButton("Preview")
+        self.preview_camera_button.clicked.connect(self.preview_camera)
+
         self.setups_table.insertRow(0)
         self.setups_table.setCellWidget(0, 0, self.name_edit)
         self.setups_table.setCellWidget(0, 1, self.unique_id_edit)
         self.setups_table.setCellWidget(0, 2, self.fps_edit)
         self.setups_table.setCellWidget(0, 3, self.pxl_fmt_edit)
         self.setups_table.setCellWidget(0, 4, self.downsampling_factor_edit)
+        self.setups_table.setCellWidget(0, 5, self.preview_camera_button)
 
     def camera_name_changed(self):
         """Called when name text of setup is edited."""
@@ -106,6 +112,13 @@ class Camera:
         """Called when the downsampling factor of the seutp is edited"""
         self.downsampling_factor = int(self.downsampling_factor_edit.currentText())
         self.setups_tab.update_saved_setups(setup=self)
+
+    def preview_camera(self):
+        """Button to preview the camera in the row"""
+        camera_preview = CameraPreviewDialog(
+            gui=self.gui,unique_id=self.unique_id, window_title=f"Camera {self.unique_id}"
+        )
+        camera_preview.exec()
 
     def getCameraSettingsConfig(self):
         """
@@ -331,7 +344,7 @@ class CameraOverviewTable(QTableWidget):
             # self.camera_dict[0].keys()
             # if len(self.camera_dict) > 0
             # else
-            ["Name", "Unique ID", "FPS", "Pxl Fmt", "Downsample Factor"]
+            ["Name", "Unique ID", "FPS", "Pxl Fmt", "Downsample Factor", "Camera Preview"]
         )
         self.setColumnCount(len(self.header_names))
         self.setRowCount(len(self.camera_dict))

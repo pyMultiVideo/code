@@ -131,7 +131,7 @@ def find_all_cameras() -> list[str]:
     return camera_list
 
 
-def init_camera(_id, CameraSettingsConfig=None):
+def init_camera_api(_id, CameraSettingsConfig=None):
     """Go through each"""
     # Split the camera unique_id into its api and its serial_no
     serial_no, module_name = _id.split("-")

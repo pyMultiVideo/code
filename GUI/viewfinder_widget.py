@@ -24,9 +24,10 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from .message_dialogs import show_warning_message
 from tools import cbox_update_options
 from tools import CameraSetupConfig
-from tools import init_camera
+from tools import init_camera_api
 from config import ffmpeg_config_dict
 from config import gui_config_dict
 from config import paths_config_dict
@@ -64,12 +65,13 @@ class ViewfinderWidget(QWidget):
         self.unique_id = self.camera_settings.unique_id
         self.downsampling_factor = 1
 
-        self.camera_api = init_camera(self.unique_id, self.camera_settings)
+        self.camera_api = init_camera_api(self.unique_id, self.camera_settings)
 
-        self.cam_width = self.camera_api.get_width()
-        self.cam_height = self.camera_api.get_height()
+        self.cam_width = self.camera_api.width
+        self.cam_height = self.camera_api.height
 
-        # Intialise video feed
+        # Layout
+
         self.video_feed = pg.ImageView()
         self.video_feed.ui.histogram.hide()
         self.video_feed.ui.roiBtn.hide()
@@ -77,26 +79,30 @@ class ViewfinderWidget(QWidget):
         # Disable zoom and pan
         self.video_feed.view.setMouseEnabled(x=False, y=False)
         # Recording Information
-        self.text = pg.TextItem()
-        self.text.setPos(10, 10)
-        self.video_feed.addItem(self.text)
-        self.text.setText("NOT RECORDING", color="r")
+        self.recording_status_item = pg.TextItem()
+        self.recording_status_item.setPos(10, 10)
+        self.video_feed.addItem(self.recording_status_item)
+        self.recording_status_item.setText("NOT RECORDING", color="r")
 
         """Initialise the GPIO data"""
         # Initial state of the colour painted to the image
         self.gpio_over_lay_color = np.random.randint(0, 256, size=3)
-        self.ellipse = pg.TextItem()
-        self.ellipse_font = QFont()
-        # self.ellipse_font.setPixelSize(100)
-        self.ellipse.setPos(10, 100)
-        self.video_feed.addItem(self.ellipse)
-        # self.ellipse.setFont(self.ellipse_font)
-        self.text.setText("GPIO Status: \u2b24", color=self.gpio_over_lay_color)
+
+        self.gpio_status_item = pg.TextItem()
+        self.gpio_status_font = QFont()
+        self.gpio_status_item.setPos(10, 70)
+        self.video_feed.addItem(self.gpio_status_item)
+        self.gpio_status_item.setText("GPIO Status", color="purple")
+
+        self.gpio_status_indicator = pg.TextItem()
+        self.gpio_status_font = QFont()
+        self.gpio_status_indicator.setPos(170, 70)
+        self.video_feed.addItem(self.gpio_status_indicator)
 
         self.recording_time_text = pg.TextItem()
-        self.recording_time_text.setPos(10, 70)
+        self.recording_time_text.setPos(200, 10)
         self.video_feed.addItem(self.recording_time_text)
-        self.recording_time_text.setText("Recording Time: 00:00:00", color="r")
+        self.recording_time_text.setText("", color="r")
 
         # Framerate information
         self.frame_rate_text = pg.TextItem()
@@ -160,6 +166,9 @@ class ViewfinderWidget(QWidget):
         self.camera_setup_hlayout.addWidget(self.video_feed)
 
         self.setLayout(self.camera_setup_hlayout)
+        self._init_recording()
+
+    def _init_recording(self):
         # Set the recording flag to False
         self.recording = False
         # Default width and hieght for the camera widget
@@ -260,11 +269,10 @@ class ViewfinderWidget(QWidget):
             hours, remainder = divmod(elapsed_seconds, 3600)
             minutes, seconds = divmod(remainder, 60)
             self.recording_time_text.setText(
-                f"Recording Time: {int(hours):02}:{int(minutes):02}:{int(seconds):02}",
-                color="g",
+                f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}", color="g"
             )
         else:
-            self.recording_time_text.setText("Recording Time: 00:00:00", color="r")
+            self.recording_time_text.setText("", color="r")
 
     def update_camera_dropdown(self):
         """Update the camera options
@@ -350,7 +358,7 @@ class ViewfinderWidget(QWidget):
         elif self.recording is False:
             status = "NOT RECORDING"
             color = "r"
-        self.text.setText(status, color=color)
+        self.recording_status_item.setText(status, color=color)
 
     def update_gpio_overlay(self, DECAY=0.9) -> None:
         """Draw the GPIO data on the image"""
@@ -376,7 +384,7 @@ class ViewfinderWidget(QWidget):
                 ) * np.array(self.gpio_over_lay_color)
 
         # update the color of the ellipse
-        self.ellipse.setText("GPIO Status: \u2b24", color=self.gpio_over_lay_color)
+        self.gpio_status_indicator.setText("\u2b24", color=self.gpio_over_lay_color)
 
     def refresh(self):
         """refresh the camera widget"""
@@ -608,7 +616,7 @@ class ViewfinderWidget(QWidget):
         # Get the new camera settings
         self.camera_settings = self.camera_setup_tab.getCameraSettingsConfig(self.label)
         # Set the new camera object
-        self.camera_api = init_camera(new_unique_id, self.camera_settings)
+        self.camera_api = init_camera_api(new_unique_id, self.camera_settings)
         self.camera_api.begin_capturing()
         # Call the display function once
         # self.display_frame(self.camera_object.get_next_image())

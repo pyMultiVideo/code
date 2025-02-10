@@ -24,7 +24,7 @@ from PyQt6.QtCore import QTimer
 
 from dataclasses import asdict
 from .viewfinder_widget import ViewfinderWidget
-from .dialogs import show_info_message
+from .message_dialogs import show_info_message
 from tools import (
     ExperimentConfig,
     CameraSetupConfig,
@@ -304,6 +304,16 @@ class VideoCaptureTab(QWidget):
             )
         )
         self.add_widget_to_layout()
+
+    def pause_camera_streaming(self):
+        for camera in self.camera_groupboxes:
+            # Pause the aqusition of the video stream
+            camera.camera_api.stop_capturing()
+
+    def play_camera_streaming(self):
+        for camera in self.camera_groupboxes: 
+            # Restart the aquisition of the video stream 
+            camera.camera_api.begin_capturing()
 
     def add_widget_to_layout(self):
         """Add the camera widget to the layout

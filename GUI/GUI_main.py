@@ -48,7 +48,7 @@ class GUIMain(QMainWindow):
         """Set the icons for the GUI"""
         icon = QIcon(os.path.join(self.paths["assets_dir"], "logo.svg"))
         self.setWindowIcon(icon)
-        self.statusBar().showMessage("Ready")
+        # self.statusBar().showMessage("Ready")
 
     def _init_tabs(self):
         """Initialize tab classes"""
@@ -62,6 +62,7 @@ class GUIMain(QMainWindow):
         self.tab_widget = QTabWidget()
         self.tab_widget.addTab(self.video_capture_tab, "Video Capture")
         self.tab_widget.addTab(self.camera_setup_tab, "Cameras")
+        self.tab_widget.currentChanged.connect(self.on_tab_change)
 
     def _load_camera_names(self):
         # Get list of json files in the configs folder
@@ -108,6 +109,13 @@ class GUIMain(QMainWindow):
         self.refresh_timer = QTimer()
         self.refresh_timer.timeout.connect(self.refresh)
         # self.refresh_timer.start(1000)
+
+    def on_tab_change(self):
+        """Function that is run on tab change"""
+        if self.tab_widget.currentIndex() == 0:
+            self.video_capture_tab.play_camera_streaming()
+        else:
+            self.video_capture_tab.pause_camera_streaming()
 
     def refresh(self):
         """
