@@ -21,11 +21,7 @@ class CameraPreviewDialog(QDialog):
         self.window_title = window_title
         self.unique_id = unique_id
         self.paths = paths_config_dict
-        self.initUI()
-        self.initCamera()
-        self.start_timer()
-
-    def initUI(self):
+        
         self.setWindowTitle(self.window_title)
         icon = QIcon(os.path.join(self.paths["assets_dir"], "logo.svg"))
         self.setWindowIcon(icon)
@@ -37,9 +33,8 @@ class CameraPreviewDialog(QDialog):
             500,
         )
 
-        self.hlayout = QVBoxLayout()
-
         """Intialise Videofeed"""
+        self.hlayout = QVBoxLayout()
         self.video_feed = pg.ImageView()
         self.video_feed.ui.histogram.hide()
         self.video_feed.ui.roiBtn.hide()
@@ -54,11 +49,13 @@ class CameraPreviewDialog(QDialog):
 
         self.setLayout(self.hlayout)
 
-    def initCamera(self):
+        # Init camera        
         self.camera_api = init_camera_api(_id=self.unique_id)
         self.camera_api.begin_capturing()
+        
+        self.start_timer()
 
-    def _display_preview(self):
+    def display_preview(self):
         """Display the data at the GUI"""
 
         # Get the buffered data
@@ -81,7 +78,7 @@ class CameraPreviewDialog(QDialog):
 
     def refresh(self):
         """Refresh function for this tab"""
-        self._display_preview()
+        self.display_preview()
 
     def closeEvent(self, event):
         """Handle the close event to stop the timer and release resources"""

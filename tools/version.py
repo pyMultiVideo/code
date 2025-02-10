@@ -1,1 +1,1 @@
-__version__ = "1.0.5.2:merge"
+__version__ = "1.0.5.3"
