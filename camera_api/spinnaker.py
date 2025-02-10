@@ -311,7 +311,7 @@ class SpinnakerCamera(GenericCamera):
         # Return the image
         return self.next_image
 
-    def retrieve_buffered_data(
+    def get_available_images(
         self,
     ) -> dict[list[np.ndarray], list[dict[str, bool]], list[int]]:
         """

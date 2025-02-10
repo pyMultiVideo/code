@@ -1,12 +1,10 @@
 from PyQt6.QtWidgets import QMessageBox
 
-# TA Do we really need this module, most of this functionality could be done using generic pyQT dialogs.
-# E.g. info message as a one liner:  QMessageBox.information(None, "Title", "Your message here")
-
-
 def show_info_message(input_text: str):
     """
     Display an information message dialog box.
+    - Adds info icon to message box
+    - Removes need for explicitly writing info_dialog.exec()
     """
     info_dialog = QMessageBox()
     info_dialog.setIcon(QMessageBox.Icon.Information)
@@ -17,11 +15,10 @@ def show_info_message(input_text: str):
 
 def show_warning_message(
     input_text: str, okayButtonPresent: bool, ignoreButtonPresent: bool
-) -> bool:
+    ) -> bool:
     """
     Displays a warning message with Ignore button.
     Returns True if ignore button clicked else False.
-
     """
     warning_dialog = QMessageBox()
     warning_dialog.setIcon(QMessageBox.Icon.Warning)

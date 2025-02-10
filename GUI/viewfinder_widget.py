@@ -24,16 +24,12 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from .dialogs import show_warning_message  # TA : imported but not used.
 from tools import cbox_update_options
 from tools import CameraSetupConfig
 from tools import init_camera
 from config import ffmpeg_config_dict
 from config import gui_config_dict
 from config import paths_config_dict
-
-# TA I don't think the code that initialses the various GUI elements in this widget needs to be split into lots of different functions
-# that only get called once each.  Just combine them into the __init__ method seperated by comment lines as necessary.
 
 
 class ViewfinderWidget(QWidget):
@@ -73,19 +69,40 @@ class ViewfinderWidget(QWidget):
         self.cam_width = self.camera_api.get_width()
         self.cam_height = self.camera_api.get_height()
 
-        # Layout
-        self._init_camera_setup_groupbox()
-        self._set_camera_setup_layout()
-        self._page_layout()
-        self._init_recording()
+        # Intialise video feed
+        self.video_feed = pg.ImageView()
+        self.video_feed.ui.histogram.hide()
+        self.video_feed.ui.roiBtn.hide()
+        self.video_feed.ui.menuBtn.hide()
+        # Disable zoom and pan
+        self.video_feed.view.setMouseEnabled(x=False, y=False)
+        # Recording Information
+        self.text = pg.TextItem()
+        self.text.setPos(10, 10)
+        self.video_feed.addItem(self.text)
+        self.text.setText("NOT RECORDING", color="r")
 
-    def _page_layout(self):  # TA does this need to be a seperate function?
-        self.setLayout(self.camera_setup_hlayout)
+        """Initialise the GPIO data"""
+        # Initial state of the colour painted to the image
+        self.gpio_over_lay_color = np.random.randint(0, 256, size=3)
+        self.ellipse = pg.TextItem()
+        self.ellipse_font = QFont()
+        # self.ellipse_font.setPixelSize(100)
+        self.ellipse.setPos(10, 100)
+        self.video_feed.addItem(self.ellipse)
+        # self.ellipse.setFont(self.ellipse_font)
+        self.text.setText("GPIO Status: \u2b24", color=self.gpio_over_lay_color)
 
-    def _init_camera_setup_groupbox(
-        self,
-    ):  # TA does this need to be a seperate function?
-        self._initialise_video_feed()
+        self.recording_time_text = pg.TextItem()
+        self.recording_time_text.setPos(10, 70)
+        self.video_feed.addItem(self.recording_time_text)
+        self.recording_time_text.setText("Recording Time: 00:00:00", color="r")
+
+        # Framerate information
+        self.frame_rate_text = pg.TextItem()
+        self.frame_rate_text.setPos(10, 40)
+        self.video_feed.addItem(self.frame_rate_text)
+        self.frame_rate_text.setText("FPS:", color="r")
 
         self.camera_setup_groupbox = QGroupBox(f"{self.label}")
 
@@ -137,53 +154,12 @@ class ViewfinderWidget(QWidget):
         self.camera_setup_groupbox.setLayout(self.camera_header_layout)
         self.camera_setup_groupbox.setFixedHeight(75)
 
-    def _initialise_video_feed(self):  # TA does this need to be a seperate function?
-        self.video_feed = pg.ImageView()
-        self.video_feed.ui.histogram.hide()
-        self.video_feed.ui.roiBtn.hide()
-        self.video_feed.ui.menuBtn.hide()
-        # Disable zoom and pan
-        self.video_feed.view.setMouseEnabled(x=False, y=False)
-        # Recording Information
-        self.text = pg.TextItem()
-        self.text.setPos(10, 10)
-        self.video_feed.addItem(self.text)
-        self.text.setText("NOT RECORDING", color="r")
-        self._init_GPIO_overlay()
-        self._init_recording_time_overlay()
-        # Framerate information
-        self.frame_rate_text = pg.TextItem()
-        self.frame_rate_text.setPos(10, 40)
-        self.video_feed.addItem(self.frame_rate_text)
-        self.frame_rate_text.setText("FPS:", color="r")
-
-    def _set_camera_setup_layout(self):  # TA does this need to be a seperate function?
         self.camera_setup_hlayout = QVBoxLayout()
 
         self.camera_setup_hlayout.addWidget(self.camera_setup_groupbox)
         self.camera_setup_hlayout.addWidget(self.video_feed)
 
-    def _init_GPIO_overlay(self):  # TA does this need to be a seperate function?
-        """Initialise the GPIO data"""
-        # Initial state of the colour painted to the image
-        self.gpio_over_lay_color = np.random.randint(0, 256, size=3)
-        self.ellipse = pg.TextItem()
-        self.ellipse_font = QFont()
-        # self.ellipse_font.setPixelSize(100)
-        self.ellipse.setPos(10, 100)
-        self.video_feed.addItem(self.ellipse)
-        # self.ellipse.setFont(self.ellipse_font)
-        self.text.setText("GPIO Status: \u2b24", color=self.gpio_over_lay_color)
-
-    def _init_recording_time_overlay(
-        self,
-    ):  # TA does this need to be a seperate function?
-        self.recording_time_text = pg.TextItem()
-        self.recording_time_text.setPos(10, 70)
-        self.video_feed.addItem(self.recording_time_text)
-        self.recording_time_text.setText("Recording Time: 00:00:00", color="r")
-
-    def _init_recording(self):  # TA does this need to be a seperate function?
+        self.setLayout(self.camera_setup_hlayout)
         # Set the recording flag to False
         self.recording = False
         # Default width and hieght for the camera widget
@@ -211,7 +187,7 @@ class ViewfinderWidget(QWidget):
         """
         try:
             # Retrieve the latest image from the camera
-            self.buffered_data = self.camera_api.retrieve_buffered_data()
+            self.buffered_data = self.camera_api.get_available_images()
             if len(self.buffered_data["images"]) == 0:
                 return  # exit the function and wait to be called by the viewfinder tab.
             # Assign the first image of to the data to be displayed
@@ -405,8 +381,6 @@ class ViewfinderWidget(QWidget):
     def refresh(self):
         """refresh the camera widget"""
         self.update_camera_dropdown()
-        # Check the camera API if it would like to stop or start recording
-        self.check_trigger_recording()
 
     def _init_ffmpeg_process(self) -> None:
         """
@@ -731,18 +705,3 @@ class ViewfinderWidget(QWidget):
         # This post might suggest that the self.deleteLater() function is causing the application to crash.
         # https://stackoverflow.com/questions/37564728/pyqt-how-to-remove-a-layout-from-a-layout
         # self.deleteLater()
-
-    def check_trigger_recording(
-        self,
-    ):  # TA is this functionallity actually used?  If not remove.
-        """Function to check whether the camera API wants to stop or start recording."""
-        # If not recording check if there is a trigger to start recording
-        if self.recording is False:
-            if self.camera_api.trigger_start_recording() is True:
-                # Trigger recording
-                self.start_recording()
-        # If recording, check if there is a trigger to stop recording.
-        if self.recording is True:
-            if self.camera_api.trigger_stop_recording() is True:
-                # Stop recording
-                self.stop_recording()

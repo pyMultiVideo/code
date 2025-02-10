@@ -12,14 +12,11 @@ from PyQt6.QtWidgets import (
 )
 from dataclasses import asdict
 
-
 from config import ffmpeg_config_dict, paths_config_dict
 from tools import CameraSettingsConfig
 from tools import find_all_cameras, load_saved_setups, load_camera_dict
 
 QtCore.pyqtClassInfo
-
-# TA Suggest reordering the classes in this file from highest to lowest level, so CamerasTab, CameraOverviewTable, Camera
 
 
 class Camera:

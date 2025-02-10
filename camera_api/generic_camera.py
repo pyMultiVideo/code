@@ -21,19 +21,8 @@ class GenericCamera:
         """Function that returns the height of the camera resolution"""
         pass
 
-    def get_frame_rate(self) -> int:  # TA : Does not appear to be used by GUI, remove?
-        """Get the framerate of the camera"""
-        pass
 
-    def get_frame_rate_range(
-        self,
-    ) -> tuple[int, int]:  # TA : Does not appear to be used by GUI, remove?
-        """Get the range of frame rates the camera can return
 
-        Returns:
-            tuple[int, int]: A tuple of int containing this data
-        """
-        pass
 
     def set_frame_rate(self, frame_rate: int) -> None:
         """Function to set the aquisition frame rate of the camera"""
@@ -49,28 +38,17 @@ class GenericCamera:
 
     def set_buffer_handling_mode(
         self,
-    ) -> None:  # TA : Does not appear to be used by GUI, remove?
+    ) -> None:
         """Consider implementing a function that sets any internal camera buffer to overwrite the oldest image from the buffer to write a new image"""
         pass
 
-    def get_next_image(self) -> np.ndarray:
-        # TA : Do we need two methods for getting imgages from the camera, (this and retrieve_buffered_data). Remove?
-        """Function returns an image from the camera as a numpy array
-
-        Important Note: the aquisition of the next image from the camera can be a blocking function
-        (i.e. the function will prevent any other functions from being called without being completed). This will block the GUI from updating.
-        Make sure that there is a timeout for the time taken to get the image if this is the case
-
-        Returns:
-            self.next_image: np.ndarray of the next image
-        """
 
     def get_image_timestamp(self, next_image) -> datetime:
         """Function that returns a datetime object of the timestamp when the `next_image` was aquired"""
         timestamp = None
         return timestamp
 
-    def retrieve_buffered_data(  # TA : Rename as get_available_images?
+    def get_available_images( 
         self,
     ) -> dict[list[np.ndarray], list[dict[str, bool]], list[int]]:
         """Function to returns all the data from the camera buffer as a dictionary.
@@ -97,7 +75,12 @@ class GenericCamera:
     ) -> dict[
         str, bool
     ]:  # TA How to handle camera systems that dont have GPIO or have different number of pins?
-        """Function to return a dictionary of the GPIO data from the camera's GPIO pins"""
+        """Function to return a dictionary of the GPIO data from the camera's GPIO pins
+        
+        - Keys: Header of the file name
+        - Value: Values printed very frame / time the function is called to write to the GPIO output file.
+        
+        """
         return {
             "Line0": False,
             "Line1": False,

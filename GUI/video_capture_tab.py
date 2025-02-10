@@ -34,9 +34,6 @@ from tools import (
 from config import gui_config_dict
 from config import paths_config_dict
 
-# TA I don't think the code that initialses the various GUI elements in this tab needs to be split into lots of different functions
-# that only get called once each.  Just combine them into the __init__ method seperated by comment lines as necessary.
-
 
 class VideoCaptureTab(QWidget):
     """Tab used to display the viewfinder and control the cameras"""
@@ -48,38 +45,17 @@ class VideoCaptureTab(QWidget):
         self.logging = logging.getLogger(__name__)
         self.camera_groupboxes = []
         self.paths = paths_config_dict
-        self._init_header_groupbox()
-        self._init_viewfinder_groupbox()
-        # self._init_visibility_control_groupbox()
-        self._page_layout()
+        self.camera_layout = QGridLayout()
+        self.viewfinder_groupbox = QGroupBox("Viewfinder")
+        self.viewfinder_groupbox.setLayout(self.camera_layout)
+
         self._init_timers()
         print("Viewfinder tab initialised")
 
-    def _init_header_groupbox(self):  # TA does this need to be a seperate function?
-        # Initialise the configuration widget
+        # Initialise Header Group box
         self.header_groupbox = QGroupBox()
         self.header_groupbox.setMaximumHeight(95)
 
-        self._init_aquire_groupbox()
-        self._init_config_groupbox()
-        self._init_save_dir_groupbox()
-        self._init_control_all_groupbox()
-
-        self.header_hlayout = QHBoxLayout()
-        self.header_hlayout.addWidget(self.config_groupbox)
-        self.header_hlayout.addWidget(self.encoder_settings_group_box)
-        self.header_hlayout.addWidget(self.save_dir_groupbox)
-        self.header_hlayout.addWidget(self.control_all_groupbox)
-        self.header_groupbox.setLayout(self.header_hlayout)
-
-    def _page_layout(self):  # TA does this need to be a seperate function?
-        self.page_layout = QVBoxLayout()
-
-        self.page_layout.addWidget(self.header_groupbox)
-        self.page_layout.addWidget(self.viewfinder_groupbox)
-        self.setLayout(self.page_layout)
-
-    def _init_aquire_groupbox(self):  # TA does this need to be a seperate function?
         """List of encoders that are available"""
         self.encoder_settings_group_box = QGroupBox("FFMPEG Settings")
         # dropdown for camera selection
@@ -97,14 +73,11 @@ class VideoCaptureTab(QWidget):
         self.encoder_selection.setCurrentIndex(1)
         self.encoder = self.encoder_selection.currentText()
         self.encoder_selection.currentIndexChanged.connect(self.change_encoder)
-        self._set_aquire_layout()
 
-    def _set_aquire_layout(self):  # TA does this need to be a seperate function?
         self.aquire_hlayout = QHBoxLayout()
         self.aquire_hlayout.addWidget(self.encoder_selection)
         self.encoder_settings_group_box.setLayout(self.aquire_hlayout)
 
-    def _init_config_groupbox(self):  # TA does this need to be a seperate function?
         self.config_groupbox = QGroupBox("Experiment Configuration")
 
         # Text box for displaying the number of camera
@@ -140,9 +113,6 @@ class VideoCaptureTab(QWidget):
         # This feature does not work. disable the checkbox
         self.layout_checkbox.setEnabled(False)
 
-        self._set_config_layout()
-
-    def _set_config_layout(self):  # TA does this need to be a seperate function?
         self.config_hlayout = QHBoxLayout()
         self.config_hlayout.addWidget(self.save_camera_config_button)
         self.config_hlayout.addWidget(self.load_experiment_config_button)
@@ -151,7 +121,6 @@ class VideoCaptureTab(QWidget):
         self.config_hlayout.addWidget(self.layout_checkbox)
         self.config_groupbox.setLayout(self.config_hlayout)
 
-    def _init_save_dir_groupbox(self):  # TA does this need to be a seperate function?
         self.save_dir_groupbox = QGroupBox("Save Directory")
 
         # Buttons for saving and loading camera configurations
@@ -169,17 +138,12 @@ class VideoCaptureTab(QWidget):
         self.save_dir_textbox.setFont(QFont("Courier", 12))
         self.save_dir_textbox.setReadOnly(True)
         self.save_dir_textbox.setPlainText(self.paths["data_dir"])
-        self._set_save_dir_layout()
 
-    def _set_save_dir_layout(self):  # TA does this need to be a seperate function?
         self.save_dir_hlayout = QHBoxLayout()
         self.save_dir_hlayout.addWidget(self.save_dir_textbox)
         self.save_dir_hlayout.addWidget(self.save_dir_button)
         self.save_dir_groupbox.setLayout(self.save_dir_hlayout)
 
-    def _init_control_all_groupbox(
-        self,
-    ):  # TA does this need to be a seperate function?
         self.control_all_groupbox = QGroupBox("Control All")
 
         # Button for recording video
@@ -200,13 +164,48 @@ class VideoCaptureTab(QWidget):
         self.stop_recording_button.setFixedHeight(30)
         self.stop_recording_button.clicked.connect(self.stop_recording)
 
-        self._set_control_all_layout()
-
-    def _set_control_all_layout(self):  # TA does this need to be a seperate function?
         self.control_all_hlayout = QHBoxLayout()
         self.control_all_hlayout.addWidget(self.start_recording_button)
         self.control_all_hlayout.addWidget(self.stop_recording_button)
         self.control_all_groupbox.setLayout(self.control_all_hlayout)
+
+        self.header_hlayout = QHBoxLayout()
+        self.header_hlayout.addWidget(self.config_groupbox)
+        self.header_hlayout.addWidget(self.encoder_settings_group_box)
+        self.header_hlayout.addWidget(self.save_dir_groupbox)
+        self.header_hlayout.addWidget(self.control_all_groupbox)
+        self.header_groupbox.setLayout(self.header_hlayout)
+
+        # page layout initalisastion
+        self.page_layout = QVBoxLayout()
+
+        self.page_layout.addWidget(self.header_groupbox)
+        self.page_layout.addWidget(self.viewfinder_groupbox)
+        self.setLayout(self.page_layout)
+
+        # Check if the config file is present 
+
+        if self.GUI.startup_config is None:
+            useable_cameras = sorted(
+                list(
+                    set(self.connected_cameras()) - set(self.camera_groupbox_labels())
+                ),
+                key=str.lower,
+            )
+            for camera_label in useable_cameras[:1]:  # One camera by default
+                self.initialize_camera_widget(
+                    label=camera_label,
+                )
+        else:
+            # Load the default config file
+            with open(self.GUI.startup_config, "r") as config_file:
+                config_data = json.load(config_file)
+                config_data["cameras"] = [
+                    CameraSetupConfig(**camera) for camera in config_data["cameras"]
+                ]
+            experiment_config = ExperimentConfig(**config_data)
+
+            self.load_from_config_dir(experiment_config)
 
     ### Visibility Controls
 
@@ -246,50 +245,23 @@ class VideoCaptureTab(QWidget):
         TESTING = False
         # TESTING = True
         if TESTING is True:
-            for camera in self.camera_groupboxes:
+            for camera_widget in self.camera_groupboxes:
                 # check if the camera is in the performance_table as a column
-                if camera.unique_id not in self.GUI.performance_table.columns:
-                    self.GUI.performance_table[camera.unique_id] = []
+                if camera_widget.unique_id not in self.GUI.performance_table.columns:
+                    self.GUI.performance_table[camera_widget.unique_id] = []
 
-        for camera in self.camera_groupboxes:
+        for camera_widget in self.camera_groupboxes:
             if TESTING is True:
                 start_time = time.time()
-            camera.fetch_image_data()
-            camera.display_frame(camera._image_data)
-            camera.update_gpio_overlay()
+            camera_widget.fetch_image_data()
+            camera_widget.display_frame(camera_widget._image_data)
+            camera_widget.update_gpio_overlay()
             if TESTING is True:
                 end_time = time.time()
                 # Append the time taken to the performance table
-                self.GUI.performance_table.loc[time.time(), camera.unique_id] = (
+                self.GUI.performance_table.loc[time.time(), camera_widget.unique_id] = (
                     end_time - start_time
                 )
-
-    def _init_viewfinder_groupbox(self):
-        self.camera_layout = QGridLayout()
-        self.viewfinder_groupbox = QGroupBox("Viewfinder")
-        self.viewfinder_groupbox.setLayout(self.camera_layout)
-
-        if self.GUI.startup_config is None:
-            useable_cameras = sorted(
-                list(
-                    set(self.connected_cameras()) - set(self.camera_groupbox_labels())
-                ),
-                key=str.lower,
-            )
-            for camera_label in useable_cameras[:1]:  # One camera by default
-                self.initialize_camera_widget(
-                    label=camera_label,
-                )
-        else:
-            # Load the default config file
-            with open(self.GUI.startup_config, "r") as config_file:
-                config_data = json.load(config_file)
-                config_data["cameras"] = [
-                    CameraSetupConfig(**camera) for camera in config_data["cameras"]
-                ]
-            experiment_config = ExperimentConfig(**config_data)
-
-            self.load_from_config_dir(experiment_config)
 
     def spinbox_add_remove_cameras(self):
         """
