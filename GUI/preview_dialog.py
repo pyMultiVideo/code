@@ -62,7 +62,7 @@ class CameraPreviewDialog(QDialog):
         """Display the data at the GUI"""
 
         # Get the buffered data
-        self.buffered_data: dict = self.camera_api.retrieve_buffered_data()
+        self.buffered_data: dict = self.camera_api.get_available_images()
         if len(self.buffered_data["images"]) == 0:
             return  # exit the function and wait to be called by the viewfinder tab.
         self._image_data = self.buffered_data["images"][0]

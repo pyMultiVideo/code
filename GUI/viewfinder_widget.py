@@ -71,16 +71,44 @@ class ViewfinderWidget(QWidget):
         self.cam_height = self.camera_api.height
 
         # Layout
-        self._init_camera_setup_groupbox()
-        self._set_camera_setup_layout()
-        self._page_layout()
-        self._init_recording()
 
-    def _page_layout(self):
-        self.setLayout(self.camera_setup_hlayout)
+        self.video_feed = pg.ImageView()
+        self.video_feed.ui.histogram.hide()
+        self.video_feed.ui.roiBtn.hide()
+        self.video_feed.ui.menuBtn.hide()
+        # Disable zoom and pan
+        self.video_feed.view.setMouseEnabled(x=False, y=False)
+        # Recording Information
+        self.recording_status_item = pg.TextItem()
+        self.recording_status_item.setPos(10, 10)
+        self.video_feed.addItem(self.recording_status_item)
+        self.recording_status_item.setText("NOT RECORDING", color="r")
 
-    def _init_camera_setup_groupbox(self):
-        self._initialise_video_feed()
+        """Initialise the GPIO data"""
+        # Initial state of the colour painted to the image
+        self.gpio_over_lay_color = np.random.randint(0, 256, size=3)
+
+        self.gpio_status_item = pg.TextItem()
+        self.gpio_status_font = QFont()
+        self.gpio_status_item.setPos(10, 70)
+        self.video_feed.addItem(self.gpio_status_item)
+        self.gpio_status_item.setText("GPIO Status", color="purple")
+
+        self.gpio_status_indicator = pg.TextItem()
+        self.gpio_status_font = QFont()
+        self.gpio_status_indicator.setPos(170, 70)
+        self.video_feed.addItem(self.gpio_status_indicator)
+
+        self.recording_time_text = pg.TextItem()
+        self.recording_time_text.setPos(200, 10)
+        self.video_feed.addItem(self.recording_time_text)
+        self.recording_time_text.setText("", color="r")
+
+        # Framerate information
+        self.frame_rate_text = pg.TextItem()
+        self.frame_rate_text.setPos(10, 40)
+        self.video_feed.addItem(self.frame_rate_text)
+        self.frame_rate_text.setText("FPS:", color="r")
 
         self.camera_setup_groupbox = QGroupBox(f"{self.label}")
 
@@ -132,53 +160,13 @@ class ViewfinderWidget(QWidget):
         self.camera_setup_groupbox.setLayout(self.camera_header_layout)
         self.camera_setup_groupbox.setFixedHeight(75)
 
-    def _initialise_video_feed(self):
-        self.video_feed = pg.ImageView()
-        self.video_feed.ui.histogram.hide()
-        self.video_feed.ui.roiBtn.hide()
-        self.video_feed.ui.menuBtn.hide()
-        # Disable zoom and pan
-        self.video_feed.view.setMouseEnabled(x=False, y=False)
-        # Recording Information
-        self.recording_status_item = pg.TextItem()
-        self.recording_status_item.setPos(10, 10)
-        self.video_feed.addItem(self.recording_status_item)
-        self.recording_status_item.setText("NOT RECORDING", color="r")
-        self._init_GPIO_overlay()
-        self._init_recording_time_overlay()
-        # Framerate information
-        self.frame_rate_text = pg.TextItem()
-        self.frame_rate_text.setPos(10, 40)
-        self.video_feed.addItem(self.frame_rate_text)
-        self.frame_rate_text.setText("FPS:", color="r")
-
-    def _set_camera_setup_layout(self):
         self.camera_setup_hlayout = QVBoxLayout()
 
         self.camera_setup_hlayout.addWidget(self.camera_setup_groupbox)
         self.camera_setup_hlayout.addWidget(self.video_feed)
 
-    def _init_GPIO_overlay(self):
-        """Initialise the GPIO data"""
-        # Initial state of the colour painted to the image
-        self.gpio_over_lay_color = np.random.randint(0, 256, size=3)
-
-        self.gpio_status_item = pg.TextItem()
-        self.gpio_status_font = QFont()
-        self.gpio_status_item.setPos(10, 70)
-        self.video_feed.addItem(self.gpio_status_item)
-        self.gpio_status_item.setText("GPIO Status", color="purple")
-
-        self.gpio_status_indicator = pg.TextItem()
-        self.gpio_status_font = QFont()
-        self.gpio_status_indicator.setPos(170, 70)
-        self.video_feed.addItem(self.gpio_status_indicator)
-
-    def _init_recording_time_overlay(self):
-        self.recording_time_text = pg.TextItem()
-        self.recording_time_text.setPos(200, 10)
-        self.video_feed.addItem(self.recording_time_text)
-        self.recording_time_text.setText("", color="r")
+        self.setLayout(self.camera_setup_hlayout)
+        self._init_recording()
 
     def _init_recording(self):
         # Set the recording flag to False
@@ -208,7 +196,7 @@ class ViewfinderWidget(QWidget):
         """
         try:
             # Retrieve the latest image from the camera
-            self.buffered_data = self.camera_api.retrieve_buffered_data()
+            self.buffered_data = self.camera_api.get_available_images()
             if len(self.buffered_data["images"]) == 0:
                 return  # exit the function and wait to be called by the viewfinder tab.
             # Assign the first image of to the data to be displayed
@@ -401,8 +389,6 @@ class ViewfinderWidget(QWidget):
     def refresh(self):
         """refresh the camera widget"""
         self.update_camera_dropdown()
-        # Check the camera API if it would like to stop or start recording
-        self.check_trigger_recording()
 
     def _init_ffmpeg_process(self) -> None:
         """
@@ -727,16 +713,3 @@ class ViewfinderWidget(QWidget):
         # This post might suggest that the self.deleteLater() function is causing the application to crash.
         # https://stackoverflow.com/questions/37564728/pyqt-how-to-remove-a-layout-from-a-layout
         # self.deleteLater()
-
-    def check_trigger_recording(self):
-        """Function to check whether the camera API wants to stop or start recording."""
-        # If not recording check if there is a trigger to start recording
-        if self.recording is False:
-            if self.camera_api.trigger_start_recording() is True:
-                # Trigger recording
-                self.start_recording()
-        # If recording, check if there is a trigger to stop recording.
-        if self.recording is True:
-            if self.camera_api.trigger_stop_recording() is True:
-                # Stop recording
-                self.stop_recording()

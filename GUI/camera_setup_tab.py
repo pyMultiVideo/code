@@ -13,7 +13,6 @@ from PyQt6.QtWidgets import (
 )
 from dataclasses import asdict
 
-
 from config import ffmpeg_config_dict, paths_config_dict
 from tools import CameraSettingsConfig
 from tools import find_all_cameras, load_saved_setups, load_camera_dict
@@ -23,7 +22,7 @@ QtCore.pyqtClassInfo
 
 
 class Camera:
-    """Class that contains the setup for the camera widget inside the Camera Tab"""
+    """Class representing single camera in the Camera Tab table."""
 
     def __init__(
         self, setups_table, name, unique_id, fps, pxl_fmt, downsampling_factor
@@ -136,10 +135,7 @@ class Camera:
 
 class CamerasTab(QtWidgets.QWidget):
     """
-    Class that creates a setup tab that contains the camera table. This where we can see the camera settings and update them.
-    In particular a name for the camera, for each serial number.
-
-    This is the highest level of the setups tab, and contains the camera table.
+    Tab for naming cameras and editing camera-level settings.
     """
 
     def __init__(self, parent=None):

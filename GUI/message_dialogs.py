@@ -1,15 +1,10 @@
 from PyQt6.QtWidgets import QMessageBox
 
-
 def show_info_message(input_text: str):
     """
-    The function `show_info_message` displays an information message dialog with the input text in a
-    PyQt application.
-
-    :param input_text: The `show_info_message` function takes a string input_text as a parameter. This
-    function creates an information dialog box using PyQt5 library in Python and displays the input_text
-    as the message in the dialog box
-    :type input_text: str
+    Display an information message dialog box.
+    - Adds info icon to message box
+    - Removes need for explicitly writing info_dialog.exec()
     """
     info_dialog = QMessageBox()
     info_dialog.setIcon(QMessageBox.Icon.Information)
@@ -20,13 +15,10 @@ def show_info_message(input_text: str):
 
 def show_warning_message(
     input_text: str, okayButtonPresent: bool, ignoreButtonPresent: bool
-) -> bool:
+    ) -> bool:
     """
-    The function `show_warning_message` displays a warning dialog with an input text and allows the user
-    to either ignore or acknowledge the warning.
-
-    Function returns a bool (True) when the ignore button is clicked
-
+    Displays a warning message with Ignore button.
+    Returns True if ignore button clicked else False.
     """
     warning_dialog = QMessageBox()
     warning_dialog.setIcon(QMessageBox.Icon.Warning)
@@ -40,7 +32,3 @@ def show_warning_message(
     if ignoreButtonPresent and warning_dialog.clickedButton().text() == "Ignore":
         return True
     return False
-
-
-if __name__ == "__main__":
-    pass
