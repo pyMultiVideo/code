@@ -19,10 +19,13 @@ class SpinnakerCamera(GenericCamera):
         self.serial_number, self.api = unique_id.split("-")
         self.cam = self.system.GetCameras().GetBySerial(self.serial_number)
 
+
         print("Camera:", self.cam)
         self.cam.Init()
-        self.set_buffer_handling_mode()
+        self.nodemap = self.cam.GetNodeMap()
         self.stream_nodemap = self.cam.GetTLStreamNodeMap()
+        self.set_buffer_handling_mode("OldestFirst")
+
 
         self.setupChunkSelector()
 
@@ -32,12 +35,10 @@ class SpinnakerCamera(GenericCamera):
         else:
             self.fps = self.get_frame_rate()
 
-        # self.exposure_time  = self.get_exposure_time()
         self.width = self.get_width()
         self.height = self.get_height()
         self.gain = self.get_gain()
         self.pxl_fmt = self.get_pixel_format()
-        self.bitrate = self.get_bitrate()
 
     def setupChunkSelector(self):
         """
@@ -50,165 +51,57 @@ class SpinnakerCamera(GenericCamera):
     # Functions to get the camera parameters
 
     def get_width(self) -> int:
-        """
-        This Python function retrieves the width value from a node map using the PySpin library.
-        :return: The `get_width` method returns the width value of the camera image as an integer. It
-        retrieves the width node from the camera node map and returns its integer value.
-        """
-        nodemap = self.cam.GetNodeMap()
-        return PySpin.CIntegerPtr(nodemap.GetNode("Width")).GetValue()
+        """Get the width of the camera image in pixels."""
+        return PySpin.CIntegerPtr(self.nodemap.GetNode("Width")).GetValue()
 
     def get_height(self) -> int:
-        """
-        This Python function retrieves the height value from a camera node map.
-        :return: The `get_height` method returns the height value of the camera image as an integer. It
-        retrieves the height node from the camera node map and returns its integer value.
-        """
-        nodemap = self.cam.GetNodeMap()
-        return PySpin.CIntegerPtr(nodemap.GetNode("Height")).GetValue()
+        """Get the height of the camera image in pixels."""
+        return PySpin.CIntegerPtr(self.nodemap.GetNode("Height")).GetValue()
 
     def get_frame_rate(self) -> int:
-        """
-        This Python function retrieves the frame rate value from a camera node map.
-        :return: The `get_frame_rate` method returns the frame rate value as an integer.
-        """
-        nodemap = self.cam.GetNodeMap()
-        return PySpin.CFloatPtr(nodemap.GetNode("AcquisitionFrameRate")).GetValue()
+        """Get the camera frame rate in Hz."""
+        return PySpin.CFloatPtr(self.nodemap.GetNode("AcquisitionFrameRate")).GetValue()
 
     def get_frame_rate_range(self) -> tuple[int, int]:
-        """
-        Function that returns a tuple of ints that describes the minimum and maximum framerate
-
-        Returns:
-            tuple[int, int]: Minimum framerate and Maximum Frame rate
-        """
-
-        node_frame_rate = PySpin.CFloatPtr(
-            self.cam.GetNodeMap().GetNode("AcquisitionFrameRate")
-        )
-        if PySpin.IsAvailable(node_frame_rate) and PySpin.IsReadable(node_frame_rate):
-            min_frame_rate = node_frame_rate.GetMin()
-            max_frame_rate = node_frame_rate.GetMax()
-        else:
-            print("Frame rate node is not readable.")
-
-        return min_frame_rate, max_frame_rate
+        """Get the min and max frame rate in Hz."""
+        node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("AcquisitionFrameRate"))
+        return node.GetMin(), node.GetMax()
 
     def get_gain(self) -> int:
-        """
-        This Python function retrieves the gain value from a camera node map using the PySpin library.
-        :return: The `get_gain` method returns the current gain value of the camera.
-        """
-        nodemap = self.cam.GetNodeMap()
-        return PySpin.CFloatPtr(nodemap.GetNode("Gain")).GetValue()
+        """Get camera gain setting in dB."""
+        return PySpin.CFloatPtr(self.nodemap.GetNode("Gain")).GetValue()
 
     def get_pixel_format(self) -> str:
-        """
-        This Python function retrieves the current pixel format of an image using the PySpin library.
-        :return: The `get_pixel_format` method returns a string representing the current pixel format of
-        the camera. It retrieves the pixel format from the camera's node map and returns the symbolic
-        representation of the current pixel format.
-        """
-        nodemap = self.cam.GetNodeMap()
+        """Get string specifying camera pixel format"""
         return (
-            PySpin.CEnumerationPtr(nodemap.GetNode("PixelFormat"))
+            PySpin.CEnumerationPtr(self.nodemap.GetNode("PixelFormat"))
             .GetCurrentEntry()
             .GetSymbolic()
         )
-
-    def get_bitrate(self) -> int:
-        """
-        This Python function retrieves the bitrate value from a camera node map using the PySpin
-        library.
-        :return: The `get_bitrate` method returns an integer value representing the bitrate obtained
-        from the node "DeviceLinkThroughputLimit" in the camera's node map.
-        """
-        nodemap = self.cam.GetNodeMap()
-        return PySpin.CIntegerPtr(
-            nodemap.GetNode("DeviceLinkThroughputLimit")
-        ).GetValue()
-
-    # def get_unique_id(self) -> str:
-    #     '''Returns the unique id of the camera that is used in the pyMultiVideo application'''
-    #     return self.unique_id
 
     ## Buffer handling functions
 
     def set_buffer_handling_mode(self, mode: str = "OldestFirst") -> None:
         """
-        Sets the buffer handling mode.
+        Sets the buffer handling mode. Default mode 'OldestFirst' means that the oldest image in the
+        buffer is the first to be retrieved.  Alternative modes are:
 
-        By default, the buffer handling mode is set to 'OldestFirst'. This means that the oldest image in the buffer is the first to be retrieved.
-
-        Alternative modes are:
         - NewestFirst
         - NewestOnly
         - OldestFirstOverwrite
 
         See: https://www.teledynevisionsolutions.com/en-gb/support/support-center/application-note/iis/accessing-the-on-camera-frame-buffer/
-
-        For this implementation, use of oldest first is important as the camera releases the images in the order they are collected.
-        If the buffer is not emptied in this order then the images will be encoded in the wrong order which is bad
-
         """
-        if mode not in ["OldestFirst"]:
-            # Raise a warning if the mode is not set to 'OldestFirst'
-            self.logger.warning(f"Buffer handling mode '{mode}' is not 'OldestFirst'.")
-
         try:
-            # Access the Transport Layer Stream (TLStream) node map
-            stream_nodemap = self.cam.GetTLStreamNodeMap()
-
-            # Set buffer handling mode
-            node_buffer_handling_mode = PySpin.CEnumerationPtr(
-                stream_nodemap.GetNode("StreamBufferHandlingMode")
-            )
-
-            # Check if the node exists and is writable
-            if PySpin.IsAvailable(node_buffer_handling_mode) and PySpin.IsWritable(
-                node_buffer_handling_mode
-            ):
-                node_mode_value = node_buffer_handling_mode.GetEntryByName(
-                    mode
-                )  # Change to desired mode
-                if PySpin.IsAvailable(node_mode_value) and PySpin.IsReadable(
-                    node_mode_value
-                ):
-                    node_buffer_handling_mode.SetIntValue(node_mode_value.GetValue())
-                    print(
-                        f"Buffer Handling Mode set to: {node_mode_value.GetSymbolic()}"
-                    )
-
+            node = PySpin.CEnumerationPtr(self.stream_nodemap.GetNode("StreamBufferHandlingMode"))
+            node.SetIntValue(node.GetEntryByName(mode).GetValue())
         except PySpin.SpinnakerException as ex:
             print(f"Error setting buffer handling mode: {ex}")
 
-    def get_buffer_handling_mode(self) -> str:
-        """Function that returns the current buffer handling mode"""
-        try:
-            # Access the Transport Layer Stream (TLStream) node map
-            stream_nodemap = self.cam.GetTLStreamNodeMap()
 
-            # Get buffer handling mode
-            node_buffer_handling_mode = PySpin.CEnumerationPtr(
-                stream_nodemap.GetNode("StreamBufferHandlingMode")
-            )
-
-            # Check if the node exists and is readable
-            if PySpin.IsAvailable(node_buffer_handling_mode) and PySpin.IsReadable(
-                node_buffer_handling_mode
-            ):
-                mode = node_buffer_handling_mode.GetCurrentEntry().GetSymbolic()
-                print(f"Buffer Handling Mode: {mode}")
-                return mode
-
-        except PySpin.SpinnakerException as ex:
-            print(f"Error getting buffer handling mode: {ex}")
-            return None
 
     def set_frame_rate(self, frame_rate: int) -> None:
-        """
-        Function to set the frame rate of the camera.
-        """
+        """Set the frame rate of the camera."""
         ## Make sure that frame rate is an int
         if type(frame_rate) is str:
             frame_rate = int(frame_rate)
@@ -282,34 +175,6 @@ class SpinnakerCamera(GenericCamera):
             self.logger.error(f"Error during begin capturing: {e}")
             print(f"Error during begin capturing: {e}")
             raise
-
-    def get_next_image(self) -> np.ndarray:
-        """
-        Function to get the next image from the camera (one at a time).
-
-        In the PySpin API, this function is a blocking function. i.e. running this function will stop the rest of the program
-        running until is has completed its own task.
-        """
-
-        # Check if the camera is not in aquistion mode
-        if not self.cam.IsStreaming():
-            raise Exception(f"Camera {self.serial_number} is not in acquisition mode.")
-
-        # Get the next image
-        next_image = self.cam.GetNextImage()
-
-        # Check if the image is incomplete
-        if next_image.IsIncomplete():
-            raise Exception("Image is incomplete.")
-
-        # Convert the image to a numpy array
-        self.next_image = next_image.GetNDArray()
-
-        # This function is not going to release data from the buffer since it will only be used to display the current image.
-        next_image.Release()
-
-        # Return the image
-        return self.next_image
 
     def get_available_images(
         self,
