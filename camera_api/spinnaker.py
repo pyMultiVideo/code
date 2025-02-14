@@ -42,8 +42,10 @@ class SpinnakerCamera(GenericCamera):
             self.set_pixel_format(self.camera_config.pxl_fmt)
 
         # Set frame rate control to manual.
-        # frc_node = PySpin.CBooleanPtr(self.nodemap.GetNode("AcquisitionFrameRateEnable"))
-        # frc_node.SetValue(True) # Not working because AcquisitionFrameRateEnable node is not available.
+        fra_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("AcquisitionFrameRateAuto"))
+        fra_node.SetIntValue(fra_node.GetEntryByName("Off").GetValue())
+        frc_node = PySpin.CBooleanPtr(self.nodemap.GetNode("AcquisitionFrameRateEnabled"))
+        frc_node.SetValue(True)
 
     # Functions to get the camera parameters ----------------------------------------------
 
