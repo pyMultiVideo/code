@@ -54,17 +54,17 @@ if ($minicondaOutput) {
 
 # Create a conda environment in the miniconda path that has been installe.
 try {
-    Write-Output "Creating pyMultiCam_env for running the applications"
-    # Create a new environment in Miniconda called pyMultiCam_env
-    & "$minicondaPath\miniconda3\Scripts\conda.exe" create -n pyMultiCam_env python=3.10 -y
+    Write-Output "Creating pmv for running the applications"
+    # Create a new environment in Miniconda called pmv
+    & "$minicondaPath\miniconda3\Scripts\conda.exe" create -n pmv python=3.10 -y
 }
 catch {
     Write-Error "An Error occured whilst trying to make the virtual environment for pyMulitCam."
 }
 
 try {
-    Write-Output  "Installing the requirements.txt in the pyMultiCam_env"
-    & "$minicondaPath\miniconda3\Scripts\conda.exe" run -n pyMultiCam_env pip install -r "../requirements.txt"
+    Write-Output  "Installing the requirements.txt in the pmv"
+    & "$minicondaPath\miniconda3\Scripts\conda.exe" run -n pmv pip install -r "../requirements.txt"
 } catch {
     Write-Error "An error occurred while installing the requirements."
 }

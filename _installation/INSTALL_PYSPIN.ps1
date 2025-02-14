@@ -109,7 +109,7 @@ Get-Process -Id $PID |
 
 # Path to program files
 $systemPath = [System.Environment]::GetFolderPath('ProgramFiles') 
-$envPath = "$systemPath\miniconda3\envs\pyMultiCam_env"
+$envPath = "$systemPath\miniconda3\envs\pmv"
 
 # Install spinnaker SDK
 try {
