@@ -24,7 +24,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from .message_dialogs import show_warning_message
 from tools import cbox_update_options
 from tools import CameraSetupConfig
 from tools import init_camera_api
@@ -57,9 +56,7 @@ class ViewfinderWidget(QWidget):
         # to set the camera settings.
 
         if self.label in self.camera_setup_tab.get_camera_labels():
-            self.camera_settings = self.camera_setup_tab.getCameraSettingsConfig(
-                self.label
-            )
+            self.camera_settings = self.camera_setup_tab.getCameraSettingsConfig(self.label)
         self.fps = self.camera_settings.fps
         self.pxl_fmt = self.camera_settings.pxl_fmt
         self.unique_id = self.camera_settings.unique_id
@@ -67,8 +64,8 @@ class ViewfinderWidget(QWidget):
 
         self.camera_api = init_camera_api(self.unique_id, self.camera_settings)
 
-        self.cam_width = self.camera_api.width
-        self.cam_height = self.camera_api.height
+        self.cam_width = self.camera_api.get_width()
+        self.cam_height = self.camera_api.get_height()
 
         # Layout
 
@@ -86,7 +83,7 @@ class ViewfinderWidget(QWidget):
 
         """Initialise the GPIO data"""
         # Initial state of the colour painted to the image
-        self.gpio_over_lay_color = np.random.randint(0, 256, size=3)
+        self.gpio_over_lay_color = np.zeros(3)
 
         self.gpio_status_item = pg.TextItem()
         self.gpio_status_font = QFont()
@@ -124,9 +121,7 @@ class ViewfinderWidget(QWidget):
 
         # Button for recording video
         self.start_recording_button = QPushButton("")
-        self.start_recording_button.setIcon(
-            QIcon(os.path.join(self.paths["assets_dir"], "record.svg"))
-        )
+        self.start_recording_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "record.svg")))
         self.start_recording_button.setFixedWidth(30)
         # self.start_recording_button.setFixedHeight(30)
         self.start_recording_button.setEnabled(False)
@@ -134,9 +129,7 @@ class ViewfinderWidget(QWidget):
 
         # Button for stopping recording
         self.stop_recording_button = QPushButton("")
-        self.stop_recording_button.setIcon(
-            QIcon(os.path.join(self.paths["assets_dir"], "stop.svg"))
-        )
+        self.stop_recording_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "stop.svg")))
         self.stop_recording_button.setFixedWidth(30)
         # self.stop_recording_button.setFixedHeight(30)
         self.stop_recording_button.setEnabled(False)
@@ -194,83 +187,42 @@ class ViewfinderWidget(QWidget):
         This can then be used to display the image to the GUI.
 
         """
-        try:
-            # Retrieve the latest image from the camera
-            self.buffered_data = self.camera_api.get_available_images()
-            if len(self.buffered_data["images"]) == 0:
-                return  # exit the function and wait to be called by the viewfinder tab.
-            # Assign the first image of to the data to be displayed
-            self._image_data = self.buffered_data["images"][0]
-            self._GPIO_data = [int(x) for x in self.buffered_data["gpio_data"][0]]
-            self.display_average_frame_rate()
-            self.display_recording_time()
-            # If the recording flag is True
-            if self.recording is True:
-                self.recorded_frames += len(self.buffered_data["timestamps"])
-                # encode the frames
-                self.encode_frame_from_camera_buffer(
-                    frame_buffer=self.buffered_data["images"]
-                )
-                # encode the GPIO data
-                self.write_gpio_data_from_buffer(
-                    gpio_buffer=self.buffered_data["gpio_data"]
-                )
-        except Exception as e:
-            print(f"Error fetching image data: {e}")
-            # print(self.camera_object.buffer_list)
-
-            pass
+        # try:
+        # Retrieve the latest image from the camera
+        new_images = self.camera_api.get_available_images()
+        if len(new_images["images"]) == 0:
+            return
+        # Assign the first image of to the data to be displayed
+        self._image_data = new_images["images"][0]
+        self._GPIO_data = np.array(list(new_images["gpio_data"][0].values()))
+        self.frame_timestamps.extend(new_images["timestamps"])
+        # If the recording flag is True
+        if self.recording is True:
+            self.recorded_frames += len(new_images["timestamps"])
+            # encode the frames
+            self.encode_frame_from_camera_buffer(frame_buffer=new_images["images"])
+            # encode the GPIO data
+            self.write_gpio_data_from_buffer(gpio_buffer=new_images["gpio_data"])
+        # except Exception as e:
+        #    print(f"Error fetching image data: {e}")
 
     def display_average_frame_rate(self):
-        """
-        Function that checks if the rate of frame aquisiton is as correct.
-        This is being done using the `self.timestamps` list.
-
-        Note: The framerate being less than the required framerate is good because is it aquring faster than required.
-
-        """
-        self.frame_timestamps.extend(self.buffered_data["timestamps"])
-
-        # Calculate the time differences between consecutive timestamps
-        time_diffs = [
-            (self.frame_timestamps[i + 1] - self.frame_timestamps[i]).total_seconds()
-            for i in range(len(self.frame_timestamps) - 1)
-        ]
-        # Calculate the average time difference
-        avg_time_diff = sum(time_diffs) / len(time_diffs)
-
-        # Calculate the framerate
-        calculated_framerate = 1 / avg_time_diff
-
-        # if calculated_framerate < int(self.fps) + 1:
-        if abs(calculated_framerate - int(self.fps)) < 1:
-            color = "r"
-            # if self.FRAMERATEWARNINGSUPPRESSED is False:
-            #     # if the framerate is too low raise a warining to the user?
-            #     self.FRAMERATEWARNINGSUPPRESSED = show_warning_message(
-            #         input_text="The required aquisition framerate is note being met. You could be dropping frames. ",
-            #         okayButtonPresent=False,
-            #         ignoreButtonPresent=True,
-            #     )
-        else:
-            color = "g"
-        # Display the implied framerate from the calcualtion
+        """Compute average framerate and display over image in green if OK else red."""
+        # Calculate the frame rate.
+        avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
+        calculated_framerate = 1e9 / avg_time_diff
+        # Display the framerate over the image.
+        color = "r" if calculated_framerate < (int(self.fps) - 1) else "g"
         self.frame_rate_text.setText(f"FPS: {calculated_framerate:.2f}", color=color)
 
     def display_recording_time(self):
-        """
-        Function to display the length of recording time.
-        """
+        """Display the current recording duration over image."""
         if self.recording:
-            elapsed_time = datetime.now() - datetime.strptime(
-                self.metadata["begin_time"], "%Y-%m-%d %H:%M:%S"
-            )
+            elapsed_time = datetime.now() - datetime.strptime(self.metadata["begin_time"], "%Y-%m-%d %H:%M:%S")
             elapsed_seconds = elapsed_time.total_seconds()
             hours, remainder = divmod(elapsed_seconds, 3600)
             minutes, seconds = divmod(remainder, 60)
-            self.recording_time_text.setText(
-                f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}", color="g"
-            )
+            self.recording_time_text.setText(f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}", color="g")
         else:
             self.recording_time_text.setText("", color="r")
 
@@ -284,9 +236,7 @@ class ViewfinderWidget(QWidget):
         cbox_update_options(
             cbox=self.camera_dropdown,
             options=self.camera_setup_tab.get_camera_labels(),
-            used_cameras_labels=list(
-                [cam.label for cam in self.view_finder.camera_groupboxes]
-            ),
+            used_cameras_labels=list([cam.label for cam in self.view_finder.camera_groupboxes]),
             selected=self.label,
         )
         self.camera_dropdown.currentTextChanged.connect(self.change_camera)
@@ -318,7 +268,7 @@ class ViewfinderWidget(QWidget):
             f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_GPIO_data.csv",
         )
         if header is None:
-            header = ["Line1", "Line2", "Line3", "Line4"]
+            header = ["Line1", "Line2", "Line3"]
         with open(self.GPIO_filename, mode="w", newline="") as self.f:
             writer = csv.writer(self.f)
             writer.writerow(header)
@@ -331,19 +281,17 @@ class ViewfinderWidget(QWidget):
             f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_metadata.json",
         )
 
-    def display_frame(self, image_data: np.array) -> None:
+    def display_frame(self):
         """
-        Display the image on the GUI
-        This function also calls the the relevent functions to add overlays on the image.
+        Display the most recent image on the GUI and call functions to add overlays on the image.
         """
         try:
             # Display the image on the GUI
-            self.video_feed.setImage(image_data.T)
-            # Display the GPIO data on the image
-            # self.get_GPIO_data()
-            # self.draw_GPIO_overlay()
-            # # # Recording status overlay
+            self.video_feed.setImage(self._image_data.T)
             self.draw_status_overlay()
+            self.display_average_frame_rate()
+            self.display_recording_time()
+            self.update_gpio_overlay()
         except Exception as e:
             print(f"Error displaying image: {e}")
 
@@ -360,30 +308,11 @@ class ViewfinderWidget(QWidget):
             color = "r"
         self.recording_status_item.setText(status, color=color)
 
-    def update_gpio_overlay(self, DECAY=0.9) -> None:
+    def update_gpio_overlay(self, decay=0.9):
         """Draw the GPIO data on the image"""
-
-        if self._GPIO_data is None:
-            self.gpio_over_lay_color = DECAY * np.array(self.gpio_over_lay_color)
-        elif self._GPIO_data is not None:
-            # If all of the channels are 1 normal exponential decay, if any are 0 then bump the color back to the highest point again
-            if all(state == 0 for state in self._GPIO_data):
-                self.gpio_over_lay_color = DECAY * np.array(self.gpio_over_lay_color)
-            else:
-                new_color = self.gpio_over_lay_color.copy()
-                for line_index, gpio_state in enumerate(self._GPIO_data):
-                    if line_index == 3:
-                        # skip the last line
-                        continue
-                    if gpio_state == 0:
-                        new_color[line_index] = 0
-                    elif gpio_state == 1:
-                        new_color[line_index] = 255
-                self.gpio_over_lay_color = (DECAY) * np.array(new_color) + (
-                    1 - DECAY
-                ) * np.array(self.gpio_over_lay_color)
-
-        # update the color of the ellipse
+        self.gpio_over_lay_color = decay * self.gpio_over_lay_color
+        if self._GPIO_data is not None:
+            self.gpio_over_lay_color[self._GPIO_data > 0] = 255
         self.gpio_status_indicator.setText("\u2b24", color=self.gpio_over_lay_color)
 
     def refresh(self):
@@ -435,19 +364,6 @@ class ViewfinderWidget(QWidget):
         print(ffmpeg_command)
         self.ffmpeg_process = subprocess.Popen(ffmpeg_command, stdin=subprocess.PIPE)
 
-    def encode_frame_ffmpeg_process(self, frame: np.array) -> None:
-        """
-        The `encode_frame_ffmpeg_process` function encodes the frame using the ffmpeg pgrocess.
-
-        :param frame: np.array - frame to be encoded
-        """
-        try:
-            # Write the frame to the ffmpeg process
-            self.ffmpeg_process.stdin.write(frame.tobytes())
-
-        except Exception as e:
-            print(f"Error encoding frame: {e}")
-
     def encode_frame_from_camera_buffer(self, frame_buffer: list[np.ndarray]) -> None:
         """
         Encodes the frames from the camera buffer and writes them to the file.
@@ -457,31 +373,10 @@ class ViewfinderWidget(QWidget):
                 # Get the frame from the buffer (front of the queue)
                 frame = frame_buffer.pop(0)
                 # Encode the frame
-                self.encode_frame_ffmpeg_process(frame)
+                self.ffmpeg_process.stdin.write(frame.tobytes())
 
         except Exception as e:
             print(f"Error encoding frame: {e}")
-
-    def write_gpio_data_to_csv(self, gpio_data: list[bool]) -> None:
-        """
-        The function `encode_gpio_data` writes GPIO data to a file in CSV format.
-        :param gpio_data: The `gpio_data` parameter is a list of boolean values representing the GPIO
-        data that needs to be encoded and written to a file. The `encode_gpio_data` method takes this
-        list of boolean values and writes them to a file specified by `self.GPIO_filename`. If an error
-        occurs during the encoding
-        :type gpio_data: list[bool]
-        """
-        try:
-            # Converts the list of bools to a list of ints, because writing ints takes a smaller number of charaters than
-            # writing the string 'True' or 'False'.
-            gpio_data = [int(x) for x in gpio_data]
-            # Write the GPIO data to the file
-            with open(self.GPIO_filename, mode="a", newline="") as self.f:
-                writer = csv.writer(self.f)
-                writer.writerow(gpio_data)
-
-        except Exception as e:
-            print(f"Error encoding GPIO data: {e}")
 
     def write_gpio_data_from_buffer(self, gpio_buffer: list[list[bool]]) -> None:
         """
@@ -493,11 +388,14 @@ class ViewfinderWidget(QWidget):
         - buffer_list: list[list[bool]] - list of GPIO data to be written to the file
 
         """
-        try:
-            for gpio_data in gpio_buffer:
-                self.write_gpio_data_to_csv(gpio_data)
-        except Exception as e:
-            print(f"Error encoding GPIO data: {e}")
+        with open(self.GPIO_filename, mode="a", newline="") as self.f:
+            writer = csv.writer(self.f)
+            try:
+                for gpio_data in gpio_buffer:
+                    gpio_values = list(gpio_data.values())
+                    writer.writerow(gpio_values)
+            except Exception as e:
+                print(f"Error encoding GPIO data: {e}")
 
     def create_metadata_file(self):
         """Function to creat the metadata file and write its initial information to json"""
@@ -511,7 +409,6 @@ class ViewfinderWidget(QWidget):
             "GPIO_filename": self.GPIO_filename,
             "recorded_frames": self.recorded_frames,
             "begin_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "recorded_frames": None,
             "end_time": None,
         }
 
@@ -604,9 +501,7 @@ class ViewfinderWidget(QWidget):
         # Get the new camera ID
         new_camera_label = str(self.camera_dropdown.currentText())
         # from the setups tab, get the unique id of the camera
-        camera_unique_id = self.camera_setup_tab.get_camera_unique_id_from_label(
-            new_camera_label
-        )
+        camera_unique_id = self.camera_setup_tab.get_camera_unique_id_from_label(new_camera_label)
         self._change_camera(camera_unique_id, new_camera_label)
 
     def _change_camera(self, new_unique_id, new_camera_label) -> None:
@@ -645,16 +540,12 @@ class ViewfinderWidget(QWidget):
         """Set the settings assocaitd with the camera widget into the GUI"""
         # Check if the camera label is in the database
         if camera_config.label not in self.camera_setup_tab.get_camera_labels():
-            self.logger.error(
-                f"Camera label {camera_config.label} not found in database"
-            )
+            self.logger.error(f"Camera label {camera_config.label} not found in database")
             return
 
         self.label = camera_config.label
         # self.downsampling_factor = camera_config.downsample_factor
-        self.unique_id = self.camera_setup_tab.get_camera_unique_id_from_label(
-            self.label
-        )
+        self.unique_id = self.camera_setup_tab.get_camera_unique_id_from_label(self.label)
         self.subject_id = camera_config.subject_id
         self._change_camera(new_unique_id=self.unique_id, new_camera_label=self.label)
         self.logger.info(f"Camera configuration set to: {camera_config}")

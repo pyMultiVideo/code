@@ -64,9 +64,7 @@ class VideoCaptureTab(QWidget):
         self.encoder_selection.addItems(
             valid_ffmpeg_encoders(
                 GPU_AVAIALABLE=gpu_available(),
-                encoder_dict_keys=self.camera_setup_tab.ffmpeg_config["output"][
-                    "encoder"
-                ].keys(),
+                encoder_dict_keys=self.camera_setup_tab.ffmpeg_config["output"]["encoder"].keys(),
             )
         )
 
@@ -89,15 +87,11 @@ class VideoCaptureTab(QWidget):
         maxCameras = len(self.camera_setup_tab.setups.keys())
         self.camera_quantity_spin_box.setRange(1, maxCameras)
         self.camera_quantity_spin_box.setSingleStep(1)
-        self.camera_quantity_spin_box.valueChanged.connect(
-            self.spinbox_add_remove_cameras
-        )
+        self.camera_quantity_spin_box.valueChanged.connect(self.spinbox_add_remove_cameras)
         self.camera_quantity_spin_box.setValue(1)
         #
         self.save_camera_config_button = QPushButton("Save Layout")
-        self.save_camera_config_button.setIcon(
-            QIcon(os.path.join(self.paths["assets_dir"], "save.svg"))
-        )
+        self.save_camera_config_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "save.svg")))
         self.save_camera_config_button.setFixedHeight(30)
         self.save_camera_config_button.clicked.connect(self.save_experiment_config)
 
@@ -125,9 +119,7 @@ class VideoCaptureTab(QWidget):
 
         # Buttons for saving and loading camera configurations
         self.save_dir_button = QPushButton("")
-        self.save_dir_button.setIcon(
-            QIcon(os.path.join(self.paths["assets_dir"], "folder.svg"))
-        )
+        self.save_dir_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "folder.svg")))
         self.save_dir_button.setFixedWidth(30)
         self.save_dir_button.setFixedHeight(30)
         self.save_dir_button.clicked.connect(self.get_save_dir)
@@ -148,18 +140,14 @@ class VideoCaptureTab(QWidget):
 
         # Button for recording video
         self.start_recording_button = QPushButton("")
-        self.start_recording_button.setIcon(
-            QIcon(os.path.join(self.paths["assets_dir"], "record.svg"))
-        )
+        self.start_recording_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "record.svg")))
         self.start_recording_button.setFixedWidth(30)
         self.start_recording_button.setFixedHeight(30)
         self.start_recording_button.clicked.connect(self.start_recording)
 
         # Button for stopping recording
         self.stop_recording_button = QPushButton("")
-        self.stop_recording_button.setIcon(
-            QIcon(os.path.join(self.paths["assets_dir"], "stop.svg"))
-        )
+        self.stop_recording_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "stop.svg")))
         self.stop_recording_button.setFixedWidth(30)
         self.stop_recording_button.setFixedHeight(30)
         self.stop_recording_button.clicked.connect(self.stop_recording)
@@ -183,13 +171,11 @@ class VideoCaptureTab(QWidget):
         self.page_layout.addWidget(self.viewfinder_groupbox)
         self.setLayout(self.page_layout)
 
-        # Check if the config file is present 
+        # Check if the config file is present
 
         if self.GUI.startup_config is None:
             useable_cameras = sorted(
-                list(
-                    set(self.connected_cameras()) - set(self.camera_groupbox_labels())
-                ),
+                list(set(self.connected_cameras()) - set(self.camera_groupbox_labels())),
                 key=str.lower,
             )
             for camera_label in useable_cameras[:1]:  # One camera by default
@@ -200,9 +186,7 @@ class VideoCaptureTab(QWidget):
             # Load the default config file
             with open(self.GUI.startup_config, "r") as config_file:
                 config_data = json.load(config_file)
-                config_data["cameras"] = [
-                    CameraSetupConfig(**camera) for camera in config_data["cameras"]
-                ]
+                config_data["cameras"] = [CameraSetupConfig(**camera) for camera in config_data["cameras"]]
             experiment_config = ExperimentConfig(**config_data)
 
             self.load_from_config_dir(experiment_config)
@@ -228,40 +212,23 @@ class VideoCaptureTab(QWidget):
 
     def _init_timers(self):
         """Initialise the timers for the viewfinder tab"""
-        self.display_update_timer = QTimer()
-        self.display_update_timer.timeout.connect(self.update_display)
-        self.display_update_timer.start(
-            int(1000 / gui_config_dict["update_display_rate"])
-        )  # 30 fps by default. Can be edited in the .json file
+        self.fetch_images_timer = QTimer()
+        self.fetch_images_timer.timeout.connect(self.fetch_image_data)
+        self.fetch_images_timer.start(int(1000 / gui_config_dict["fetch_image_rate"]))
 
         self.refresh_timer = QTimer()
         self.refresh_timer.timeout.connect(self.refresh)
-        self.refresh_timer.start(1000)
+        self.refresh_timer.timeout.connect(self.update_display)
+        self.refresh_timer.start(int(1000 / gui_config_dict["update_display_rate"]))
+
+    def fetch_image_data(self):
+        for camera_widget in self.camera_groupboxes:
+            camera_widget.fetch_image_data()
 
     def update_display(self):
-        """
-        Function that calls the required functions to collect, encode and display the images from the camera.
-        """
-        TESTING = False
-        # TESTING = True
-        if TESTING is True:
-            for camera_widget in self.camera_groupboxes:
-                # check if the camera is in the performance_table as a column
-                if camera_widget.unique_id not in self.GUI.performance_table.columns:
-                    self.GUI.performance_table[camera_widget.unique_id] = []
-
+        """Displays GUI on the application"""
         for camera_widget in self.camera_groupboxes:
-            if TESTING is True:
-                start_time = time.time()
-            camera_widget.fetch_image_data()
-            camera_widget.display_frame(camera_widget._image_data)
-            camera_widget.update_gpio_overlay()
-            if TESTING is True:
-                end_time = time.time()
-                # Append the time taken to the performance table
-                self.GUI.performance_table.loc[time.time(), camera_widget.unique_id] = (
-                    end_time - start_time
-                )
+            camera_widget.display_frame()
 
     def spinbox_add_remove_cameras(self):
         """
@@ -283,9 +250,7 @@ class VideoCaptureTab(QWidget):
             )
 
         elif self.camera_quantity_spin_box.value() <= len(self.camera_groupboxes):
-            for i in range(
-                len(self.camera_groupboxes) - self.camera_quantity_spin_box.value()
-            ):
+            for i in range(len(self.camera_groupboxes) - self.camera_quantity_spin_box.value()):
                 # Removes camera from
                 camera = self.camera_groupboxes.pop()
                 camera.disconnect()
@@ -309,11 +274,13 @@ class VideoCaptureTab(QWidget):
         for camera in self.camera_groupboxes:
             # Pause the aqusition of the video stream
             camera.camera_api.stop_capturing()
+        self.fetch_images_timer.stop()
 
     def play_camera_streaming(self):
-        for camera in self.camera_groupboxes: 
-            # Restart the aquisition of the video stream 
+        for camera in self.camera_groupboxes:
+            # Restart the aquisition of the video stream
             camera.camera_api.begin_capturing()
+        self.fetch_images_timer.start(int(1000 / gui_config_dict["fetch_image_rate"]))
 
     def add_widget_to_layout(self):
         """Add the camera widget to the layout
@@ -327,16 +294,12 @@ class VideoCaptureTab(QWidget):
             side_len = ceil(sqrt(len(self.connected_cameras())))
             # Could instead, add a manual setting for the number of colmns in the layout.
             # Add the new camera to the correct position
-            self.camera_layout.addWidget(
-                self.camera_groupboxes[-1], position // side_len, position % side_len
-            )
+            self.camera_layout.addWidget(self.camera_groupboxes[-1], position // side_len, position % side_len)
         else:
             if type(self.camera_layout) is QGridLayout:
                 # Grid Layout
                 position = len(self.camera_groupboxes) - 1
-                self.camera_layout.addWidget(
-                    self.camera_groupboxes[-1], position // 2, position % 2
-                )
+                self.camera_layout.addWidget(self.camera_groupboxes[-1], position // 2, position % 2)
             elif type(self.camera_layout) is QVBoxLayout:
                 # Vertical Layout
                 self.camera_layout.addWidget(self.camera_groupboxes[-1])
@@ -394,9 +357,7 @@ class VideoCaptureTab(QWidget):
     def save_experiment_config(self):
         """Save the camera configuration to a json file"""
         # Open folder selection dialog for which file to save to
-        file_path = QFileDialog.getSaveFileName(
-            self, "Save File", "experiments", "JSON Files (*.json)"
-        )
+        file_path = QFileDialog.getSaveFileName(self, "Save File", "experiments", "JSON Files (*.json)")
         # save the experiment to a json file
 
         with open(file_path[0], "w") as config_file:
@@ -405,14 +366,10 @@ class VideoCaptureTab(QWidget):
     def load_experiment_config(self):
         """Function to load a camera configuration from a json file"""
         # deinitialise all cameras that are currently running
-        file_tuple = QFileDialog.getOpenFileName(
-            self, "Open File", "experiments", "JSON Files (*.json)"
-        )
+        file_tuple = QFileDialog.getOpenFileName(self, "Open File", "experiments", "JSON Files (*.json)")
         with open(file_tuple[0], "r") as config_file:
             config_data = json.load(config_file)
-            config_data["cameras"] = [
-                CameraSetupConfig(**camera) for camera in config_data["cameras"]
-            ]
+            config_data["cameras"] = [CameraSetupConfig(**camera) for camera in config_data["cameras"]]
         experiment_config = ExperimentConfig(**config_data)
         # Check if the config file is valid
         VALID = self.check_valid_config(experiment_config)
@@ -446,9 +403,7 @@ class VideoCaptureTab(QWidget):
 
         # Initialise the cameras from the config file
         for camera in experiment_config.cameras:
-            self.initialize_camera_widget(
-                label=camera.label, subject_id=camera.subject_id
-            )
+            self.initialize_camera_widget(label=camera.label, subject_id=camera.subject_id)
         # Set the values of the spinbox and encoder selection based on config file
         self.camera_quantity_spin_box.setValue(experiment_config.num_cameras)
         self.encoder_selection.setCurrentText(experiment_config.encoder)
@@ -474,11 +429,7 @@ class VideoCaptureTab(QWidget):
                 unique_id = self.camera_setup_tab.get_camera_unique_id_from_label(label)
                 # if the unique id is not in the list of camera groupboxes is it a uninitialized camera
                 if unique_id in [camera.unique_id for camera in self.camera_groupboxes]:
-                    camera_widget = [
-                        camera
-                        for camera in self.camera_groupboxes
-                        if camera.unique_id == unique_id
-                    ][0]
+                    camera_widget = [camera for camera in self.camera_groupboxes if camera.unique_id == unique_id][0]
                     # Rename the camera with the queried label
                     camera_widget.rename(new_label=label)
                 else:

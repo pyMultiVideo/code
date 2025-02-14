@@ -21,7 +21,7 @@ class CameraPreviewDialog(QDialog):
         self.window_title = window_title
         self.unique_id = unique_id
         self.paths = paths_config_dict
-        
+
         self.setWindowTitle(self.window_title)
         icon = QIcon(os.path.join(self.paths["assets_dir"], "logo.svg"))
         self.setWindowIcon(icon)
@@ -49,10 +49,10 @@ class CameraPreviewDialog(QDialog):
 
         self.setLayout(self.hlayout)
 
-        # Init camera        
+        # Init camera
         self.camera_api = init_camera_api(_id=self.unique_id)
         self.camera_api.begin_capturing()
-        
+
         self.start_timer()
 
     def display_preview(self):
@@ -63,7 +63,6 @@ class CameraPreviewDialog(QDialog):
         if len(self.buffered_data["images"]) == 0:
             return  # exit the function and wait to be called by the viewfinder tab.
         self._image_data = self.buffered_data["images"][0]
-        self._GPIO_data = [int(x) for x in self.buffered_data["gpio_data"][0]]
 
         # Display the data
         self.video_feed.setImage(self._image_data.T)
