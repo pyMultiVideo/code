@@ -1,4 +1,3 @@
-import time
 import os
 from math import sqrt, ceil
 import json
@@ -125,7 +124,7 @@ class VideoCaptureTab(QWidget):
         self.save_dir_button.clicked.connect(self.get_save_dir)
 
         # Display the save directory
-        self.save_dir_textbox = QPlainTextEdit()
+        self.save_dir_textbox = QPlainTextEdit(paths_config_dict["data_dir"])
         self.save_dir_textbox.setMaximumBlockCount(1)
         self.save_dir_textbox.setFont(QFont("Courier", 12))
         self.save_dir_textbox.setReadOnly(True)
