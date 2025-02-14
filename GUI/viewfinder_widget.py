@@ -183,18 +183,17 @@ class ViewfinderWidget(QWidget):
         to the encoding function to be saved to disk.
 
         The current implementation calls the camera API to empty its buffer.
-        The first image from this buffer is saved to the attribute 'self.img_buffer'
+        The first image from this buffer is saved to the attribute 'img_buffer'
         This can then be used to display the image to the GUI.
 
         """
-        # try:
         # Retrieve the latest image from the camera
         new_images = self.camera_api.get_available_images()
-        if len(new_images["images"]) == 0:
+        if new_images == None:
             return
         # Assign the first image of to the data to be displayed
         self._image_data = new_images["images"][0]
-        self._GPIO_data = np.array(list(new_images["gpio_data"][0].values()))
+        self._GPIO_data = new_images["gpio_data"][0]
         self.frame_timestamps.extend(new_images["timestamps"])
         # If the recording flag is True
         if self.recording is True:
@@ -312,7 +311,7 @@ class ViewfinderWidget(QWidget):
         """Draw the GPIO data on the image"""
         self.gpio_over_lay_color = decay * self.gpio_over_lay_color
         if self._GPIO_data is not None:
-            self.gpio_over_lay_color[self._GPIO_data > 0] = 255
+            self.gpio_over_lay_color[np.array(self._GPIO_data) > 0] = 255
         self.gpio_status_indicator.setText("\u2b24", color=self.gpio_over_lay_color)
 
     def refresh(self):
@@ -392,8 +391,7 @@ class ViewfinderWidget(QWidget):
             writer = csv.writer(self.f)
             try:
                 for gpio_data in gpio_buffer:
-                    gpio_values = list(gpio_data.values())
-                    writer.writerow(gpio_values)
+                    writer.writerow(gpio_data)
             except Exception as e:
                 print(f"Error encoding GPIO data: {e}")
 

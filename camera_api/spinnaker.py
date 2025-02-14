@@ -1,7 +1,3 @@
-import numpy as np
-from datetime import datetime
-import logging
-
 import PySpin
 from . import GenericCamera
 
@@ -13,7 +9,6 @@ class SpinnakerCamera(GenericCamera):
         super().__init__(self)
         self.camera_config = CameraConfig
         self.unique_id = unique_id
-        self.logger = logging.getLogger(__name__)
 
         # Initialise camera -------------------------------------------------
 
@@ -23,7 +18,6 @@ class SpinnakerCamera(GenericCamera):
         self.cam.Init()
         self.nodemap = self.cam.GetNodeMap()
         self.stream_nodemap = self.cam.GetTLStreamNodeMap()
-        print("Camera:", self.cam)
 
         # Configure camera --------------------------------------------------
 
@@ -46,6 +40,12 @@ class SpinnakerCamera(GenericCamera):
         fra_node.SetIntValue(fra_node.GetEntryByName("Off").GetValue())
         frc_node = PySpin.CBooleanPtr(self.nodemap.GetNode("AcquisitionFrameRateEnabled"))
         frc_node.SetValue(True)
+
+        # Configure camera to embed GPIO pinstate in image data.
+        FRAME_INFO_REG = 0xFFFFF0F012F8
+        reg_read = self.cam.ReadPort(FRAME_INFO_REG)
+        reg_write = (reg_read & 0xFFFFFC00) + 0x3FF
+        self.cam.WritePort(FRAME_INFO_REG, reg_write)
 
     # Functions to get the camera parameters ----------------------------------------------
 
@@ -94,17 +94,8 @@ class SpinnakerCamera(GenericCamera):
     # Functions to set camera paramteters.
 
     def set_frame_rate(self, frame_rate: int) -> None:
-        """Set the frame rate of the camera."""
-        ## Make sure that frame rate is an int
-        if type(frame_rate) is str:
-            frame_rate = int(frame_rate)
-        try:
-            # Set frame rate value
-            node_frame_rate = PySpin.CFloatPtr(self.nodemap.GetNode("AcquisitionFrameRate"))
-            node_frame_rate.SetValue(frame_rate)
-            print(f"Frame rate set to {frame_rate} FPS.")
-        except PySpin.SpinnakerException as ex:
-            print(f"Error Setting Frame Rate: {ex}")
+        """Set the frame rate of the camera in Hz."""
+        PySpin.CFloatPtr(self.nodemap.GetNode("AcquisitionFrameRate")).SetValue(int(frame_rate))
 
     def set_pixel_format(self, pixel_format):
         pass
@@ -113,82 +104,44 @@ class SpinnakerCamera(GenericCamera):
 
     def begin_capturing(self) -> None:
         """Start camera streaming images."""
-        try:
-            # initialize the camera if it is not already initialized
-            if not self.cam.IsInitialized():
-                self.cam.Init()
-                print(f"Camera {self.serial_number} has been initialized.")
-            if not self.cam.IsStreaming():
-                self.cam.BeginAcquisition()
-                print(f"Camera {self.serial_number} is in acquisition mode.")
-            print(f"Begin capturing: {self.serial_number}")
-        except PySpin.SpinnakerException as e:
-            self.logger.error(f"Error during begin capturing: {e}")
-            print(f"Error during begin capturing: {e}")
-            raise
+        if not self.cam.IsInitialized():
+            self.cam.Init()
+        if not self.cam.IsStreaming():
+            self.cam.BeginAcquisition()
 
     def stop_capturing(self) -> None:
         """Stop the camera from streaming"""
         if self.cam.IsStreaming():
-            print(f"Camera {self.serial_number} has stopped aquisiton.")
             self.cam.EndAcquisition()
         if self.cam.IsInitialized():
             self.cam.DeInit()
-            print(f"Camera {self.serial_number} has been deinitialized.")
-        # make sure to release the camera
-
-    def is_initialized(self) -> bool:
-        """Check if the camera is initialised"""
-        return self.cam.IsInitialized()
-
-    def is_streaming(self) -> bool:
-        """Check if the camera is streaming"""
-        return self.cam.IsStreaming()
 
     # Function to aquire images from the camera
 
-    def get_available_images(
-        self,
-    ) -> dict[list[np.ndarray], list[dict[str, bool]], list[int]]:
-        """
-        Gets all available images from the buffer and returns a list of images and corresponding lists
-        of the GPIO pinstate data and timestamps.
-        """
-        self.img_buffer = []
-        self.gpio_buffer = []
-        self.timestamps_buffer = []
-        # Get LineStatus from the nodemap
-        line_status = PySpin.CIntegerPtr(self.nodemap.GetNode("LineStatusAll")).GetValue()
-        line_status_binary = format(line_status, "04b")  # Convert to 4 bit binary array.
-        # Get all available images from buffer.
+    def get_available_images(self):
+        """Gets all available images from the buffer and return images GPIO pinstate data and timestamps."""
+        img_buffer = []
+        timestamps_buffer = []
+        gpio_buffer = []
+        # Get all available images from camera buffer.
         try:
-            call_count = 0
             while True:
                 next_image = self.cam.GetNextImage(0)  # Raises exception if buffer empty.
-                image_pixels = next_image.GetNDArray()  # Image pixels as numpy array.
+                img_buffer.append(next_image.GetNDArray())  # Image pixels as numpy array.
                 chunk_data = next_image.GetChunkData()  # Additional image data.
-                img_time_stamp = chunk_data.GetTimestamp()  # Image timestamp (ns?)
+                timestamps_buffer.append(chunk_data.GetTimestamp())  # Image timestamp (ns?)
+                img_data = next_image.GetData()
+                gpio_buffer.append([(img_data[32] >> 4) & 1, (img_data[32] >> 5) & 1, (img_data[32] >> 7) & 1])
                 next_image.Release()  # Clears image from buffer.
-                # Append to lists
-                self.img_buffer.append(image_pixels)
-                self.gpio_buffer.append(
-                    {
-                        "Line0": int(line_status_binary[0]),
-                        "Line1": int(line_status_binary[1]),
-                        "Line2": int(line_status_binary[3]),
-                    }
-                )
-                self.timestamps_buffer.append(img_time_stamp)
-                call_count += 1
-        except PySpin.SpinnakerException:
-            # When the buffer is empty, the 'GetNextImage' function will raise an exception.
-            if call_count > 1:
-                print(f"Multiple images aquired between calls:{call_count}")
-            return {
-                "images": self.img_buffer,
-                "gpio_data": self.gpio_buffer,
-                "timestamps": self.timestamps_buffer,
-            }
+        except PySpin.SpinnakerException:  # Buffer is empty.
+            if len(img_buffer) == 0:
+                return
+            else:
+                return {
+                    "images": img_buffer,
+                    "gpio_data": gpio_buffer,
+                    "timestamps": timestamps_buffer,
+                }
 
 
 # Camera system functions -------------------------------------------------------------------------------
