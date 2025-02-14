@@ -73,16 +73,20 @@ class ViewfinderWidget(QWidget):
         self.video_feed.ui.histogram.hide()
         self.video_feed.ui.roiBtn.hide()
         self.video_feed.ui.menuBtn.hide()
-        # Disable zoom and pan
-        self.video_feed.view.setMouseEnabled(x=False, y=False)
+        self.video_feed.view.setMouseEnabled(x=False, y=False)  # Disable zoom and pan
+
         # Recording Information
         self.recording_status_item = pg.TextItem()
         self.recording_status_item.setPos(10, 10)
         self.video_feed.addItem(self.recording_status_item)
         self.recording_status_item.setText("NOT RECORDING", color="r")
 
-        """Initialise the GPIO data"""
-        # Initial state of the colour painted to the image
+        self.recording_time_text = pg.TextItem()
+        self.recording_time_text.setPos(200, 10)
+        self.video_feed.addItem(self.recording_time_text)
+        self.recording_time_text.setText("", color="r")
+
+        # Initialise the GPIO data
         self.gpio_state_smoothed = np.zeros(3)
 
         self.gpio_status_item = pg.TextItem()
@@ -96,11 +100,6 @@ class ViewfinderWidget(QWidget):
         for i, gpio_indicator in enumerate(self.gpio_status_indicators):
             gpio_indicator.setPos(150 + i * 30, 70)
             self.video_feed.addItem(gpio_indicator)
-
-        self.recording_time_text = pg.TextItem()
-        self.recording_time_text.setPos(200, 10)
-        self.video_feed.addItem(self.recording_time_text)
-        self.recording_time_text.setText("", color="r")
 
         # Framerate information
         self.frame_rate_text = pg.TextItem()
@@ -171,32 +170,19 @@ class ViewfinderWidget(QWidget):
         self.camera_api.begin_capturing()
 
     def fetch_image_data(self) -> None:
-        """
-        Function that gets both the GPIO and the image data from the camera and sends them
-        to the encoding function to be saved to disk.
-
-        The current implementation calls the camera API to empty its buffer.
-        The first image from this buffer is saved to the attribute 'img_buffer'
-        This can then be used to display the image to the GUI.
-
-        """
-        # Retrieve the latest image from the camera
+        """Get images and associated data from camera and save to disk if recording."""
         new_images = self.camera_api.get_available_images()
         if new_images == None:
             return
-        # Assign the first image of to the data to be displayed
+        # Store first image and GPIO state for display update.
         self._image_data = new_images["images"][0]
         self._GPIO_data = new_images["gpio_data"][0]
         self.frame_timestamps.extend(new_images["timestamps"])
-        # If the recording flag is True
+        # Record data to disk if recording.
         if self.recording is True:
             self.recorded_frames += len(new_images["timestamps"])
-            # encode the frames
             self.encode_frame_from_camera_buffer(frame_buffer=new_images["images"])
-            # encode the GPIO data
             self.write_gpio_data_from_buffer(gpio_buffer=new_images["gpio_data"])
-        # except Exception as e:
-        #    print(f"Error fetching image data: {e}")
 
     def display_average_frame_rate(self):
         """Compute average framerate and display over image in green if OK else red."""
@@ -219,11 +205,7 @@ class ViewfinderWidget(QWidget):
             self.recording_time_text.setText("", color="r")
 
     def update_camera_dropdown(self):
-        """Update the camera options
-        NOTE: this function is wrapped in functions to disconnect and reconnect the signal to the dropdown when the function changes the text in the dropdown
-        the combobox is filled with the other camera label and the correct camera is not an option in the dropdown.
-        """
-        # disconnect self.camera_dropdown from the current function
+        """Update the cameras available in the camera select dropdown menu."""
         self.camera_dropdown.currentTextChanged.disconnect(self.change_camera)
         cbox_update_options(
             cbox=self.camera_dropdown,
@@ -233,65 +215,44 @@ class ViewfinderWidget(QWidget):
         )
         self.camera_dropdown.currentTextChanged.connect(self.change_camera)
 
-    def get_mp4_filename(self) -> str:
+    def get_mp4_filepath(self) -> str:
         """Get the filename for the mp4 file. This is done using GUI information"""
         self.subject_id = self.subject_id_text.toPlainText()
-
-        self.recording_filename = os.path.join(
+        self.recording_filepath = os.path.join(
             self.view_finder.save_dir_textbox.toPlainText(),
             f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.mp4",
         )
 
-        self.logger.info(f"Saving recording to: {type(self.recording_filename)}")
-
-    def get_gpio_filename(self, header=None) -> str:
-        """
-        This Python function creates a CSV file with a specified header containing GPIO data.
-
-        :param header: The `header` parameter in the `get_gpio_filename` function is a list of strings
-        that represent the column headers for the CSV file that will be created. In this case, the
-        default header list is `['Line1', 'Line2', 'Line3', 'Line4']`, but
-        :type header: list
-        """
-        # Get the subject ID from the text field
+    def create_gpio_file(self):
+        """Create the GPIO data file, write header line, store filepath."""
         self.subject_id = self.subject_id_text.toPlainText()
-        self.GPIO_filename = os.path.join(
+        self.GPIO_filepath = os.path.join(
             self.view_finder.save_dir_textbox.toPlainText(),
             f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_GPIO_data.csv",
         )
-        if header is None:
-            header = ["Line1", "Line2", "Line3"]
-        with open(self.GPIO_filename, mode="w", newline="") as self.f:
+        header = ["GPIO1", "GPIO2", "GPIO3"]
+        with open(self.GPIO_filepath, mode="w", newline="") as self.f:
             writer = csv.writer(self.f)
             writer.writerow(header)
 
-    def get_metadata_filename(self) -> str:
+    def get_metadata_filepath(self) -> str:
         """Get the filename for the metadata file"""
         self.subject_id = self.subject_id_text.toPlainText()
-        self.metadata_filename = os.path.join(
+        self.metadata_filepath = os.path.join(
             self.view_finder.save_dir_textbox.toPlainText(),
             f"{self.subject_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_metadata.json",
         )
 
     def display_frame(self):
-        """
-        Display the most recent image on the GUI and call functions to add overlays on the image.
-        """
-        try:
-            # Display the image on the GUI
-            self.video_feed.setImage(self._image_data.T)
-            self.draw_status_overlay()
-            self.display_average_frame_rate()
-            self.display_recording_time()
-            self.update_gpio_overlay()
-        except Exception as e:
-            print(f"Error displaying image: {e}")
+        """Display most recent image and call functions to add information overlays."""
+        self.video_feed.setImage(self._image_data.T)
+        self.update_recording_status_overlay()
+        self.display_average_frame_rate()
+        self.display_recording_time()
+        self.update_gpio_overlay()
 
-    def draw_status_overlay(self):
-        """
-        Draw the status of the recording on the image. This simply changes the color of an attribute that is been placed
-        onto the image during initialisation.
-        """
+    def update_recording_status_overlay(self):
+        """Set recording status text to match recording status."""
         if self.recording is True:
             status = "RECORDING"
             color = "g"
@@ -311,21 +272,12 @@ class ViewfinderWidget(QWidget):
         """refresh the camera widget"""
         self.update_camera_dropdown()
 
-    def _init_ffmpeg_process(self) -> None:
-        """
-        This function initalising the ffmpeg process.
-        This uses the ffmpeg-python API. This api does little more than make the syntax for ffmpeg nicer.
-        The FFMPEG process is a separate process (according to task-manager) that is running in the background.
-        It runs on the GPU (if you let the encoder be a GPU encoder) and is not blocking the main thread.
-        TODO: There needs to be proper error handling for the ffmpeg process. At the moment, if the process fails, the user will not know.
-        """
+    def _init_ffmpeg_process(self):
+        """Initialise the FFMPEG process that will be used to compress and store video."""
         downsampled_width = int(self.cam_width / self.downsampling_factor)
         downsampled_height = int(self.cam_height / self.downsampling_factor)
 
-        if getattr(sys, "frozen", False):
-            ffmpeg_path = gui_config_dict["PATH_TO_FFMPEG"]
-        else:
-            ffmpeg_path = gui_config_dict["PATH_TO_FFMPEG"]
+        ffmpeg_path = gui_config_dict["PATH_TO_FFMPEG"]
 
         ffmpeg_command = [
             ffmpeg_path,
@@ -350,77 +302,48 @@ class ViewfinderWidget(QWidget):
             "fast",
             "-crf",
             "23",
-            self.recording_filename,  # Output filename
+            self.recording_filepath,  # Output filename
         ]
-
-        print(ffmpeg_command)
         self.ffmpeg_process = subprocess.Popen(ffmpeg_command, stdin=subprocess.PIPE)
 
     def encode_frame_from_camera_buffer(self, frame_buffer: list[np.ndarray]) -> None:
-        """
-        Encodes the frames from the camera buffer and writes them to the file.
-        """
-        try:
-            while frame_buffer:
-                # Get the frame from the buffer (front of the queue)
-                frame = frame_buffer.pop(0)
-                # Encode the frame
-                self.ffmpeg_process.stdin.write(frame.tobytes())
+        """Encode frames from the frame_buffer and writes them to the file using FFMPEG."""
+        while frame_buffer:
+            frame = frame_buffer.pop(0)
+            self.ffmpeg_process.stdin.write(frame.tobytes())
 
-        except Exception as e:
-            print(f"Error encoding frame: {e}")
-
-    def write_gpio_data_from_buffer(self, gpio_buffer: list[list[bool]]) -> None:
-        """
-        This function is used to write the GPIO data to a file from the buffer.
-        The buffer will return a list of list of booleans.
-        The length of the outer list is the number of frames that were emptied from the buffer.
-        This function is a wrapper for the `encode_gpio_data` function.
-        Parameters:
-        - buffer_list: list[list[bool]] - list of GPIO data to be written to the file
-
-        """
-        with open(self.GPIO_filename, mode="a", newline="") as self.f:
+    def write_gpio_data_from_buffer(self, gpio_buffer):
+        """Write the GPIO pinstates in GPIO_buffer to csv file."""
+        with open(self.GPIO_filepath, mode="a", newline="") as self.f:
             writer = csv.writer(self.f)
-            try:
-                for gpio_data in gpio_buffer:
-                    writer.writerow(gpio_data)
-            except Exception as e:
-                print(f"Error encoding GPIO data: {e}")
+            for gpio_data in gpio_buffer:
+                writer.writerow(gpio_data)
 
     def create_metadata_file(self):
-        """Function to creat the metadata file and write its initial information to json"""
-        # create metadata file
-        self.get_metadata_filename()
-
+        """Creat the metadata file and write its initial information as a json"""
+        self.get_metadata_filepath()
         self.metadata = {
             "subject_ID": self.subject_id,
             "camera_unique_id": self.unique_id,
-            "recording_filename": self.recording_filename,
-            "GPIO_filename": self.GPIO_filename,
+            "recording_filepath": self.recording_filepath,
+            "GPIO_filename": self.GPIO_filepath,
             "recorded_frames": self.recorded_frames,
             "begin_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "end_time": None,
         }
-
-        with open(self.metadata_filename, "w") as self.meta_data_file:
+        with open(self.metadata_filepath, "w") as self.meta_data_file:
             json.dump(self.metadata, self.meta_data_file, indent=4)
 
     def close_metadata_file(self):
-        """Function to close the metadata file"""
         self.metadata["end_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.metadata["recorded_frames"] = self.recorded_frames
-        with open(self.metadata_filename, "w") as self.meta_data_file:
+        with open(self.metadata_filepath, "w") as self.meta_data_file:
             # add the end time to the metadata file
             json.dump(self.metadata, self.meta_data_file, indent=4)
 
     def update_subject_id(self):
-        """Update the subject ID"""
         self.subject_id = self.subject_id_text.toPlainText()
-        self.logger.info(f"Subject ID changed to: {self.subject_id}")
         self.validate_subject_id_input()
-        # call the refresh function from th viewfinder class
-        self.view_finder.refresh()
 
     def validate_subject_id_input(self):
         """Change the colour of the subject ID text field"""
@@ -440,9 +363,9 @@ class ViewfinderWidget(QWidget):
         - Update the GUI buttons to the correct state
         """
         # Get the filenames
-        self.get_mp4_filename()
-        self.get_gpio_filename()
-        self.get_metadata_filename()
+        self.get_mp4_filepath()
+        self.create_gpio_file()
+        self.get_metadata_filepath()
         # Initalise ffmpeg process
         self._init_ffmpeg_process()
         # Set the recording flag to True
