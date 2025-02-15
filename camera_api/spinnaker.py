@@ -25,15 +25,13 @@ class SpinnakerCamera(GenericCamera):
         bh_node = PySpin.CEnumerationPtr(self.stream_nodemap.GetNode("StreamBufferHandlingMode"))
         bh_node.SetIntValue(bh_node.GetEntryByName("OldestFirst").GetValue())
 
-        # Configure ChunkData
-        self.cam.ChunkSelector.SetValue(PySpin.ChunkSelector_Timestamp)
+        # Configure ChunkData to include frame count and timestamp.
+        chunk_selector = PySpin.CEnumerationPtr(self.nodemap.GetNode("ChunkSelector"))
+        chunk_selector.SetIntValue(chunk_selector.GetEntryByName("FrameCounter").GetValue())
+        self.cam.ChunkEnable.SetValue(True)
+        chunk_selector.SetIntValue(chunk_selector.GetEntryByName("Timestamp").GetValue())
         self.cam.ChunkEnable.SetValue(True)
         self.cam.ChunkModeActive.SetValue(True)
-
-        # Configure user settings.
-        if self.camera_config is not None:
-            self.set_frame_rate(self.camera_config.fps)
-            self.set_pixel_format(self.camera_config.pxl_fmt)
 
         # Set frame rate control to manual.
         fra_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("AcquisitionFrameRateAuto"))
@@ -46,6 +44,11 @@ class SpinnakerCamera(GenericCamera):
         reg_read = self.cam.ReadPort(FRAME_INFO_REG)
         reg_write = (reg_read & 0xFFFFFC00) + 0x3FF
         self.cam.WritePort(FRAME_INFO_REG, reg_write)
+
+        # Configure user settings.
+        if self.camera_config is not None:
+            self.set_frame_rate(self.camera_config.fps)
+            self.set_pixel_format(self.camera_config.pxl_fmt)
 
     # Functions to get the camera parameters ----------------------------------------------
 
@@ -108,6 +111,7 @@ class SpinnakerCamera(GenericCamera):
             self.cam.Init()
         if not self.cam.IsStreaming():
             self.cam.BeginAcquisition()
+        self.last_frame_number = 0
 
     def stop_capturing(self) -> None:
         """Stop the camera from streaming"""
@@ -130,6 +134,10 @@ class SpinnakerCamera(GenericCamera):
                 img_buffer.append(next_image.GetNDArray())  # Image pixels as numpy array.
                 chunk_data = next_image.GetChunkData()  # Additional image data.
                 timestamps_buffer.append(chunk_data.GetTimestamp())  # Image timestamp (ns?)
+                frame_number = chunk_data.GetFrameID()
+                if (frame_number - self.last_frame_number) > 1:
+                    print("Dropped frame")
+                self.last_frame_number = frame_number
                 img_data = next_image.GetData()
                 gpio_buffer.append([(img_data[32] >> 4) & 1, (img_data[32] >> 5) & 1, (img_data[32] >> 7) & 1])
                 next_image.Release()  # Clears image from buffer.
@@ -158,9 +166,7 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
 
     for cam in pyspin_cam_list:
         try:
-            # Initialize the camera
             cam.Init()
-            # Get cam serial number
             cam_id: str = f"{cam.DeviceSerialNumber()}-spinnaker"
             if VERBOSE:
                 print(f"Camera ID: {cam_id}")
@@ -173,10 +179,7 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
                 continue
             else:
                 cam.DeInit()
-
-    # Release resources
     pyspin_cam_list.Clear()
-
     return unique_id_list
 
 

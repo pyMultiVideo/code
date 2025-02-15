@@ -15,16 +15,12 @@ logging.basicConfig(level=logging.INFO)
 # from GUI import ViewfinderWidget
 def cbox_update_options(cbox, options, used_cameras_labels, selected):
     """Update the options available in a qcombobox without changing the selection."""
-    available_options = sorted(
-        list(set(options) - set(used_cameras_labels)), key=str.lower
-    )
+    available_options = sorted(list(set(options) - set(used_cameras_labels)), key=str.lower)
     # get the current test from the combobox
     selected = cbox.currentText()
 
     if selected:
-        available_options = sorted(
-            list(set([selected] + available_options)), key=str.lower
-        )
+        available_options = sorted(list(set([selected] + available_options)), key=str.lower)
         i = available_options.index(selected)
     else:  # cbox is currently empty.
         i = 0
@@ -38,10 +34,12 @@ def gpu_available() -> bool:
     """Check if a GPU is available on the system running the program"""
     try:
         subprocess.check_output("nvidia-smi")
-        print("Nvidia GPU detected!")
+        print("Nvidia GPU detected")
         return True
-    except Exception:  # this command not being found can raise quite a few different errors depending on the configuration
-        print("No Nvidia GPU in system!")
+    except (
+        Exception
+    ):  # this command not being found can raise quite a few different errors depending on the configuration
+        print("No Nvidia GPU available")
         return False
 
 
@@ -95,9 +93,7 @@ def load_camera_dict(camera_config_path: str) -> Dict[str, Any]:
         with open(camera_config_path, "r") as file:
             camera_dict = json.load(file)
     except FileNotFoundError:
-        raise FileNotFoundError(
-            f"Camera configuration file not found at {camera_config_path}"
-        )
+        raise FileNotFoundError(f"Camera configuration file not found at {camera_config_path}")
     except json.JSONDecodeError:
         raise ValueError(f"Invalid JSON format in file: {camera_config_path}")
 
@@ -138,9 +134,7 @@ def init_camera_api(_id, CameraSettingsConfig=None):
 
     camera_module = importlib.import_module(f"camera_api.{module_name}")
 
-    return camera_module.initialise_by_id(
-        _id=_id, CameraSettingsConfig=CameraSettingsConfig
-    )
+    return camera_module.initialise_by_id(_id=_id, CameraSettingsConfig=CameraSettingsConfig)
 
 
 def load_saved_setups(camera_data) -> list[CameraSettingsConfig]:
@@ -157,7 +151,3 @@ def load_saved_setups(camera_data) -> list[CameraSettingsConfig]:
             )
         )
     return setups_from_database
-
-
-if __name__ == "__main__":
-    pass

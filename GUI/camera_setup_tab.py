@@ -134,7 +134,6 @@ class CamerasTab(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super(CamerasTab, self).__init__(parent)
-        print("SetupsTab")
         self.GUI = parent
 
         self._initialize_camera_groupbox()

@@ -2,7 +2,6 @@ cv2_enumerate_cameras==1.1.17
 ffmpeg_python==0.2.0
 numpy==1.26.4
 opencv_python==4.10.0.84
-pandas==1.4.0
 PyQt6==6.7.1
 PyQt6_sip==13.8.0
 pyqtgraph==0.13.7

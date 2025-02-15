@@ -48,14 +48,11 @@ class VideoCaptureTab(QWidget):
         self.viewfinder_groupbox = QGroupBox("Viewfinder")
         self.viewfinder_groupbox.setLayout(self.camera_layout)
 
-        self._init_timers()
-        print("Viewfinder tab initialised")
-
         # Initialise Header Group box
         self.header_groupbox = QGroupBox()
         self.header_groupbox.setMaximumHeight(95)
 
-        """List of encoders that are available"""
+        # Encoder select dropdown
         self.encoder_settings_group_box = QGroupBox("FFMPEG Settings")
         # dropdown for camera selection
         self.encoder_selection = QComboBox()
@@ -190,6 +187,8 @@ class VideoCaptureTab(QWidget):
 
             self.load_from_config_dir(experiment_config)
 
+        self._init_timers()
+
     ### Visibility Controls
 
     def toggle_full_screen_mode(self):
@@ -204,8 +203,8 @@ class VideoCaptureTab(QWidget):
 
     def toggle_all_viewfinder_control_visiblity(self):
         """Function that toggles the visibility of all the camera control widgets"""
-        for camera in self.camera_groupboxes:
-            camera.toggle_control_visibility()
+        for camera_widget in self.camera_groupboxes:
+            camera_widget.toggle_control_visibility()
 
     ### Timer Functions
 
@@ -215,10 +214,9 @@ class VideoCaptureTab(QWidget):
         self.fetch_images_timer.timeout.connect(self.fetch_image_data)
         self.fetch_images_timer.start(int(1000 / gui_config_dict["fetch_image_rate"]))
 
-        self.refresh_timer = QTimer()
-        self.refresh_timer.timeout.connect(self.refresh)
-        self.refresh_timer.timeout.connect(self.update_display)
-        self.refresh_timer.start(int(1000 / gui_config_dict["update_display_rate"]))
+        self.display_update_timer = QTimer()
+        self.display_update_timer.timeout.connect(self.update_display)
+        self.display_update_timer.start(int(1000 / gui_config_dict["update_display_rate"]))
 
     def fetch_image_data(self):
         for camera_widget in self.camera_groupboxes:
@@ -270,15 +268,15 @@ class VideoCaptureTab(QWidget):
         self.add_widget_to_layout()
 
     def pause_camera_streaming(self):
-        for camera in self.camera_groupboxes:
+        for camera_widget in self.camera_groupboxes:
             # Pause the aqusition of the video stream
-            camera.camera_api.stop_capturing()
+            camera_widget.camera_api.stop_capturing()
         self.fetch_images_timer.stop()
 
     def play_camera_streaming(self):
-        for camera in self.camera_groupboxes:
+        for camera_widget in self.camera_groupboxes:
             # Restart the aquisition of the video stream
-            camera.camera_api.begin_capturing()
+            camera_widget.camera_api.begin_capturing()
         self.fetch_images_timer.start(int(1000 / gui_config_dict["fetch_image_rate"]))
 
     def add_widget_to_layout(self):
@@ -310,7 +308,7 @@ class VideoCaptureTab(QWidget):
         Change the layout from the square one to a vertical one
         This function should be able to be called whilst recording is taking place
         """
-        no_cameras = len(self.camera_groupboxes)
+        n_cameras = len(self.camera_groupboxes)
         for camera in self.camera_groupboxes:
             # Remove all the camera from the layout
             camera = self.camera_groupboxes.pop()
@@ -330,7 +328,7 @@ class VideoCaptureTab(QWidget):
             key=str.lower,
         )
 
-        for camera_index in range(no_cameras):
+        for camera_index in range(n_cameras):
             print("Label:", useable_cameras[camera_index])
             self.initialize_camera_widget(label=useable_cameras[camera_index])
 
@@ -411,8 +409,8 @@ class VideoCaptureTab(QWidget):
 
     def update_camera_dropdowns(self):
         """Update the camera dropdowns"""
-        for camera in self.camera_groupboxes:
-            camera.update_camera_dropdown()
+        for camera_widget in self.camera_groupboxes:
+            camera_widget.update_camera_dropdown()
 
     def handle_camera_setups_modified(self):
         """
@@ -440,7 +438,7 @@ class VideoCaptureTab(QWidget):
 
     def get_save_dir(self):
         """Return the save directory"""
-        save_directory = QFileDialog.getExistingDirectory(self, "Select Directory")
+        save_directory = QFileDialog.getExistingDirectory(self, "Select Directory", paths_config_dict["data_dir"])
         if save_directory:
             self.save_dir_textbox.setPlainText(save_directory)
 
@@ -456,8 +454,8 @@ class VideoCaptureTab(QWidget):
         """Check if all the cameras are ready to start recording. If any camera is not ready to start,
         disable the global start recording button"""
         all_ready = True
-        for camera in self.camera_groupboxes:
-            if not camera.start_recording_button.isEnabled():
+        for camera_widget in self.camera_groupboxes:
+            if not camera_widget.start_recording_button.isEnabled():
                 all_ready = False
                 break
         self.start_recording_button.setEnabled(all_ready)
@@ -500,7 +498,6 @@ class VideoCaptureTab(QWidget):
         self.check_to_enable_global_stop_recording()
         for camera_label in self.camera_groupboxes:
             camera_label.refresh()
-
         # Check the setups_changed flag
         if self.camera_setup_tab.setups_changed:
             self.camera_setup_tab.setups_changed = False
