@@ -1,12 +1,15 @@
 import PySpin
-from . import GenericCamera
-
-
-class SpinnakerCamera(GenericCamera):
+if __name__ == "__main__":
+    class GenericCamera:
+        pass
+else:
+    from . import GenericCamera
+    
+class Chameleon3Camera(GenericCamera):
     """Inherits from the camera class and adds the spinnaker specific functions from the PySpin library"""
 
     def __init__(self, unique_id: str, CameraConfig=None):
-        super().__init__(self)
+        super().__init__()
         self.camera_config = CameraConfig
         self.unique_id = unique_id
 
@@ -160,17 +163,17 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
     unique_id_list = []
     pyspin_system = PySpin.System.GetInstance()
     pyspin_cam_list = pyspin_system.GetCameras()
-
     if VERBOSE:
-        print(f"Number of cameras detected: {pyspin_cam_list.GetSize()}")
+        print(f"Number of PySpin cameras detected: {pyspin_cam_list.GetSize()}")
 
     for cam in pyspin_cam_list:
         try:
             cam.Init()
-            cam_id: str = f"{cam.DeviceSerialNumber()}-spinnaker"
-            if VERBOSE:
-                print(f"Camera ID: {cam_id}")
-            unique_id_list.append(cam_id)
+            if "Chameleon3" in cam.DeviceModelName():
+                cam_id: str = f"{cam.DeviceSerialNumber()}-chameleon3"
+                if VERBOSE:
+                    print(f"Camera ID: {cam_id}")
+                unique_id_list.append(cam_id)
         except Exception as e:
             if VERBOSE:
                 print(f"Error accessing camera: {e}")
@@ -185,4 +188,18 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
 
 def initialise_by_id(_id, CameraSettingsConfig):
     """Instantiate the SpinnakerCamera object based on the unique-id"""
-    return SpinnakerCamera(unique_id=_id, CameraConfig=CameraSettingsConfig)
+    return Chameleon3Camera(unique_id=_id, CameraConfig=CameraSettingsConfig)
+
+if __name__ == "__main__":
+    import time
+    cameras = list_available_cameras(VERBOSE=True)
+    if cameras:
+        camera = initialise_by_id(cameras[0], None)
+        camera.begin_capturing()
+        time.sleep(1)
+        images_data = camera.get_available_images()
+        if images_data:
+            print(f"Captured {len(images_data['images'])} images")
+        camera.stop_capturing()
+    else:
+        print("No cameras found.")
