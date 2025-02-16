@@ -6,17 +6,13 @@ import shutil
 __version__ = "1.0.5.3"
 
 gui_config = {
-    # This has no impact of the rate at which the buffer is emptied
-    "update_display_rate": 30,  # (Hz) the rate at which the function for updating the display is called.
-    "fetch_image_rate": 60,  # (Hz) the rate at which the function which is called to fetch images from the camera.
-    # The default directory for the data from the application to be stored.
-    "data_folder_directory": "data",
+    "display_update_rate": 30,  # Rate at which function to update video displays is called (Hz).
+    "fetch_image_rate": 60,  # Rate at which the function that fetches images from cameras is called (Hz).
 }
 
 # FFMPEG config -----------------------------------------------------------------------
 
 ffmpeg_config = {
-    "input": {},
     "output": {
         # Encoders available to ffmpeg
         # {'GUI Name: ffmpeg_encoder name'}

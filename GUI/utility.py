@@ -7,6 +7,8 @@ import subprocess
 from typing import Dict, Any
 from dataclasses import dataclass
 
+from config.config import ffmpeg_config
+
 # Custom data classes -----------------------------------------------------------------
 
 
@@ -67,28 +69,24 @@ def cbox_update_options(cbox, options, used_cameras_labels, selected):
     cbox.setCurrentIndex(i)
 
 
-def gpu_available() -> bool:
-    """Check if a GPU is available on the system running the program"""
+def get_valid_ffmpeg_encoders() -> list:
+    """Return list of valid encoders given GPU availibility."""
+    # Check if GPU is available.
     try:
         subprocess.check_output("nvidia-smi")
         print("Nvidia GPU detected")
-        return True
-    except (
-        Exception
-    ):  # this command not being found can raise quite a few different errors depending on the configuration
+        GPU_AVAIALABLE = True
+    except Exception:
         print("No Nvidia GPU available")
-        return False
-
-
-def valid_ffmpeg_encoders(GPU_AVAIALABLE: bool, encoder_dict_keys) -> list:
-    """Return list of valid encoders depending on if GPU is available"""
+        GPU_AVAIALABLE = False
+    # Get all corresponding encoders.
+    encoder_dict_keys = ffmpeg_config["output"]["encoder"].keys()
     valid_encoders_keys = []
     for key in encoder_dict_keys:
         if "CPU" in key:
             valid_encoders_keys.append(key)
         elif "GPU" in key and GPU_AVAIALABLE:
             valid_encoders_keys.append(key)
-
     return valid_encoders_keys
 
 

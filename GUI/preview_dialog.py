@@ -72,7 +72,7 @@ class CameraPreviewDialog(QDialog):
         """Start a timer to refresh the video feed every second"""
         self.timer = QTimer()
         self.timer.timeout.connect(self.refresh)
-        self.timer.start(int(1000 / gui_config["update_display_rate"]))
+        self.timer.start(int(1000 / gui_config["display_update_rate"]))
 
     def refresh(self):
         """Refresh function for this tab"""
