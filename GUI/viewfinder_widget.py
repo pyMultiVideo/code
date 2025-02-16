@@ -42,13 +42,13 @@ class ViewfinderWidget(QWidget):
         self.label = label
         self.subject_id = subject_id
         if self.label in self.camera_setup_tab.get_camera_labels():
-            self.camera_settings = self.camera_setup_tab.getCameraSettingsConfig(self.label)
-        self.fps = self.camera_settings.fps
-        self.pxl_fmt = self.camera_settings.pxl_fmt
-        self.unique_id = self.camera_settings.unique_id
+            self.camera_settings_config = self.camera_setup_tab.getCameraSettingsConfig(self.label)
+        self.fps = self.camera_settings_config.fps
+        self.pxl_fmt = self.camera_settings_config.pxl_fmt
+        self.unique_id = self.camera_settings_config.unique_id
         self.downsampling_factor = 1
 
-        self.camera_api = init_camera_api(self.unique_id, self.camera_settings)
+        self.camera_api = init_camera_api(self.unique_id, self.camera_settings_config)
         self.cam_width = self.camera_api.get_width()
         self.cam_height = self.camera_api.get_height()
 
@@ -396,14 +396,14 @@ class ViewfinderWidget(QWidget):
         self.unique_id = new_unique_id
         self.label = new_camera_label
         # Get the new camera settings
-        self.camera_settings = self.camera_setup_tab.getCameraSettingsConfig(self.label)
+        self.camera_settings_config = self.camera_setup_tab.getCameraSettingsConfig(self.label)
         # Set the new camera object
-        self.camera_api = init_camera_api(new_unique_id, self.camera_settings)
+        self.camera_api = init_camera_api(new_unique_id, self.camera_settings_config)
         self.camera_api.begin_capturing()
         # Call the display function once
-        # self.display_frame(self.camera_object.get_next_image())
         #  Update the list cameras that are currently being used.
         self.camera_setup_groupbox.setTitle(self.label)
+
 
     def disconnect(self):
         """
@@ -433,17 +433,17 @@ class ViewfinderWidget(QWidget):
         """Change the FPS of the camera"""
         self.logger.info("Changing FPS")
         # Set the new FPS
-        self.camera_settings.fps = str(self.fps_cbox.currentText())
+        self.camera_settings_config.fps = str(self.fps_cbox.currentText())
         # This function requires reinitalisation of the camera with the new FPS
-        self.camera_api.set_frame_rate(int(self.camera_settings.fps))
+        self.camera_api.set_frame_rate(int(self.camera_settings_config.fps))
 
     def change_pxl_fmt(self):
         """Change the pixel format of the camera"""
         self.logger.info("Changing pixel format")
         # Set the new pixel format to the camera settings datastructure
-        self.camera_settings.pxl_fmt = str(self.pxl_fmt_cbox.currentText())
+        self.camera_settings_config.pxl_fmt = str(self.pxl_fmt_cbox.currentText())
         # This function requires reinitalisation of the camera with the new pixel format
-        self.camera_api.set_pixel_format(self.camera_settings.pxl_fmt)
+        self.camera_api.set_pixel_format(self.camera_settings_config.pxl_fmt)
 
     def change_downsampling_factor(self) -> None:
         """Change the downsampling factor of the camera"""

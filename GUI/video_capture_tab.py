@@ -278,7 +278,7 @@ class VideoCaptureTab(QWidget):
     def play_camera_streaming(self):
         for camera_widget in self.camera_groupboxes:
             # Restart the aquisition of the video stream
-            camera_widget.camera_api.begin_capturing()
+            camera_widget._change_camera(camera_widget.unique_id, camera_widget.label)
         self.fetch_images_timer.start(int(1000 / gui_config_dict["fetch_image_rate"]))
 
     def add_widget_to_layout(self):
