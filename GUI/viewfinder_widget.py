@@ -207,7 +207,7 @@ class ViewfinderWidget(QWidget):
             gpio_indicator.setText("\u2b24", color=[0, 0, self.gpio_state_smoothed[i] * 255])
 
     def display_font_size_update(self, scale_factor = 0.01):
-        """Update the size of the GUI elements"""        
+        """Update the size of the GUI text elements"""        
         font_size = int(min(self.GUI.width(), self.GUI.height()) * scale_factor)
 
         # Update GUI elements to font size
@@ -217,6 +217,7 @@ class ViewfinderWidget(QWidget):
         self.recording_status_item.setFont(QFont("Arial", font_size))
         self.recording_time_text.setFont(QFont("Arial", font_size))
         self.frame_rate_text.setFont(QFont("Arial", font_size))
+    
     # GUI element updates -------------------------------------------------------------
 
     def refresh(self):
@@ -224,7 +225,7 @@ class ViewfinderWidget(QWidget):
         self.update_camera_dropdown()
         
     def resizeEvent(self, event):
-        """resize Widget"""
+        """Called on Widget resize"""
         self.display_font_size_update()
         super().resizeEvent(event)
 
@@ -262,7 +263,7 @@ class ViewfinderWidget(QWidget):
         # Create Filepaths.
         self.subject_id = self.subject_id_text.toPlainText()
         self.record_start_time = datetime.now()
-        save_dir = self.video_capture_tab.save_dir_textbox.toPlainText()
+        save_dir = self.video_capture_tab.temp_data_dir
         filename_stem = f"{self.subject_id}_{self.record_start_time.strftime('%Y-%m-%d-%H%M%S')}"
         self.video_filepath = os.path.join(save_dir, filename_stem + ".mp4")
         self.GPIO_filepath = os.path.join(save_dir, filename_stem + "_GPIO_data.csv")

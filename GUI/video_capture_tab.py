@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QCheckBox,
 )
-from PyQt6.QtGui import QFont, QIcon
+from PyQt6.QtGui import QFont,QFontMetrics, QIcon
 from PyQt6.QtCore import QTimer
 
 from dataclasses import asdict
@@ -121,11 +121,13 @@ class VideoCaptureTab(QWidget):
         self.save_dir_button.clicked.connect(self.get_save_dir)
 
         # Display the save directory
-        self.save_dir_textbox = QPlainTextEdit(paths_config_dict["data_dir"])
+        self.save_dir_textbox = QPlainTextEdit(self.paths["data_dir"])
         self.save_dir_textbox.setMaximumBlockCount(1)
         self.save_dir_textbox.setFont(QFont("Courier", 12))
         self.save_dir_textbox.setReadOnly(True)
-        self.save_dir_textbox.setPlainText(self.paths["data_dir"])
+        self.temp_data_dir = self.paths["data_dir"]
+        self.save_dir_textbox.setPlainText(self.temp_data_dir)
+        self.display_save_dir_text()
 
         self.save_dir_hlayout = QHBoxLayout()
         self.save_dir_hlayout.addWidget(self.save_dir_textbox)
@@ -249,9 +251,9 @@ class VideoCaptureTab(QWidget):
         elif self.camera_quantity_spin_box.value() <= len(self.camera_groupboxes):
             for i in range(len(self.camera_groupboxes) - self.camera_quantity_spin_box.value()):
                 # Removes camera from
-                camera = self.camera_groupboxes.pop()
-                camera.disconnect()
-                camera.deleteLater()
+                camera_widget = self.camera_groupboxes.pop()
+                camera_widget.disconnect()
+                camera_widget.deleteLater()
 
         self.refresh()
 
@@ -309,10 +311,10 @@ class VideoCaptureTab(QWidget):
         This function should be able to be called whilst recording is taking place
         """
         n_cameras = len(self.camera_groupboxes)
-        for camera in self.camera_groupboxes:
+        for camera_widget in self.camera_groupboxes:
             # Remove all the camera from the layout
-            camera = self.camera_groupboxes.pop()
-            camera.disconnect()
+            camera_widget = self.camera_groupboxes.pop()
+            camera_widget.disconnect()
         # Remove the widget
         # self.viewfinder_groupbox.removeLayout(self.camera_layout)
         # Change the layout after the cameras have been removed
@@ -412,6 +414,21 @@ class VideoCaptureTab(QWidget):
         for camera_widget in self.camera_groupboxes:
             camera_widget.update_camera_dropdown()
 
+    def display_save_dir_text(self):
+        """Display the path in the textbox"""
+        save_dir = self.temp_data_dir
+        n_char = self.calculate_text_field_width()
+        if len(save_dir) > n_char:
+            save_dir = ".." + save_dir[-(n_char - 2):]
+        self.save_dir_textbox.setPlainText(save_dir)
+        
+    def calculate_text_field_width(self) -> int:
+        """Change the amount of text shown in save_dir textfield"""
+        text_edit_width = self.save_dir_textbox.viewport().width()
+        font = self.save_dir_textbox.font()
+        char_width = QFontMetrics(font).horizontalAdvance('A')
+        return text_edit_width // char_width - 2
+    
     def handle_camera_setups_modified(self):
         """
         Handle the renamed cameras by renaming the relevent attributes of the camera groupboxes
@@ -438,10 +455,10 @@ class VideoCaptureTab(QWidget):
 
     def get_save_dir(self):
         """Return the save directory"""
-        save_directory = QFileDialog.getExistingDirectory(self, "Select Directory", paths_config_dict["data_dir"])
+        save_directory = QFileDialog.getExistingDirectory(self, "Select Directory", self.paths["data_dir"])
         if save_directory:
             self.save_dir_textbox.setPlainText(save_directory)
-
+            self.temp_data_dir = save_directory
     def camera_groupbox_labels(self) -> List[str]:
         """Return the labels of the camera groupboxes"""
         return [camera.label for camera in self.camera_groupboxes]
@@ -503,3 +520,8 @@ class VideoCaptureTab(QWidget):
             self.camera_setup_tab.setups_changed = False
             # Handle the renamed cameras
             self.handle_camera_setups_modified()
+
+    def resizeEvent(self, event):
+        """"""
+        self.display_save_dir_text()
+        super().resizeEvent(event)
