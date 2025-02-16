@@ -24,11 +24,11 @@ from .utility import cbox_update_options, CameraSetupConfig, init_camera_api
 from config.config import ffmpeg_config, paths_config
 
 
-class ViewfinderWidget(QWidget):
+class CameraWidget(QWidget):
     """Widget for displaying camera video and camera controls."""
 
     def __init__(self, parent, label, subject_id):
-        super(ViewfinderWidget, self).__init__(parent)
+        super(CameraWidget, self).__init__(parent)
         self.video_capture_tab = parent
         self.camera_setup_tab = self.video_capture_tab.GUI.camera_setup_tab
         self.logger = logging.getLogger(__name__)
@@ -48,6 +48,7 @@ class ViewfinderWidget(QWidget):
         self.cam_width = self.camera_api.get_width()
         self.cam_height = self.camera_api.get_height()
         self._image_data = None
+        self.frame_timestamps = deque(maxlen=10)
 
         # Video display
         self.video_feed = pg.ImageView()
@@ -99,7 +100,7 @@ class ViewfinderWidget(QWidget):
         self.start_recording_button = QPushButton("")
         self.start_recording_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "record.svg")))
         self.start_recording_button.setFixedWidth(30)
-        self.start_recording_button.setEnabled(False)
+        self.start_recording_button.setEnabled(bool(self.subject_id))
         self.start_recording_button.clicked.connect(self.start_recording)
 
         # Stop button.
@@ -134,17 +135,20 @@ class ViewfinderWidget(QWidget):
 
         self.setLayout(self.camera_setup_hlayout)
 
-        self._begin_capturing()
+        self.begin_capturing()
 
     # Camera and recording control ----------------------------------------------------
 
-    def _begin_capturing(self):
+    def begin_capturing(self):
         """Start streaming video from camera."""
         self.recording = False
-        self.width = self.cam_width
-        self.height = self.cam_height
-        self.frame_timestamps = deque(maxlen=10)
         self.camera_api.begin_capturing()
+
+    def stop_capturing(self):
+        """Stop streaming video from camera."""
+        if self.recording:
+            self.stop_recording()
+        self.camera_api.stop_capturing()
 
     def fetch_image_data(self) -> None:
         """Get images and associated data from camera and save to disk if recording."""
@@ -290,7 +294,7 @@ class ViewfinderWidget(QWidget):
         cbox_update_options(
             cbox=self.camera_dropdown,
             options=self.camera_setup_tab.get_camera_labels(),
-            used_cameras_labels=list([cam.label for cam in self.video_capture_tab.camera_groupboxes]),
+            used_cameras_labels=list([cam.label for cam in self.video_capture_tab.camera_widgets]),
             selected=self.label,
         )
         self.camera_dropdown.currentTextChanged.connect(self.change_camera)
@@ -351,11 +355,6 @@ class ViewfinderWidget(QWidget):
         self.camera_api = init_camera_api(new_unique_id, self.camera_settings)
         self.camera_api.begin_capturing()
         self.camera_setup_groupbox.setTitle(self.label)
-
-    def disconnect(self):
-        """Stop capturing and remove viewfinder widget from video capture tab."""
-        self.camera_api.stop_capturing()
-        self.video_capture_tab.camera_layout.removeWidget(self)
 
     ### Functions for changing camera settings ----------------------------------------
 

@@ -51,7 +51,6 @@ class CameraSettingsConfig:
 # Utility functions -------------------------------------------------------------------
 
 
-# from GUI import ViewfinderWidget
 def cbox_update_options(cbox, options, used_cameras_labels, selected):
     """Update the options available in a qcombobox without changing the selection."""
     available_options = sorted(list(set(options) - set(used_cameras_labels)), key=str.lower)

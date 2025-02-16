@@ -133,7 +133,7 @@ class CamerasTab(QtWidgets.QWidget):
         for setup in self.setups.values():
             camera_object = [
                 camera.camera_object
-                for camera in self.GUI.viewfinder_tab.camera_groupboxes
+                for camera in self.GUI.viewfinder_tab.camera_widgets
                 if camera.unique_id == setup.unique_id
             ]
             for camera_object in camera_object:
