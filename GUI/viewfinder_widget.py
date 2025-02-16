@@ -34,6 +34,7 @@ class ViewfinderWidget(QWidget):
     def __init__(self, parent, label, subject_id):
         super(ViewfinderWidget, self).__init__(parent)
         self.video_capture_tab = parent
+        self.GUI = self.video_capture_tab.GUI
         self.camera_setup_tab = self.video_capture_tab.GUI.camera_setup_tab
         self.logger = logging.getLogger(__name__)
         self.paths = paths_config_dict
@@ -205,11 +206,27 @@ class ViewfinderWidget(QWidget):
         for i, gpio_indicator in enumerate(self.gpio_status_indicators):
             gpio_indicator.setText("\u2b24", color=[0, 0, self.gpio_state_smoothed[i] * 255])
 
+    def display_font_size_update(self, scale_factor = 0.01):
+        """Update the size of the GUI elements"""        
+        font_size = int(min(self.GUI.width(), self.GUI.height()) * scale_factor)
+
+        # Update GUI elements to font size
+        for i, gpio_indicator in enumerate(self.gpio_status_indicators):
+            gpio_indicator.setFont(QFont("Arial", font_size))
+        self.gpio_status_item.setFont(QFont("Arial", font_size))
+        self.recording_status_item.setFont(QFont("Arial", font_size))
+        self.recording_time_text.setFont(QFont("Arial", font_size))
+        self.frame_rate_text.setFont(QFont("Arial", font_size))
     # GUI element updates -------------------------------------------------------------
 
     def refresh(self):
         """refresh the camera widget"""
         self.update_camera_dropdown()
+        
+    def resizeEvent(self, event):
+        """resize Widget"""
+        self.display_font_size_update()
+        super().resizeEvent(event)
 
     def update_camera_dropdown(self):
         """Update the cameras available in the camera select dropdown menu."""
