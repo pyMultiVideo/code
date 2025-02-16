@@ -13,9 +13,8 @@ from PyQt6.QtWidgets import (
 )
 from dataclasses import asdict
 
-from config import ffmpeg_config_dict, paths_config_dict
-from tools import CameraSettingsConfig
-from tools import find_all_cameras, load_saved_setups, load_camera_dict
+from config.config import ffmpeg_config, paths_config
+from .utility import CameraSettingsConfig, find_all_cameras, load_saved_setups, load_camera_dict
 from .preview_dialog import CameraPreviewDialog
 
 QtCore.pyqtClassInfo
@@ -138,13 +137,13 @@ class CamerasTab(QtWidgets.QWidget):
 
         self._initialize_camera_groupbox()
 
-        self.paths = paths_config_dict
+        self.paths = paths_config
         self.saved_setups_file = os.path.join(self.paths["camera_dir"], "camera_configs.json")
         self.setups: dict[str, Camera] = {}  # Dict of setups: {Unique_id: Setup}
         # Get a list of the saved setups from the database
 
         self.saved_setups = load_saved_setups(load_camera_dict(camera_config_path=self.saved_setups_file))
-        self.ffmpeg_config: dict = ffmpeg_config_dict
+        self.ffmpeg_config: dict = ffmpeg_config
         self.refresh()
         self.setups_changed = False
 
@@ -161,7 +160,7 @@ class CamerasTab(QtWidgets.QWidget):
         # self.setLayout(self.camera_table_layout)
         self.setLayout(self.page_layout)
 
-    def load_ffmpeg_config_dict(self) -> dict:
+    def load_ffmpeg_config(self) -> dict:
         """Function to load the ffmpeg config dictionary"""
         with open(self.ffmpeg_config_options_file, "r") as f:
             return json.load(f)
@@ -299,7 +298,7 @@ class CameraOverviewTable(QTableWidget):
     def __init__(self, parent=None):
         super(CameraOverviewTable, self).__init__(parent)
         self.parent = parent
-        self.paths = paths_config_dict
+        self.paths = paths_config
         # Set the camera table to the camera_table in the database
         self.camera_dict = load_camera_dict(os.path.join(self.paths["config_dir"], "camera_configs.json"))
         # Configure the camera table

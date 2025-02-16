@@ -21,6 +21,7 @@ def check_module(module_name):
         logging.error(f"Unable to import dependency: {module_name}")
         sys.exit()
 
+
 check_module("PyQt6")
 check_module("pyqtgraph")
 # check_module("ffmpeg")
@@ -28,17 +29,18 @@ check_module("PySpin")
 check_module("cv2_enumerate_cameras")
 check_module("cv2")
 
-# Import GUI now that dependancies are installed
+# Import GUI now that dependancies are verified.
 import PyQt6.QtWidgets as QtWidgets
-import GUI 
+from GUI.GUI_main import GUIMain
+
 
 def main(parsed_args, unparsed_args):
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle("Fusion")
     # Parse the arguments to main window
-    gui = GUI.GUIMain(parsed_args)
+    gui = GUIMain(parsed_args)
     gui.show()
-    sys.excepthook = GUI.GUIMain.exception_hook
+    sys.excepthook = GUIMain.exception_hook
     app.exec()
 
 

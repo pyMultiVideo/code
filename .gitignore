@@ -9,6 +9,3 @@ _installation/SDK/*
 _installation/miniconda.exe
 _installation/spinview/spinnakerSDK.exe
 config/camera_configs.json
-
-tools/test.py
-tools/test2.py

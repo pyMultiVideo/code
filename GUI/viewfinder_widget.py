@@ -20,12 +20,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from tools import cbox_update_options
-from tools import CameraSetupConfig
-from tools import init_camera_api
-from config import ffmpeg_config_dict
-from config import gui_config_dict
-from config import paths_config_dict
+from .utility import cbox_update_options, CameraSetupConfig, init_camera_api
+from config.config import ffmpeg_config, paths_config
 
 
 class ViewfinderWidget(QWidget):
@@ -36,7 +32,7 @@ class ViewfinderWidget(QWidget):
         self.video_capture_tab = parent
         self.camera_setup_tab = self.video_capture_tab.GUI.camera_setup_tab
         self.logger = logging.getLogger(__name__)
-        self.paths = paths_config_dict
+        self.paths = paths_config
         # Camera attributes
         self.label = label
         self.subject_id = subject_id
@@ -50,6 +46,7 @@ class ViewfinderWidget(QWidget):
         self.camera_api = init_camera_api(self.unique_id, self.camera_settings)
         self.cam_width = self.camera_api.get_width()
         self.cam_height = self.camera_api.get_height()
+        self._image_data = None
 
         # Video display
 
@@ -155,55 +152,35 @@ class ViewfinderWidget(QWidget):
         new_images = self.camera_api.get_available_images()
         if new_images == None:
             return
-        # Store first image and GPIO state for display update.
-        self._image_data = new_images["images"][0]
-        self._GPIO_data = new_images["gpio_data"][0]
+        # Store most recent image and GPIO state for display update.
+        self._image_data = new_images["images"][-1]
+        self._GPIO_data = new_images["gpio_data"][-1]
         self.frame_timestamps.extend(new_images["timestamps"])
         # Record data to disk.
-        if self.recording is True:
+        if self.recording:
             self.save_image_data(new_images)
 
     # Video display -------------------------------------------------------------------
 
-    def display_frame(self):
-        """Display most recent image and call functions to add information overlays."""
+    def update_video_display(self, gpio_smoothing_decay=0.5):
+        """Display most recent image and update information overlays."""
+        if self._image_data is None:
+            return
         self.video_feed.setImage(self._image_data.T)
-        self.display_recording_status()
-        self.display_average_frame_rate()
-        self.display_recording_time()
-        self.display_gpio_state()
-
-    def display_average_frame_rate(self):
-        """Compute average framerate and display over image in green if OK else red."""
+        # Compute average framerate and display over image.
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
         calculated_framerate = 1e9 / avg_time_diff
         color = "r" if (abs(calculated_framerate - int(self.fps)) > 1) else "g"
         self.frame_rate_text.setText(f"FPS: {calculated_framerate:.2f}", color=color)
-
-    def display_recording_time(self):
-        """Display the current recording duration over image."""
-        if self.recording:
-            elapsed_time = datetime.now() - self.record_start_time
-            self.recording_time_text.setText(str(elapsed_time).split(".")[0], color="g")
-        else:
-            self.recording_time_text.setText("", color="r")
-
-    def display_recording_status(self):
-        """Set recording status text to match recording status."""
-        if self.recording is True:
-            status = "RECORDING"
-            color = "g"
-        elif self.recording is False:
-            status = "NOT RECORDING"
-            color = "r"
-        self.recording_status_item.setText(status, color=color)
-
-    def display_gpio_state(self, decay=0.5):
-        """Update GPIO status indicators."""
-        self.gpio_state_smoothed = decay * self.gpio_state_smoothed
+        # Update GPIO status indicators.
+        self.gpio_state_smoothed = gpio_smoothing_decay * self.gpio_state_smoothed
         self.gpio_state_smoothed[np.array(self._GPIO_data) > 0] = 1
         for i, gpio_indicator in enumerate(self.gpio_status_indicators):
             gpio_indicator.setText("\u2b24", color=[0, 0, self.gpio_state_smoothed[i] * 255])
+        # Display the current recording duration over image.
+        if self.recording:
+            elapsed_time = datetime.now() - self.record_start_time
+            self.recording_time_text.setText(str(elapsed_time).split(".")[0], color="g")
 
     # GUI element updates -------------------------------------------------------------
 
@@ -238,7 +215,7 @@ class ViewfinderWidget(QWidget):
         is_visible = self.camera_setup_groupbox.isVisible()
         self.camera_setup_groupbox.setVisible(not is_visible)
 
-    # Data file interaction -----------------------------------------------------------
+    # Recording -----------------------------------------------------------------------
 
     def start_recording(self) -> None:
         """Start recording video to disk."""
@@ -270,7 +247,7 @@ class ViewfinderWidget(QWidget):
         # Initalise ffmpeg process
         downsampled_width = int(self.cam_width / self.downsampling_factor)
         downsampled_height = int(self.cam_height / self.downsampling_factor)
-        ffmpeg_path = gui_config_dict["PATH_TO_FFMPEG"]
+        ffmpeg_path = paths_config["FFMPEG"]
         ffmpeg_command = [
             ffmpeg_path,
             "-y",  # overwrite output file if it exists
@@ -287,9 +264,9 @@ class ViewfinderWidget(QWidget):
             "-i",
             "pipe:",  # input comes from a pipe
             "-vcodec",
-            ffmpeg_config_dict["output"]["encoder"][self.video_capture_tab.encoder],
+            ffmpeg_config["output"]["encoder"][self.video_capture_tab.encoder],
             "-pix_fmt",
-            ffmpeg_config_dict["output"]["pxl_fmt"][self.pxl_fmt],
+            ffmpeg_config["output"]["pxl_fmt"][self.pxl_fmt],
             "-preset",
             "fast",
             "-crf",
@@ -301,6 +278,7 @@ class ViewfinderWidget(QWidget):
         # Set variables
         self.recording = True
         self.recorded_frames = 0
+        self.recording_status_item.setText("RECORDING", color="g")
 
         # Update GUI
         self.stop_recording_button.setEnabled(True)
@@ -312,6 +290,8 @@ class ViewfinderWidget(QWidget):
     def stop_recording(self) -> None:
         """Stop video recording to disk."""
         self.recording = False
+        self.recording_status_item.setText("NOT RECORDING", color="r")
+        self.recording_time_text.setText("")
         # Close files.
         self.gpio_file.close()
         self.metadata["end_time"] = datetime.now().isoformat(timespec="milliseconds")
@@ -382,9 +362,6 @@ class ViewfinderWidget(QWidget):
         # Set the new camera object
         self.camera_api = init_camera_api(new_unique_id, self.camera_settings)
         self.camera_api.begin_capturing()
-        # Call the display function once
-        # self.display_frame(self.camera_object.get_next_image())
-        #  Update the list cameras that are currently being used.
         self.camera_setup_groupbox.setTitle(self.label)
 
     def disconnect(self):

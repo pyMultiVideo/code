@@ -24,14 +24,13 @@ from PyQt6.QtCore import QTimer
 from dataclasses import asdict
 from .viewfinder_widget import ViewfinderWidget
 from .message_dialogs import show_info_message
-from tools import (
+from .utility import (
     ExperimentConfig,
     CameraSetupConfig,
     valid_ffmpeg_encoders,
     gpu_available,
 )
-from config import gui_config_dict
-from config import paths_config_dict
+from config.config import gui_config, paths_config
 
 
 class VideoCaptureTab(QWidget):
@@ -43,7 +42,7 @@ class VideoCaptureTab(QWidget):
         self.camera_setup_tab = self.GUI.camera_setup_tab
         self.logging = logging.getLogger(__name__)
         self.camera_groupboxes = []
-        self.paths = paths_config_dict
+        self.paths = paths_config
         self.camera_layout = QGridLayout()
         self.viewfinder_groupbox = QGroupBox("Viewfinder")
         self.viewfinder_groupbox.setLayout(self.camera_layout)
@@ -121,7 +120,7 @@ class VideoCaptureTab(QWidget):
         self.save_dir_button.clicked.connect(self.get_save_dir)
 
         # Display the save directory
-        self.save_dir_textbox = QPlainTextEdit(paths_config_dict["data_dir"])
+        self.save_dir_textbox = QPlainTextEdit(paths_config["data_dir"])
         self.save_dir_textbox.setMaximumBlockCount(1)
         self.save_dir_textbox.setFont(QFont("Courier", 12))
         self.save_dir_textbox.setReadOnly(True)
@@ -212,11 +211,11 @@ class VideoCaptureTab(QWidget):
         """Initialise the timers for the viewfinder tab"""
         self.fetch_images_timer = QTimer()
         self.fetch_images_timer.timeout.connect(self.fetch_image_data)
-        self.fetch_images_timer.start(int(1000 / gui_config_dict["fetch_image_rate"]))
+        self.fetch_images_timer.start(int(1000 / gui_config["fetch_image_rate"]))
 
         self.display_update_timer = QTimer()
         self.display_update_timer.timeout.connect(self.update_display)
-        self.display_update_timer.start(int(1000 / gui_config_dict["update_display_rate"]))
+        self.display_update_timer.start(int(1000 / gui_config["update_display_rate"]))
 
     def fetch_image_data(self):
         for camera_widget in self.camera_groupboxes:
@@ -225,7 +224,7 @@ class VideoCaptureTab(QWidget):
     def update_display(self):
         """Displays GUI on the application"""
         for camera_widget in self.camera_groupboxes:
-            camera_widget.display_frame()
+            camera_widget.update_video_display()
 
     def spinbox_add_remove_cameras(self):
         """
@@ -277,7 +276,7 @@ class VideoCaptureTab(QWidget):
         for camera_widget in self.camera_groupboxes:
             # Restart the aquisition of the video stream
             camera_widget.camera_api.begin_capturing()
-        self.fetch_images_timer.start(int(1000 / gui_config_dict["fetch_image_rate"]))
+        self.fetch_images_timer.start(int(1000 / gui_config["fetch_image_rate"]))
 
     def add_widget_to_layout(self):
         """Add the camera widget to the layout
@@ -438,7 +437,7 @@ class VideoCaptureTab(QWidget):
 
     def get_save_dir(self):
         """Return the save directory"""
-        save_directory = QFileDialog.getExistingDirectory(self, "Select Directory", paths_config_dict["data_dir"])
+        save_directory = QFileDialog.getExistingDirectory(self, "Select Directory", paths_config["data_dir"])
         if save_directory:
             self.save_dir_textbox.setPlainText(save_directory)
 

@@ -6,9 +6,8 @@ from PyQt6.QtGui import QIcon
 import pyqtgraph as pg
 
 # Local Imports
-from tools import init_camera_api
-from config import paths_config_dict
-from config import gui_config_dict
+from .utility import init_camera_api
+from config.config import paths_config, gui_config
 
 
 class CameraPreviewDialog(QDialog):
@@ -20,7 +19,7 @@ class CameraPreviewDialog(QDialog):
         self.main_gui = gui
         self.window_title = window_title
         self.unique_id = unique_id
-        self.paths = paths_config_dict
+        self.paths = paths_config
 
         self.setWindowTitle(self.window_title)
         icon = QIcon(os.path.join(self.paths["assets_dir"], "logo.svg"))
@@ -73,7 +72,7 @@ class CameraPreviewDialog(QDialog):
         """Start a timer to refresh the video feed every second"""
         self.timer = QTimer()
         self.timer.timeout.connect(self.refresh)
-        self.timer.start(int(1000 / gui_config_dict["update_display_rate"]))
+        self.timer.start(int(1000 / gui_config["update_display_rate"]))
 
     def refresh(self):
         """Refresh function for this tab"""
