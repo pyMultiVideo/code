@@ -30,6 +30,7 @@ class CameraWidget(QWidget):
     def __init__(self, parent, label, subject_id):
         super(CameraWidget, self).__init__(parent)
         self.video_capture_tab = parent
+        self.GUI = self.video_capture_tab.GUI
         self.camera_setup_tab = self.video_capture_tab.GUI.camera_setup_tab
         self.logger = logging.getLogger(__name__)
         self.paths = paths_config
@@ -38,13 +39,13 @@ class CameraWidget(QWidget):
         self.label = label
         self.subject_id = subject_id
         if self.label in self.camera_setup_tab.get_camera_labels():
-            self.camera_settings = self.camera_setup_tab.getCameraSettingsConfig(self.label)
-        self.fps = self.camera_settings.fps
-        self.pxl_fmt = self.camera_settings.pxl_fmt
-        self.unique_id = self.camera_settings.unique_id
+            self.camera_settings_config = self.camera_setup_tab.getCameraSettingsConfig(self.label)
+        self.fps = self.camera_settings_config.fps
+        self.pxl_fmt = self.camera_settings_config.pxl_fmt
+        self.unique_id = self.camera_settings_config.unique_id
         self.downsampling_factor = 1
 
-        self.camera_api = init_camera_api(self.unique_id, self.camera_settings)
+        self.camera_api = init_camera_api(self.unique_id, self.camera_settings_config)
         self.cam_width = self.camera_api.get_width()
         self.cam_height = self.camera_api.get_height()
         self._image_data = None
@@ -161,18 +162,86 @@ class CameraWidget(QWidget):
         self.frame_timestamps.extend(new_images["timestamps"])
         # Record data to disk.
         if self.recording:
-            self.recorded_frames += len(new_images["images"])
-            for frame in new_images["images"]:  # Send new images to FFMPEG for encoding.
-                self.ffmpeg_process.stdin.write(frame.tobytes())
-            for gpio_pinstate in new_images["gpio_data"]:  # Write GPIO pinstate to file.
-                self.gpio_writer.writerow(gpio_pinstate)
+            elapsed_time = datetime.now() - self.record_start_time
+            self.recording_time_text.setText(str(elapsed_time).split(".")[0], color="g")
+        else:
+            self.recording_time_text.setText("", color="r")
+
+    def display_recording_status(self):
+        """Set recording status text to match recording status."""
+        if self.recording is True:
+            status = "RECORDING"
+            color = "g"
+        elif self.recording is False:
+            status = "NOT RECORDING"
+            color = "r"
+        self.recording_status_item.setText(status, color=color)
+
+    def display_gpio_state(self, decay=0.5):
+        """Update GPIO status indicators."""
+        self.gpio_state_smoothed = decay * self.gpio_state_smoothed
+        self.gpio_state_smoothed[np.array(self._GPIO_data) > 0] = 1
+        for i, gpio_indicator in enumerate(self.gpio_status_indicators):
+            gpio_indicator.setText("\u2b24", color=[0, 0, self.gpio_state_smoothed[i] * 255])
+
+    def display_font_size_update(self, scale_factor = 0.01):
+        """Update the size of the GUI text elements"""        
+        font_size = int(min(self.GUI.width(), self.GUI.height()) * scale_factor)
+
+        # Update GUI elements to font size
+        for i, gpio_indicator in enumerate(self.gpio_status_indicators):
+            gpio_indicator.setFont(QFont("Arial", font_size))
+        self.gpio_status_item.setFont(QFont("Arial", font_size))
+        self.recording_status_item.setFont(QFont("Arial", font_size))
+        self.recording_time_text.setFont(QFont("Arial", font_size))
+        self.frame_rate_text.setFont(QFont("Arial", font_size))
+    
+    # GUI element updates -------------------------------------------------------------
+
+    def refresh(self):
+        """refresh the camera widget"""
+        self.update_camera_dropdown()
+        
+    def resizeEvent(self, event):
+        """Called on Widget resize"""
+        self.display_font_size_update()
+        super().resizeEvent(event)
+
+    def update_camera_dropdown(self):
+        """Update the cameras available in the camera select dropdown menu."""
+        self.camera_dropdown.currentTextChanged.disconnect(self.change_camera)
+        cbox_update_options(
+            cbox=self.camera_dropdown,
+            options=self.camera_setup_tab.get_camera_labels(),
+            used_cameras_labels=list([c_w.label for c_w in self.video_capture_tab.camera_widgets]),
+            selected=self.label,
+        )
+        self.camera_dropdown.currentTextChanged.connect(self.change_camera)
+
+    def update_subject_id(self):
+        self.subject_id = self.subject_id_text.toPlainText()
+        self.validate_subject_id_input()
+
+    def validate_subject_id_input(self):
+        """Change the colour of the subject ID text field"""
+        if self.subject_id_text.toPlainText() == "":
+            self.start_recording_button.setEnabled(False)
+        else:
+            self.start_recording_button.setEnabled(True)
+
+    def toggle_control_visibility(self) -> None:
+        """Toggle the visibility of the camera controls."""
+        is_visible = self.camera_setup_groupbox.isVisible()
+        self.camera_setup_groupbox.setVisible(not is_visible)
+
+    # Data file interaction -----------------------------------------------------------
 
     def start_recording(self) -> None:
         """Open data files and FFMPEG process, update GUI elements for recording."""
         # Create Filepaths.
         self.subject_id = self.subject_id_text.toPlainText()
         self.record_start_time = datetime.now()
-        save_dir = self.video_capture_tab.save_dir_textbox.toPlainText()
+        save_dir = self.video_capture_tab.temp_data_dir
         filename_stem = f"{self.subject_id}_{self.record_start_time.strftime('%Y-%m-%d-%H%M%S')}"
         self.video_filepath = os.path.join(save_dir, filename_stem + ".mp4")
         self.GPIO_filepath = os.path.join(save_dir, filename_stem + "_GPIO_data.csv")
@@ -288,17 +357,6 @@ class CameraWidget(QWidget):
         """refresh the camera widget"""
         self.update_camera_dropdown()
 
-    def update_camera_dropdown(self):
-        """Update the cameras available in the camera select dropdown menu."""
-        self.camera_dropdown.currentTextChanged.disconnect(self.change_camera)
-        cbox_update_options(
-            cbox=self.camera_dropdown,
-            options=self.camera_setup_tab.get_camera_labels(),
-            used_cameras_labels=list([cam.label for cam in self.video_capture_tab.camera_widgets]),
-            selected=self.label,
-        )
-        self.camera_dropdown.currentTextChanged.connect(self.change_camera)
-
     def subject_ID_edited(self):
         """Store new subject ID and update status of recording button."""
         self.subject_id = self.subject_id_text.toPlainText()
@@ -350,9 +408,9 @@ class CameraWidget(QWidget):
         self.unique_id = new_unique_id
         self.label = new_camera_label
         # Get the new camera settings
-        self.camera_settings = self.camera_setup_tab.getCameraSettingsConfig(self.label)
+        self.camera_settings_config = self.camera_setup_tab.getCameraSettingsConfig(self.label)
         # Set the new camera object
-        self.camera_api = init_camera_api(new_unique_id, self.camera_settings)
+        self.camera_api = init_camera_api(new_unique_id, self.camera_settings_config)
         self.camera_api.begin_capturing()
         self.camera_setup_groupbox.setTitle(self.label)
 
@@ -365,17 +423,6 @@ class CameraWidget(QWidget):
         self.camera_dropdown.setCurrentText(new_label)
         self.camera_setup_groupbox.setTitle(new_label)
 
-    def change_fps(self):
-        """Change the FPS of the camera"""
-        self.logger.info("Changing FPS")
-        self.camera_settings.fps = str(self.fps_cbox.currentText())
-        self.camera_api.set_frame_rate(int(self.camera_settings.fps))
-
-    def change_pxl_fmt(self):
-        """Change the pixel format of the camera"""
-        self.logger.info("Changing pixel format")
-        self.camera_settings.pxl_fmt = str(self.pxl_fmt_cbox.currentText())
-        self.camera_api.set_pixel_format(self.camera_settings.pxl_fmt)
 
     def change_downsampling_factor(self) -> None:
         """Change the downsampling factor of the camera"""

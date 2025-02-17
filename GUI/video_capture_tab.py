@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QCheckBox,
 )
-from PyQt6.QtGui import QFont, QIcon
+from PyQt6.QtGui import QFont,QFontMetrics, QIcon
 from PyQt6.QtCore import QTimer
 
 from dataclasses import asdict
@@ -40,7 +40,7 @@ class VideoCaptureTab(QWidget):
         self.GUI = parent
         self.camera_setup_tab = self.GUI.camera_setup_tab
         self.logging = logging.getLogger(__name__)
-        self.camera_widgets = []
+        self.camera_widgets: list[CameraWidget] = []
         self.paths = paths_config
         self.camera_layout = QGridLayout()
         self.viewfinder_groupbox = QGroupBox("Viewfinder")
@@ -90,7 +90,6 @@ class VideoCaptureTab(QWidget):
         self.layout_checkbox = QCheckBox("Grid Layout")
         self.layout_checkbox.setChecked(True)
         self.layout_checkbox.stateChanged.connect(self.change_layout)
-        # self.layout_checkbox.setEnabled(True)  # Feature not yet working.
 
         self.config_hlayout = QHBoxLayout()
         self.config_hlayout.addWidget(self.save_camera_config_button)
@@ -110,11 +109,13 @@ class VideoCaptureTab(QWidget):
         self.save_dir_button.clicked.connect(self.get_save_dir)
 
         # Display the save directory
-        self.save_dir_textbox = QPlainTextEdit(paths_config["data_dir"])
+        self.save_dir_textbox = QPlainTextEdit(self.paths["data_dir"])
         self.save_dir_textbox.setMaximumBlockCount(1)
         self.save_dir_textbox.setFont(QFont("Courier", 12))
         self.save_dir_textbox.setReadOnly(True)
-        self.save_dir_textbox.setPlainText(self.paths["data_dir"])
+        self.temp_data_dir = self.paths["data_dir"]
+        self.save_dir_textbox.setPlainText(self.temp_data_dir)
+        self.display_save_dir_text()
 
         self.save_dir_hlayout = QHBoxLayout()
         self.save_dir_hlayout.addWidget(self.save_dir_textbox)
@@ -209,17 +210,6 @@ class VideoCaptureTab(QWidget):
 
     # Camera acquisition and recording control ----------------------------------------
 
-    def pause_camera_streaming(self):
-        """Pause aqusition of the camera video streams."""
-        for camera_widget in self.camera_widgets:
-            camera_widget.stop_capturing()
-        self.fetch_images_timer.stop()
-
-    def play_camera_streaming(self):
-        """Restart the aquisition of the camera video streams"""
-        for camera_widget in self.camera_widgets:
-            camera_widget.begin_capturing()
-        self.fetch_images_timer.start(int(1000 / gui_config["fetch_image_rate"]))
 
     def start_recording(self):
         for camera_widget in self.camera_widgets:
@@ -295,27 +285,29 @@ class VideoCaptureTab(QWidget):
         )
         self.add_widget_to_layout()
 
+    def pause_camera_streaming(self):
+        for camera_widget in self.camera_widgets:
+            # Pause the aqusition of the video stream
+            camera_widget.camera_api.stop_capturing()
+        self.fetch_images_timer.stop()
+
+    def play_camera_streaming(self):
+        for camera_widget in self.camera_widgets:
+            # Restart the aquisition of the video stream
+            camera_widget._initialise_camera(camera_widget.unique_id, camera_widget.label)
+        self.fetch_images_timer.start(int(1000 / gui_config["fetch_image_rate"]))
+
     def add_widget_to_layout(self):
         """Add the camera widget to the layout
         Will try to make the camera layout as square as possible. THis will be based on the nunber of connected cameras to the setup
         """
-        SQUARE = True
-        if SQUARE:
-            # Position of the new camera to be added.
+        if type(self.camera_layout) is QGridLayout:
+            # Grid Layout
             position = len(self.camera_widgets) - 1
-            # Square side length calculated
-            side_len = ceil(sqrt(len(self.connected_cameras())))
-            # Could instead, add a manual setting for the number of colmns in the layout.
-            # Add the new camera to the correct position
-            self.camera_layout.addWidget(self.camera_widgets[-1], position // side_len, position % side_len)
-        else:
-            if type(self.camera_layout) is QGridLayout:
-                # Grid Layout
-                position = len(self.camera_widgets) - 1
-                self.camera_layout.addWidget(self.camera_widgets[-1], position // 2, position % 2)
-            elif type(self.camera_layout) is QVBoxLayout:
-                # Vertical Layout
-                self.camera_layout.addWidget(self.camera_widgets[-1])
+            self.camera_layout.addWidget(self.camera_widgets[-1], position // 2, position % 2)
+        elif type(self.camera_layout) is QVBoxLayout:
+            # Vertical Layout
+            self.camera_layout.addWidget(self.camera_widgets[-1])
         self.refresh()
 
     def remove_camera_widget(self, camera_widget):
@@ -333,8 +325,11 @@ class VideoCaptureTab(QWidget):
         """Function to change the layout of the camera widgets between grid and vertical."""
         # Create new layout and populate with existing camera widgets.
         new_layout = QGridLayout() if self.layout_checkbox.isChecked() else QVBoxLayout()
-        for camera_widget in self.camera_widgets:
-            new_layout.addWidget(camera_widget)
+        for index, camera_widget in enumerate(self.camera_widgets):
+            if isinstance(new_layout, QGridLayout):
+                new_layout.addWidget(camera_widget, index // 2, index % 2)
+            else:
+                new_layout.addWidget(camera_widget)
         # Assign old layout to temporary widget to remove it from viewfinder_groupbox.
         QWidget().setLayout(self.camera_layout)
         # Set new layout to viewfinder_groupbox.
@@ -384,6 +379,22 @@ class VideoCaptureTab(QWidget):
         self.save_dir_textbox.setPlainText(experiment_config.data_dir)
         self.layout_checkbox.setChecked(experiment_config.grid_layout)
 
+
+    def display_save_dir_text(self):
+        """Display the path in the textbox"""
+        save_dir = self.temp_data_dir
+        n_char = self.calculate_text_field_width()
+        if len(save_dir) > n_char:
+            save_dir = ".." + save_dir[-(n_char - 2):]
+        self.save_dir_textbox.setPlainText(save_dir)
+        
+    def calculate_text_field_width(self) -> int:
+        """Change the amount of text shown in save_dir textfield"""
+        text_edit_width = self.save_dir_textbox.viewport().width()
+        font = self.save_dir_textbox.font()
+        char_width = QFontMetrics(font).horizontalAdvance('A')
+        return text_edit_width // char_width - 2
+    
     def handle_camera_setups_modified(self):
         """
         Handle the renamed cameras by renaming the relevent attributes of the camera groupboxes
@@ -410,10 +421,10 @@ class VideoCaptureTab(QWidget):
 
     def get_save_dir(self):
         """Return the save directory"""
-        save_directory = QFileDialog.getExistingDirectory(self, "Select Directory", paths_config["data_dir"])
+        save_directory = QFileDialog.getExistingDirectory(self, "Select Directory", self.paths["data_dir"])
         if save_directory:
             self.save_dir_textbox.setPlainText(save_directory)
-
+            self.temp_data_dir = save_directory
     def camera_groupbox_labels(self) -> List[str]:
         """Return the labels of the camera groupboxes"""
         return [camera_widget.label for camera_widget in self.camera_widgets]
@@ -449,3 +460,9 @@ class VideoCaptureTab(QWidget):
         self.encoder_selection.setEnabled(not any_recording)
         self.load_experiment_config_button.setEnabled(not any_recording)
         self.camera_quantity_spin_box.setEnabled(not any_recording)
+
+
+    def resizeEvent(self, event):
+        """"""
+        self.display_save_dir_text()
+        super().resizeEvent(event)

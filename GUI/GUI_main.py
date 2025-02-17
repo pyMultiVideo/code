@@ -62,7 +62,7 @@ class GUIMain(QMainWindow):
 
     def refresh(self):
         """Call tab refresh methods."""
-        self.camera_setup_tab.refresh()
+        # self.camera_setup_tab.refresh()
         self.video_capture_tab.refresh()
 
     def resizeEvent(self, event):
