@@ -164,6 +164,7 @@ class CameraWidget(QWidget):
         if self.recording:
             elapsed_time = datetime.now() - self.record_start_time
             self.recording_time_text.setText(str(elapsed_time).split(".")[0], color="g")
+            self.write_data(new_images)
         else:
             self.recording_time_text.setText("", color="r")
 
@@ -184,9 +185,9 @@ class CameraWidget(QWidget):
         for i, gpio_indicator in enumerate(self.gpio_status_indicators):
             gpio_indicator.setText("\u2b24", color=[0, 0, self.gpio_state_smoothed[i] * 255])
 
-    def display_font_size_update(self, scale_factor = 0.01):
+    def display_font_size_update(self, scale_factor = 0.015):
         """Update the size of the GUI text elements"""        
-        font_size = int(min(self.GUI.width(), self.GUI.height()) * scale_factor)
+        font_size = int(min(self.width(), self.height()) * scale_factor)
 
         # Update GUI elements to font size
         for i, gpio_indicator in enumerate(self.gpio_status_indicators):
@@ -234,6 +235,14 @@ class CameraWidget(QWidget):
         is_visible = self.camera_setup_groupbox.isVisible()
         self.camera_setup_groupbox.setVisible(not is_visible)
 
+    def subject_ID_edited(self):
+        """Store new subject ID and update status of recording button."""
+        self.subject_id = self.subject_id_text.toPlainText()
+        if self.subject_id_text.toPlainText() == "":
+            self.start_recording_button.setEnabled(False)
+        else:
+            self.start_recording_button.setEnabled(True)
+
     # Data file interaction -----------------------------------------------------------
 
     def start_recording(self) -> None:
@@ -266,7 +275,7 @@ class CameraWidget(QWidget):
         # Initalise ffmpeg process
         downsampled_width = int(self.cam_width / self.downsampling_factor)
         downsampled_height = int(self.cam_height / self.downsampling_factor)
-        ffmpeg_path = paths_config["FFMPEG"]
+        ffmpeg_path = self.paths["FFMPEG"]
         ffmpeg_command = [
             ffmpeg_path,
             "-y",  # overwrite output file if it exists
@@ -305,6 +314,17 @@ class CameraWidget(QWidget):
         self.start_recording_button.setEnabled(False)
         self.subject_id_text.setEnabled(False)
         self.video_capture_tab.GUI.tab_widget.tabBar().setEnabled(False)
+
+    def write_data(self,new_images:dict):
+        """Encode frames"""
+        # Encode frames
+        for image in new_images["images"]:
+            self.ffmpeg_process.stdin.write(image.tobytes())
+            self.recorded_frames += 1
+
+        # Write GPIO information
+        for gpio_data in new_images["gpio_data"]:
+            self.gpio_writer.writerow(gpio_data)
 
     def stop_recording(self) -> None:
         """Close data files and FFMPEG process, update GUI elements."""
@@ -350,25 +370,6 @@ class CameraWidget(QWidget):
         if self.recording:
             elapsed_time = datetime.now() - self.record_start_time
             self.recording_time_text.setText(str(elapsed_time).split(".")[0], color="g")
-
-    # GUI element updates -------------------------------------------------------------
-
-    def refresh(self):
-        """refresh the camera widget"""
-        self.update_camera_dropdown()
-
-    def subject_ID_edited(self):
-        """Store new subject ID and update status of recording button."""
-        self.subject_id = self.subject_id_text.toPlainText()
-        if self.subject_id_text.toPlainText() == "":
-            self.start_recording_button.setEnabled(False)
-        else:
-            self.start_recording_button.setEnabled(True)
-
-    def toggle_control_visibility(self) -> None:
-        """Toggle the visibility of the camera controls."""
-        is_visible = self.camera_setup_groupbox.isVisible()
-        self.camera_setup_groupbox.setVisible(not is_visible)
 
     ### Config related functions ------------------------------------------------------
 

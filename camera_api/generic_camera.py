@@ -88,3 +88,17 @@ def initialise_by_id(_id, CameraSettingsConfig=None):
     """Function that returns a camera instance based on the _id"""
 
     return GenericCamera()
+
+if __name__ == "__main__":
+    import time
+    cameras = list_available_cameras(VERBOSE=True)
+    if cameras:
+        camera = initialise_by_id(cameras[0], None)
+        camera.begin_capturing()
+        time.sleep(1)
+        images_data = camera.get_available_images()
+        if images_data:
+            print(f"Captured {len(images_data['images'])} images")
+        camera.stop_capturing()
+    else:
+        print("No cameras found.")
