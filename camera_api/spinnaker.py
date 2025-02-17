@@ -5,7 +5,7 @@ if __name__ == "__main__":
 else:
     from . import GenericCamera
     
-class Chameleon3Camera(GenericCamera):
+class SpinnakerCamera(GenericCamera):
     """Inherits from the camera class and adds the spinnaker specific functions from the PySpin library"""
 
     def __init__(self, unique_id: str, CameraConfig=None):
@@ -34,6 +34,8 @@ class Chameleon3Camera(GenericCamera):
         self.cam.ChunkEnable.SetValue(True)
         chunk_selector.SetIntValue(chunk_selector.GetEntryByName("Timestamp").GetValue())
         self.cam.ChunkEnable.SetValue(True)
+        chunk_selector.SetIntValue(chunk_selector.GetEntryByName("ExposureTime").GetValue())
+        self.cam.ChunkEnable.SetValue(True)
         self.cam.ChunkModeActive.SetValue(True)
 
         # Set frame rate control to manual.
@@ -41,6 +43,7 @@ class Chameleon3Camera(GenericCamera):
         fra_node.SetIntValue(fra_node.GetEntryByName("Off").GetValue())
         frc_node = PySpin.CBooleanPtr(self.nodemap.GetNode("AcquisitionFrameRateEnabled"))
         frc_node.SetValue(True)
+
 
         # Configure camera to embed GPIO pinstate in image data.
         FRAME_INFO_REG = 0xFFFFF0F012F8
@@ -52,6 +55,8 @@ class Chameleon3Camera(GenericCamera):
         if self.camera_config is not None:
             self.set_frame_rate(self.camera_config.fps)
             self.set_pixel_format(self.camera_config.pxl_fmt)
+            self.set_exposure_control(self.camera_config.exposure_manual)
+            self.set_exposure_time(self.camera_config.exposure_time)
 
     # Functions to get the camera parameters ----------------------------------------------
 
@@ -105,7 +110,27 @@ class Chameleon3Camera(GenericCamera):
 
     def set_pixel_format(self, pixel_format):
         pass
-
+    
+    def set_exposure_time(self, exposure_time: int) -> None:
+        if self.exposure_control_manual is True: 
+            PySpin.CFloatPtr(self.nodemap.GetNode("ExposureTime")).SetValue(int(exposure_time))
+        else: 
+            print("Exposure Mode is not manual")
+            
+    def set_exposure_control(self, manual:bool) -> None:
+        assert type(manual) is bool 
+        if manual:
+            # Set the Exposure time control to manual
+            ept_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("ExposureAuto"))
+            ept_node.SetIntValue(ept_node.GetEntryByName("Off").GetValue())
+            self.exposure_control_manual=manual
+        else: 
+            # Set the Exposure time control to manual
+            ept_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("ExposureAuto"))
+            ept_node.SetIntValue(ept_node.GetEntryByName("On").GetValue())
+            self.exposure_control_manual=manual
+            
+            
     # Functions to control the camera streaming and check status.
 
     def begin_capturing(self) -> None:
@@ -130,6 +155,7 @@ class Chameleon3Camera(GenericCamera):
         img_buffer = []
         timestamps_buffer = []
         gpio_buffer = []
+        exposure_times_buffer = []
         # Get all available images from camera buffer.
         try:
             while True:
@@ -137,6 +163,7 @@ class Chameleon3Camera(GenericCamera):
                 img_buffer.append(next_image.GetNDArray())  # Image pixels as numpy array.
                 chunk_data = next_image.GetChunkData()  # Additional image data.
                 timestamps_buffer.append(chunk_data.GetTimestamp())  # Image timestamp (ns?)
+                exposure_times_buffer.append(chunk_data.GetExposureTime()) # Exposure time (s?)
                 frame_number = chunk_data.GetFrameID()
                 if (frame_number - self.last_frame_number) > 1:
                     print("Dropped frame")
@@ -152,8 +179,58 @@ class Chameleon3Camera(GenericCamera):
                     "images": img_buffer,
                     "gpio_data": gpio_buffer,
                     "timestamps": timestamps_buffer,
+                    "exposure_times": exposure_times_buffer
                 }
 
+# Chameleon3 Subclass -----------------------------------------------------------------------------------
+
+class Chameleon3Camera(SpinnakerCamera):
+    """Subclass for Chameleon3 specific camera functions"""
+    def __init__(self, unique_id: str, CameraConfig=None):
+        super().__init__(unique_id, CameraConfig)
+        # Additional initialization for Chameleon3 can be added here
+
+
+# BlackFLy Subclass -------------------------------------------------------------------------------------
+
+class BlackFlyCamera(SpinnakerCamera):
+    """Subclass for Chameleon3 specific camera functions"""
+
+    def __init__(self, unique_id: str, CameraConfig=None):
+        self.camera_config = CameraConfig
+        self.unique_id = unique_id
+
+        # Initialise camera -------------------------------------------------
+
+        self.system = PySpin.System.GetInstance()
+        self.serial_number, self.api = unique_id.split("-")
+        self.cam = self.system.GetCameras().GetBySerial(self.serial_number)
+        self.cam.Init()
+        self.nodemap = self.cam.GetNodeMap()
+        self.stream_nodemap = self.cam.GetTLStreamNodeMap()
+
+        # Configure camera --------------------------------------------------
+
+        # Set Buffer handling mode to Oldest First
+        bh_node = PySpin.CEnumerationPtr(self.stream_nodemap.GetNode("StreamBufferHandlingMode"))
+        bh_node.SetIntValue(bh_node.GetEntryByName("OldestFirst").GetValue())
+
+        # Configure ChunkData to include frame count and timestamp.
+        chunk_selector = PySpin.CEnumerationPtr(self.nodemap.GetNode("ChunkSelector"))
+        # chunk_selector.SetIntValue(chunk_selector.GetEntryByName("FrameCounter").GetValue())
+        # self.cam.ChunkEnable.SetValue(True)
+        chunk_selector.SetIntValue(chunk_selector.GetEntryByName("Timestamp").GetValue())
+        self.cam.ChunkEnable.SetValue(True)
+        self.cam.ChunkModeActive.SetValue(True)
+
+        # Set frame rate control to manual.
+        fra_node = PySpin.CBooleanPtr(self.nodemap.GetNode("AcquisitionFrameRateEnable"))
+        fra_node.SetValue(True)
+
+        # Configure user settings.
+        if self.camera_config is not None:
+            self.set_frame_rate(self.camera_config.fps)
+            self.set_pixel_format(self.camera_config.pxl_fmt)
 
 # Camera system functions -------------------------------------------------------------------------------
 
@@ -174,6 +251,16 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
                 if VERBOSE:
                     print(f"Camera ID: {cam_id}")
                 unique_id_list.append(cam_id)
+            elif "Blackfly" in cam.DeviceModelName():
+                cam_id: str = f"{cam.DeviceSerialNumber()}-blackfly"
+                if VERBOSE:
+                    print(f"Camera ID: {cam_id}")
+                unique_id_list.append(cam_id)
+            else:
+                cam_id: str = f"{cam.DeviceSerialNumber()}-spinnaker"
+                if VERBOSE:
+                    print(f"Camera ID: {cam_id}")
+                unique_id_list.append(cam_id)
         except Exception as e:
             if VERBOSE:
                 print(f"Error accessing camera: {e}")
@@ -188,18 +275,24 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
 
 def initialise_by_id(_id, CameraSettingsConfig):
     """Instantiate the SpinnakerCamera object based on the unique-id"""
-    return Chameleon3Camera(unique_id=_id, CameraConfig=CameraSettingsConfig)
+    if "chameleon3" in _id:
+        return Chameleon3Camera(unique_id=_id, CameraConfig=CameraSettingsConfig)
+    elif "blackfly" in _id:
+        return BlackFlyCamera(unique_id=_id, CameraConfig=CameraSettingsConfig)
+    else:
+        return SpinnakerCamera(unique_id=_id, CameraConfig=CameraSettingsConfig)
 
 if __name__ == "__main__":
     import time
     cameras = list_available_cameras(VERBOSE=True)
     if cameras:
-        camera = initialise_by_id(cameras[0], None)
-        camera.begin_capturing()
-        time.sleep(1)
-        images_data = camera.get_available_images()
-        if images_data:
-            print(f"Captured {len(images_data['images'])} images")
-        camera.stop_capturing()
+        for i, camera in enumerate(cameras):
+            camera = initialise_by_id(cameras[i], None)
+            camera.begin_capturing()
+            time.sleep(1)
+            images_data = camera.get_available_images()
+            if images_data:
+                print(f"Captured {len(images_data['images'])} images from camera {camera.cam.DeviceModelName()}")
+            camera.stop_capturing()
     else:
         print("No cameras found.")

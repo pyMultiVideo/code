@@ -40,12 +40,13 @@ class CameraSettingsConfig:
     """
     Data class to hold the camera settings for a single camera
     """
-
     name: str
     unique_id: str
     fps: str
     pxl_fmt: str
     downsample_factor: int
+    exposure_manual: bool
+    exposure_time: int # Units? 
 
 
 # Utility functions -------------------------------------------------------------------
@@ -165,8 +166,11 @@ def init_camera_api(_id, CameraSettingsConfig=None):
     """Go through each"""
     # Split the camera unique_id into its api and its serial_no
     serial_no, module_name = _id.split("-")
-
-    camera_module = importlib.import_module(f"camera_api.{module_name}")
+    if module_name in ['chameleon3', 'blackfly']:
+        camera_module = importlib.import_module("camera_api.spinnaker")
+    else:
+        camera_module = importlib.import_module(f"camera_api.{module_name}")
+            
 
     return camera_module.initialise_by_id(_id=_id, CameraSettingsConfig=CameraSettingsConfig)
 
@@ -182,6 +186,8 @@ def load_saved_setups(camera_data) -> list[CameraSettingsConfig]:
                 fps=cam["fps"],
                 pxl_fmt=cam["pxl_fmt"],
                 downsample_factor=cam["downsample_factor"],
+                exposure_manual= cam["exposure_manual"],
+                exposure_time = cam["exposure_time"]
             )
         )
     return setups_from_database
