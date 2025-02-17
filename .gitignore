@@ -8,8 +8,3 @@ test_notebook.ipynb
 _installation/SDK/*
 
 config/camera_configs.json
-
-tools/test.py
-tools/test2.py
-test/*
-test/

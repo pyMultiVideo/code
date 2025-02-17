@@ -8,10 +8,10 @@ import sys
 import os
 
 # import tab classes
-from . import VideoCaptureTab
-from . import CamerasTab
-from config import paths_config_dict
-from tools import __version__
+from .video_capture_tab import VideoCaptureTab
+from .camera_setup_tab import CamerasTab
+
+from config.config import __version__, paths_config
 
 if os.name == "nt":  # Needed on windows to get taskbar icon to display correctly.
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(f"pyMultiVideo v{__version__}")
@@ -26,7 +26,7 @@ class GUIMain(QMainWindow):
         super().__init__()
         self.startup_config = parsed_args.config
         self.logger = logging.getLogger(__name__)
-        self.paths = paths_config_dict
+        self.paths = paths_config
         # Set window size, title, icon.
         self.setGeometry(100, 100, 700, 800)  # x, y, width, height
         self.setWindowTitle(f"pyMultiVideo v{__version__}")  # default window title
@@ -62,7 +62,7 @@ class GUIMain(QMainWindow):
 
     def refresh(self):
         """Call tab refresh methods."""
-        self.camera_setup_tab.refresh()
+        # self.camera_setup_tab.refresh()
         self.video_capture_tab.refresh()
 
     def resizeEvent(self, event):
