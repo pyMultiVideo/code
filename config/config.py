@@ -22,7 +22,7 @@ ffmpeg_config = {
             "CPU (H264)": "libx264",
             "CPU (H265)": "libx265",
         },
-        "pxl_fmt": {"yuv420p": "yuv420p"},
+        "pxl_fmt": {"Mono8": "yuv420p"}
     },
 }
 
@@ -30,14 +30,9 @@ ffmpeg_config = {
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # pyMV code folder.
 
-ffmpeg_path = shutil.which("ffmpeg")  # The location where the ffmpeg.exe is located.
-if ffmpeg_path is None:
-    raise FileNotFoundError("FFmpeg binary not found. Please install FFmpeg and ensure it's in your PATH.")
-print(f"FFmpeg found at: {ffmpeg_path}")
-
 paths_config = {
     "ROOT": ROOT,
-    "FFMPEG": ffmpeg_path,
+    "FFMPEG": shutil.which("ffmpeg"),
     "camera_dir": os.path.join(ROOT, "config"),
     "encoder_dir": os.path.join(ROOT, "config"),
     "data_dir": os.path.join(ROOT, "data"),

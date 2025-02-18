@@ -59,5 +59,4 @@ def parse_args():
 # Run the main function if this script is run
 if __name__ == "__main__":
     parsed_args, unparsed_args = parse_args()
-    print(parsed_args, unparsed_args)
     main(parsed_args, unparsed_args)

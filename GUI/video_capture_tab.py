@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QCheckBox,
 )
-from PyQt6.QtGui import QFont, QIcon
+from PyQt6.QtGui import QFont, QFontMetrics, QIcon
 from PyQt6.QtCore import QTimer
 
 from dataclasses import asdict
@@ -110,11 +110,13 @@ class VideoCaptureTab(QWidget):
         self.save_dir_button.clicked.connect(self.get_save_dir)
 
         # Display the save directory
-        self.save_dir_textbox = QPlainTextEdit(paths_config["data_dir"])
+        self.save_dir_textbox = QPlainTextEdit(self.paths["data_dir"])
         self.save_dir_textbox.setMaximumBlockCount(1)
         self.save_dir_textbox.setFont(QFont("Courier", 12))
         self.save_dir_textbox.setReadOnly(True)
-        self.save_dir_textbox.setPlainText(self.paths["data_dir"])
+        self.temp_data_dir = self.paths["data_dir"]
+        self.save_dir_textbox.setPlainText(self.temp_data_dir)
+        self.display_save_dir_text()
 
         self.save_dir_hlayout = QHBoxLayout()
         self.save_dir_hlayout.addWidget(self.save_dir_textbox)
@@ -129,6 +131,7 @@ class VideoCaptureTab(QWidget):
         self.start_recording_button.setFixedWidth(30)
         self.start_recording_button.setFixedHeight(30)
         self.start_recording_button.clicked.connect(self.start_recording)
+        self.start_recording_button.setEnabled(False)
 
         # Button for stopping recording
         self.stop_recording_button = QPushButton("")
@@ -136,6 +139,7 @@ class VideoCaptureTab(QWidget):
         self.stop_recording_button.setFixedWidth(30)
         self.stop_recording_button.setFixedHeight(30)
         self.stop_recording_button.clicked.connect(self.stop_recording)
+        self.stop_recording_button.setEnabled(False)
 
         self.control_all_hlayout = QHBoxLayout()
         self.control_all_hlayout.addWidget(self.start_recording_button)
@@ -197,8 +201,6 @@ class VideoCaptureTab(QWidget):
 
     def refresh(self):
         """Refresh the viewfinder tab"""
-        self.check_to_enable_global_start_recording()
-        self.check_to_enable_global_stop_recording()
         for camera_widget in self.camera_widgets:
             camera_widget.refresh()
         # Check the setups_changed flag
@@ -206,7 +208,12 @@ class VideoCaptureTab(QWidget):
             self.camera_setup_tab.setups_changed = False
             # Handle the renamed cameras
             self.handle_camera_setups_modified()
-
+            
+    def resizeEvent(self, event):
+        """Called on resized widget"""
+        self.display_save_dir_text()
+        super().resizeEvent(event)
+        
     # Camera acquisition and recording control ----------------------------------------
 
     def pause_camera_streaming(self):
@@ -258,6 +265,21 @@ class VideoCaptureTab(QWidget):
         for camera_widget in self.camera_widgets:
             camera_widget.update_camera_dropdown()
 
+    def display_save_dir_text(self):
+        """Display the path in the textbox"""
+        save_dir = self.temp_data_dir
+        n_char = self.calculate_text_field_width()
+        if len(save_dir) > n_char:
+            save_dir = ".." + save_dir[-(n_char - 2):]
+        self.save_dir_textbox.setPlainText(save_dir)
+        
+    def calculate_text_field_width(self) -> int:
+        """Change the amount of text shown in save_dir textfield"""
+        text_edit_width = self.save_dir_textbox.viewport().width()
+        font = self.save_dir_textbox.font()
+        char_width = QFontMetrics(font).horizontalAdvance('A')
+        return text_edit_width // char_width - 2
+    
     def spinbox_add_remove_cameras(self):
         """
         Function attached to the spinbox that adds or removes cameras from the viewfinder tab
@@ -296,26 +318,16 @@ class VideoCaptureTab(QWidget):
         self.add_widget_to_layout()
 
     def add_widget_to_layout(self):
-        """Add the camera widget to the layout
-        Will try to make the camera layout as square as possible. THis will be based on the nunber of connected cameras to the setup
         """
-        SQUARE = True
-        if SQUARE:
-            # Position of the new camera to be added.
+        """
+        if type(self.camera_layout) is QGridLayout:
+            # Grid Layout
             position = len(self.camera_widgets) - 1
-            # Square side length calculated
-            side_len = ceil(sqrt(len(self.connected_cameras())))
-            # Could instead, add a manual setting for the number of colmns in the layout.
-            # Add the new camera to the correct position
-            self.camera_layout.addWidget(self.camera_widgets[-1], position // side_len, position % side_len)
-        else:
-            if type(self.camera_layout) is QGridLayout:
-                # Grid Layout
-                position = len(self.camera_widgets) - 1
-                self.camera_layout.addWidget(self.camera_widgets[-1], position // 2, position % 2)
-            elif type(self.camera_layout) is QVBoxLayout:
-                # Vertical Layout
-                self.camera_layout.addWidget(self.camera_widgets[-1])
+            self.camera_layout.addWidget(self.camera_widgets[-1], position // 2, position % 2)
+        elif type(self.camera_layout) is QVBoxLayout:
+            # Vertical Layout
+            self.camera_layout.addWidget(self.camera_widgets[-1])
+            
         self.refresh()
 
     def remove_camera_widget(self, camera_widget):
@@ -333,13 +345,17 @@ class VideoCaptureTab(QWidget):
         """Function to change the layout of the camera widgets between grid and vertical."""
         # Create new layout and populate with existing camera widgets.
         new_layout = QGridLayout() if self.layout_checkbox.isChecked() else QVBoxLayout()
-        for camera_widget in self.camera_widgets:
-            new_layout.addWidget(camera_widget)
+        for index, camera_widget in enumerate(self.camera_widgets):
+            if isinstance(new_layout, QGridLayout):
+                new_layout.addWidget(camera_widget, index // 2, index % 2)
+            else:
+                new_layout.addWidget(camera_widget)
         # Assign old layout to temporary widget to remove it from viewfinder_groupbox.
         QWidget().setLayout(self.camera_layout)
         # Set new layout to viewfinder_groupbox.
         self.camera_layout = new_layout
         self.viewfinder_groupbox.setLayout(self.camera_layout)
+
 
     # Saving and loading experiment configs -------------------------------------------
 
@@ -413,7 +429,8 @@ class VideoCaptureTab(QWidget):
         save_directory = QFileDialog.getExistingDirectory(self, "Select Directory", paths_config["data_dir"])
         if save_directory:
             self.save_dir_textbox.setPlainText(save_directory)
-
+            self.temp_data_dir = save_directory
+            
     def camera_groupbox_labels(self) -> List[str]:
         """Return the labels of the camera groupboxes"""
         return [camera_widget.label for camera_widget in self.camera_widgets]
@@ -422,30 +439,17 @@ class VideoCaptureTab(QWidget):
         """Return the labels of cameras connected to the PC"""
         return self.camera_setup_tab.get_setups_labels()
 
-    def check_to_enable_global_start_recording(self):
-        """Check if all the cameras are ready to start recording. If any camera is not ready to start,
-        disable the global start recording button"""
-        all_ready = True
-        for camera_widget in self.camera_widgets:
-            if not camera_widget.start_recording_button.isEnabled():
-                all_ready = False
-                break
+    def update_global_recording_button_states(self):
+        """Update the states of global recording buttons based on the readiness and recording status of cameras."""
+        all_ready = all(camera_widget.start_recording_button.isEnabled() for camera_widget in self.camera_widgets)
+        any_recording = any(camera_widget.recording for camera_widget in self.camera_widgets)
+
         self.start_recording_button.setEnabled(all_ready)
-
-        # If any of the cameras are recording, the 'Change directory' button, 'Change encoder' button, Load Layout button, and change number of cameras should all be grayed out
-        any_recording = any(c_w.recording for c_w in self.camera_widgets)
-        self.save_dir_button.setEnabled(not any_recording)
-        self.encoder_selection.setEnabled(not any_recording)
-        self.load_experiment_config_button.setEnabled(not any_recording)
-        self.camera_quantity_spin_box.setEnabled(not any_recording)
-
-    def check_to_enable_global_stop_recording(self):
-        """Check if any camera is recording. If so enable the stop recording button"""
-        any_recording = any(c_w.recording for c_w in self.camera_widgets)
         self.stop_recording_button.setEnabled(any_recording)
 
-        # If any of the cameras are recording, the 'Change directory' button, 'Change encoder' button, Load Layout button, and change number of cameras should all be grayed out
-        self.save_dir_button.setEnabled(not any_recording)
-        self.encoder_selection.setEnabled(not any_recording)
-        self.load_experiment_config_button.setEnabled(not any_recording)
-        self.camera_quantity_spin_box.setEnabled(not any_recording)
+        # If any of the cameras are recording, disable certain buttons
+        disable_controls = any_recording
+        self.save_dir_button.setEnabled(not disable_controls)
+        self.encoder_selection.setEnabled(not disable_controls)
+        self.load_experiment_config_button.setEnabled(not disable_controls)
+        self.camera_quantity_spin_box.setEnabled(not disable_controls)

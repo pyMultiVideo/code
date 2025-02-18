@@ -46,7 +46,8 @@ class CameraSettingsConfig:
     fps: str
     pxl_fmt: str
     downsample_factor: int
-
+    exposure_time: float
+    gain: float
 
 # Utility functions -------------------------------------------------------------------
 
@@ -88,6 +89,21 @@ def get_valid_ffmpeg_encoders() -> list:
             valid_encoders_keys.append(key)
     return valid_encoders_keys
 
+def validate_ffmpeg_path(ffmpeg_path):
+    """Validate the provided ffmpeg path."""
+    if type(ffmpeg_path) is type(None):
+        return False
+    if not os.path.isfile(ffmpeg_path):
+        raise FileNotFoundError(f"ffmpeg executable not found at {ffmpeg_path}")
+    
+    try:
+        result = subprocess.run([ffmpeg_path, "-version"], capture_output=True, text=True)
+        if result.returncode != 0:
+            raise ValueError(f"Invalid ffmpeg executable at {ffmpeg_path}")
+    except Exception as e:
+        raise ValueError(f"Error validating ffmpeg path: {e}")
+    
+    return True
 
 def get_modules_in_package(package_name):
     """
@@ -182,6 +198,8 @@ def load_saved_setups(camera_data) -> list[CameraSettingsConfig]:
                 fps=cam["fps"],
                 pxl_fmt=cam["pxl_fmt"],
                 downsample_factor=cam["downsample_factor"],
+                exposure_time=cam["exposure_time"],
+                gain=cam["gain"]
             )
         )
     return setups_from_database

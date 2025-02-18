@@ -46,10 +46,6 @@ class GUIMain(QMainWindow):
         full_screen_controls_action.setShortcut("Ctrl+F")
         full_screen_controls_action.triggered.connect(self.video_capture_tab.toggle_full_screen_mode)
         view_menu.addAction(full_screen_controls_action)
-        # Initialise refresh timer
-        self.refresh_timer = QTimer()
-        self.refresh_timer.timeout.connect(self.refresh)
-        self.refresh_timer.start(1000)
         # Display main window.
         self.show()
 
@@ -59,11 +55,6 @@ class GUIMain(QMainWindow):
             self.video_capture_tab.play_camera_streaming()
         else:
             self.video_capture_tab.pause_camera_streaming()
-
-    def refresh(self):
-        """Call tab refresh methods."""
-        self.camera_setup_tab.refresh()
-        self.video_capture_tab.refresh()
 
     def resizeEvent(self, event):
         """Resize the GUI"""

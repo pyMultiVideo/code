@@ -20,7 +20,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from .utility import cbox_update_options, CameraSetupConfig, init_camera_api
+from .utility import cbox_update_options, CameraSetupConfig, init_camera_api, validate_ffmpeg_path
+from .message_dialogs import show_warning_message
 from config.config import ffmpeg_config, paths_config
 
 
@@ -30,9 +31,11 @@ class CameraWidget(QWidget):
     def __init__(self, parent, label, subject_id):
         super(CameraWidget, self).__init__(parent)
         self.video_capture_tab = parent
+        self.GUI = self.video_capture_tab.GUI
         self.camera_setup_tab = self.video_capture_tab.GUI.camera_setup_tab
         self.logger = logging.getLogger(__name__)
         self.paths = paths_config
+        self.ffmpeg_path = self.paths["FFMPEG"] if validate_ffmpeg_path(self.paths["FFMPEG"]) else show_warning_message(f"FFMPEG path {self.paths['FFMPEG']} not valid", okayButtonPresent=False, ignoreButtonPresent=True) 
 
         # Camera attributes
         self.label = label
@@ -172,7 +175,7 @@ class CameraWidget(QWidget):
         # Create Filepaths.
         self.subject_id = self.subject_id_text.toPlainText()
         self.record_start_time = datetime.now()
-        save_dir = self.video_capture_tab.save_dir_textbox.toPlainText()
+        save_dir = self.video_capture_tab.temp_data_dir
         filename_stem = f"{self.subject_id}_{self.record_start_time.strftime('%Y-%m-%d-%H%M%S')}"
         self.video_filepath = os.path.join(save_dir, filename_stem + ".mp4")
         self.GPIO_filepath = os.path.join(save_dir, filename_stem + "_GPIO_data.csv")
@@ -197,30 +200,20 @@ class CameraWidget(QWidget):
         # Initalise ffmpeg process
         downsampled_width = int(self.cam_width / self.downsampling_factor)
         downsampled_height = int(self.cam_height / self.downsampling_factor)
-        ffmpeg_path = paths_config["FFMPEG"]
         ffmpeg_command = [
-            ffmpeg_path,
+            self.ffmpeg_path, # Path to binary
             "-y",  # overwrite output file if it exists
-            "-f",
-            "rawvideo",
-            "-vcodec",
-            "rawvideo",
-            "-pix_fmt",
-            "gray",
-            "-s",
-            f"{downsampled_width}x{downsampled_height}",
-            "-r",
-            self.fps,  # Set framerate to camera resolution
+            "-f", "rawvideo", 
+            "-vcodec", "rawvideo", # Input codec
+            "-pix_fmt", "gray", # Input Pixel format
+            "-s", f"{downsampled_width}x{downsampled_height}", # Output resolution
+            "-r", self.fps,  # Frame rate
             "-i",
             "pipe:",  # input comes from a pipe
-            "-vcodec",
-            ffmpeg_config["output"]["encoder"][self.video_capture_tab.encoder],
-            "-pix_fmt",
-            ffmpeg_config["output"]["pxl_fmt"][self.pxl_fmt],
-            "-preset",
-            "fast",
-            "-crf",
-            "23",
+            "-vcodec", ffmpeg_config["output"]["encoder"][self.video_capture_tab.encoder], # codec
+            "-pix_fmt",ffmpeg_config["output"]["pxl_fmt"][self.pxl_fmt], # pxl format
+            "-preset", "fast",
+            "-crf", "23",
             self.video_filepath,  # Output filename
         ]
         self.ffmpeg_process = subprocess.Popen(ffmpeg_command, stdin=subprocess.PIPE)
@@ -306,12 +299,30 @@ class CameraWidget(QWidget):
             self.start_recording_button.setEnabled(False)
         else:
             self.start_recording_button.setEnabled(True)
+        self.video_capture_tab.update_global_recording_button_states()
 
     def toggle_control_visibility(self) -> None:
         """Toggle the visibility of the camera controls."""
         is_visible = self.camera_setup_groupbox.isVisible()
         self.camera_setup_groupbox.setVisible(not is_visible)
+        
+    def display_font_size_update(self, scale_factor = 0.015):
+        """Update the size of the GUI elements"""        
+        font_size = int(min(self.width(), self.height()) * scale_factor)
 
+        # Update GUI elements to font size
+        for i, gpio_indicator in enumerate(self.gpio_status_indicators):
+            gpio_indicator.setFont(QFont("Arial", font_size))
+        self.gpio_status_item.setFont(QFont("Arial", font_size))
+        self.recording_status_item.setFont(QFont("Arial", font_size))
+        self.recording_time_text.setFont(QFont("Arial", font_size))
+        self.frame_rate_text.setFont(QFont("Arial", font_size))
+
+        
+    def resizeEvent(self, event):
+        """resize Widget"""
+        self.display_font_size_update()
+        super().resizeEvent(event)
     ### Config related functions ------------------------------------------------------
 
     def get_camera_config(self):
