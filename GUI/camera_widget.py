@@ -35,7 +35,13 @@ class CameraWidget(QWidget):
         self.camera_setup_tab = self.video_capture_tab.GUI.camera_setup_tab
         self.logger = logging.getLogger(__name__)
         self.paths = paths_config
-        self.ffmpeg_path = self.paths["FFMPEG"] if validate_ffmpeg_path(self.paths["FFMPEG"]) else show_warning_message(f"FFMPEG path {self.paths['FFMPEG']} not valid", okayButtonPresent=False, ignoreButtonPresent=True) 
+        self.ffmpeg_path = (
+            self.paths["FFMPEG"]
+            if validate_ffmpeg_path(self.paths["FFMPEG"])
+            else show_warning_message(
+                f"FFMPEG path {self.paths['FFMPEG']} not valid", okayButtonPresent=False, ignoreButtonPresent=True
+            )
+        )
 
         # Camera attributes
         self.label = label
@@ -74,12 +80,10 @@ class CameraWidget(QWidget):
         # GPIO state overlay
         self.gpio_state_smoothed = np.zeros(3)
         self.gpio_status_item = pg.TextItem()
-        self.gpio_status_font = QFont()
         self.gpio_status_item.setPos(10, 70)
         self.video_feed.addItem(self.gpio_status_item)
         self.gpio_status_item.setText("GPIO state", color="blue")
         self.gpio_status_indicators = [pg.TextItem() for _ in range(3)]
-        self.gpio_status_font = QFont()
         for i, gpio_indicator in enumerate(self.gpio_status_indicators):
             gpio_indicator.setPos(150 + i * 30, 70)
             self.video_feed.addItem(gpio_indicator)
@@ -200,22 +204,22 @@ class CameraWidget(QWidget):
         # Initalise ffmpeg process
         downsampled_width = int(self.cam_width / self.downsampling_factor)
         downsampled_height = int(self.cam_height / self.downsampling_factor)
-        ffmpeg_command = [
-            self.ffmpeg_path, # Path to binary
-            "-y",  # overwrite output file if it exists
-            "-f", "rawvideo", 
-            "-vcodec", "rawvideo", # Input codec
-            "-pix_fmt", "gray", # Input Pixel format
-            "-s", f"{downsampled_width}x{downsampled_height}", # Output resolution
-            "-r", self.fps,  # Frame rate
-            "-i",
-            "pipe:",  # input comes from a pipe
-            "-vcodec", ffmpeg_config["output"]["encoder"][self.video_capture_tab.encoder], # codec
-            "-pix_fmt",ffmpeg_config["output"]["pxl_fmt"][self.pxl_fmt], # pxl format
-            "-preset", "fast",
-            "-crf", "23",
-            self.video_filepath,  # Output filename
-        ]
+        ffmpeg_command = " ".join(
+            [
+                self.ffmpeg_path,  # Path to binary
+                "-y",  # overwrite output file if it exists
+                "-f rawvideo",  # Input codec
+                "-pix_fmt gray",  # Input Pixel format
+                f"-s {downsampled_width}x{downsampled_height}",  # Output resolution
+                f"-r {self.fps}",  # Frame rate
+                "-i pipe:",  # input comes from a pipe
+                f"-vcodec {ffmpeg_config['output']['encoder'][self.video_capture_tab.encoder]}",  # Output codec
+                f"-pix_fmt {ffmpeg_config['output']['pxl_fmt'][self.pxl_fmt]}",  # pixel format
+                "-preset fast",  # Encoding speed [fast, medium, slow], higher speed -> less compression.
+                "-crf 23",  # Controls quality vs filesize, range [0, 51] where 0 is max quality and filesize.
+                f'"{self.video_filepath}"',  # Output file path.
+            ]
+        )
         self.ffmpeg_process = subprocess.Popen(ffmpeg_command, stdin=subprocess.PIPE)
 
         # Set variables
@@ -305,45 +309,23 @@ class CameraWidget(QWidget):
         """Toggle the visibility of the camera controls."""
         is_visible = self.camera_setup_groupbox.isVisible()
         self.camera_setup_groupbox.setVisible(not is_visible)
-        
-    def display_font_size_update(self, scale_factor = 0.015):
-        """Update the size of the GUI elements"""        
-        font_size = int(min(self.width(), self.height()) * scale_factor)
 
-        # Update GUI elements to font size
+    def resizeEvent(self, event, scale_factor=0.015):
+        """Update display element font sizes on resizeEvent."""
+        font_size = int(min(self.width(), self.height()) * scale_factor)
         for i, gpio_indicator in enumerate(self.gpio_status_indicators):
             gpio_indicator.setFont(QFont("Arial", font_size))
         self.gpio_status_item.setFont(QFont("Arial", font_size))
         self.recording_status_item.setFont(QFont("Arial", font_size))
         self.recording_time_text.setFont(QFont("Arial", font_size))
         self.frame_rate_text.setFont(QFont("Arial", font_size))
-
-        
-    def resizeEvent(self, event):
-        """resize Widget"""
-        self.display_font_size_update()
         super().resizeEvent(event)
+
     ### Config related functions ------------------------------------------------------
 
     def get_camera_config(self):
         """Get the camera configuration"""
-        return CameraSetupConfig(
-            label=self.label,
-            subject_id=self.subject_id,
-        )
-
-    def set_camera_widget_config(self, camera_config: CameraSetupConfig):
-        """Set the settings associated with the camera widget into the GUI"""
-        # Check if the camera label is in the database
-        if camera_config.label not in self.camera_setup_tab.get_camera_labels():
-            self.logger.error(f"Camera label {camera_config.label} not found in database")
-            return
-
-        self.label = camera_config.label
-        self.unique_id = self.camera_setup_tab.get_camera_unique_id_from_label(self.label)
-        self.subject_id = camera_config.subject_id
-        self._initialise_camera(new_unique_id=self.unique_id, new_camera_label=self.label)
-        self.logger.info(f"Camera configuration set to: {camera_config}")
+        return CameraSetupConfig(label=self.label, subject_id=self.subject_id)
 
     def change_camera(self) -> None:
         self.logger.info("Changing camera")
@@ -375,21 +357,3 @@ class CameraWidget(QWidget):
         self.label = new_label
         self.camera_dropdown.setCurrentText(new_label)
         self.camera_setup_groupbox.setTitle(new_label)
-
-    def change_fps(self):
-        """Change the FPS of the camera"""
-        self.logger.info("Changing FPS")
-        self.camera_settings.fps = str(self.fps_cbox.currentText())
-        self.camera_api.set_frame_rate(int(self.camera_settings.fps))
-
-    def change_pxl_fmt(self):
-        """Change the pixel format of the camera"""
-        self.logger.info("Changing pixel format")
-        self.camera_settings.pxl_fmt = str(self.pxl_fmt_cbox.currentText())
-        self.camera_api.set_pixel_format(self.camera_settings.pxl_fmt)
-
-    def change_downsampling_factor(self) -> None:
-        """Change the downsampling factor of the camera"""
-        self.logger.info("Changing downsampling factor")
-        downsampling_factor = int(self.downsampling_factor_text.currentText())
-        self.downsampling_factor = downsampling_factor

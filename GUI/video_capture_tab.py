@@ -1,5 +1,4 @@
 import os
-from math import sqrt, ceil
 import json
 import logging
 from typing import List
@@ -90,7 +89,6 @@ class VideoCaptureTab(QWidget):
         self.layout_checkbox = QCheckBox("Grid Layout")
         self.layout_checkbox.setChecked(True)
         self.layout_checkbox.stateChanged.connect(self.change_layout)
-        # self.layout_checkbox.setEnabled(True)  # Feature not yet working.
 
         self.config_hlayout = QHBoxLayout()
         self.config_hlayout.addWidget(self.save_camera_config_button)
@@ -208,25 +206,13 @@ class VideoCaptureTab(QWidget):
             self.camera_setup_tab.setups_changed = False
             # Handle the renamed cameras
             self.handle_camera_setups_modified()
-            
+
     def resizeEvent(self, event):
         """Called on resized widget"""
         self.display_save_dir_text()
         super().resizeEvent(event)
-        
+
     # Camera acquisition and recording control ----------------------------------------
-
-    def pause_camera_streaming(self):
-        """Pause aqusition of the camera video streams."""
-        for camera_widget in self.camera_widgets:
-            camera_widget.stop_capturing()
-        self.fetch_images_timer.stop()
-
-    def play_camera_streaming(self):
-        """Restart the aquisition of the camera video streams"""
-        for camera_widget in self.camera_widgets:
-            camera_widget.begin_capturing()
-        self.fetch_images_timer.start(int(1000 / gui_config["fetch_image_rate"]))
 
     def start_recording(self):
         for camera_widget in self.camera_widgets:
@@ -260,26 +246,33 @@ class VideoCaptureTab(QWidget):
 
     # GUI element update functions ----------------------------------------------------
 
-    def update_camera_dropdowns(self):
-        """Update the camera select dropdown menu for all camera widgets."""
+    def tab_selected(self):
+        """Called when tab deselected to start aqusition of the camera video streams."""
         for camera_widget in self.camera_widgets:
-            camera_widget.update_camera_dropdown()
+            camera_widget.begin_capturing()
+        self.fetch_images_timer.start(int(1000 / gui_config["fetch_image_rate"]))
+
+    def tab_deselected(self):
+        """Called when tab deselected to pause aqusition of the camera video streams."""
+        for camera_widget in self.camera_widgets:
+            camera_widget.stop_capturing()
+        self.fetch_images_timer.stop()
 
     def display_save_dir_text(self):
         """Display the path in the textbox"""
         save_dir = self.temp_data_dir
         n_char = self.calculate_text_field_width()
         if len(save_dir) > n_char:
-            save_dir = ".." + save_dir[-(n_char - 2):]
+            save_dir = ".." + save_dir[-(n_char - 2) :]
         self.save_dir_textbox.setPlainText(save_dir)
-        
+
     def calculate_text_field_width(self) -> int:
         """Change the amount of text shown in save_dir textfield"""
         text_edit_width = self.save_dir_textbox.viewport().width()
         font = self.save_dir_textbox.font()
-        char_width = QFontMetrics(font).horizontalAdvance('A')
+        char_width = QFontMetrics(font).horizontalAdvance("A")
         return text_edit_width // char_width - 2
-    
+
     def spinbox_add_remove_cameras(self):
         """
         Function attached to the spinbox that adds or removes cameras from the viewfinder tab
@@ -318,8 +311,7 @@ class VideoCaptureTab(QWidget):
         self.add_widget_to_layout()
 
     def add_widget_to_layout(self):
-        """
-        """
+        """ """
         if type(self.camera_layout) is QGridLayout:
             # Grid Layout
             position = len(self.camera_widgets) - 1
@@ -327,7 +319,7 @@ class VideoCaptureTab(QWidget):
         elif type(self.camera_layout) is QVBoxLayout:
             # Vertical Layout
             self.camera_layout.addWidget(self.camera_widgets[-1])
-            
+
         self.refresh()
 
     def remove_camera_widget(self, camera_widget):
@@ -355,7 +347,6 @@ class VideoCaptureTab(QWidget):
         # Set new layout to viewfinder_groupbox.
         self.camera_layout = new_layout
         self.viewfinder_groupbox.setLayout(self.camera_layout)
-
 
     # Saving and loading experiment configs -------------------------------------------
 
@@ -430,7 +421,7 @@ class VideoCaptureTab(QWidget):
         if save_directory:
             self.save_dir_textbox.setPlainText(save_directory)
             self.temp_data_dir = save_directory
-            
+
     def camera_groupbox_labels(self) -> List[str]:
         """Return the labels of the camera groupboxes"""
         return [camera_widget.label for camera_widget in self.camera_widgets]
