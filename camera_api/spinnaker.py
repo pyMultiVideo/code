@@ -45,8 +45,7 @@ class SpinnakerCamera(GenericCamera):
             # GPIO Pin state
             chunk_selector.SetIntValue(chunk_selector.GetEntryByName("ExposureEndLineStatusAll").GetValue())
             self.cam.ChunkEnable.SetValue(True)
-            
-            
+
         chunk_selector.SetIntValue(chunk_selector.GetEntryByName("Timestamp").GetValue())
         self.cam.ChunkEnable.SetValue(True)
         self.cam.ChunkModeActive.SetValue(True)
@@ -56,20 +55,17 @@ class SpinnakerCamera(GenericCamera):
             fra_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("AcquisitionFrameRateAuto"))
             fra_node.SetIntValue(fra_node.GetEntryByName("Off").GetValue())
             frc_node = PySpin.CBooleanPtr(self.nodemap.GetNode("AcquisitionFrameRateEnabled"))
-            frc_node.SetValue(True)    
+            frc_node.SetValue(True)
         else:
             fra_node = PySpin.CBooleanPtr(self.nodemap.GetNode("AcquisitionFrameRateEnable"))
             fra_node.SetValue(True)
-            
-            
+
         # Set Exposure to manual
         exc_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("ExposureAuto"))
         exc_node.SetIntValue(PySpin.ExposureAuto_Off)
         # Set Gain to manual
         gnc_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("GainAuto"))
         gnc_node.SetIntValue(PySpin.GainAuto_Off)
-        
-            
 
         # Configure user settings.
         if self.camera_config is not None:
@@ -111,7 +107,7 @@ class SpinnakerCamera(GenericCamera):
         """Get range of gain"""
         node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("Gain"))
         return ceil(node.GetMin()), floor(node.GetMax())
-    
+
     def get_pixel_format(self) -> str:
         """Get string specifying camera pixel format"""
         return PySpin.CEnumerationPtr(self.nodemap.GetNode("PixelFormat")).GetCurrentEntry().GetSymbolic()
@@ -141,15 +137,15 @@ class SpinnakerCamera(GenericCamera):
 
     def set_pixel_format(self, pixel_format):
         pass
-    
-    def set_exposure_time(self, exposure_time: float) -> None: 
+
+    def set_exposure_time(self, exposure_time: float) -> None:
         """Set the exposure time of the camera in microseconds."""
         PySpin.CFloatPtr(self.nodemap.GetNode("ExposureTime")).SetValue(float(exposure_time))
-    
+
     def set_gain(self, gain: float):
         """Set gain (dB)"""
         PySpin.CFloatPtr(self.nodemap.GetNode("Gain")).SetValue(float(gain))
-        
+
     # Functions to control the camera streaming and check status.
 
     def begin_capturing(self) -> None:
@@ -158,7 +154,7 @@ class SpinnakerCamera(GenericCamera):
             self.cam.Init()
         if not self.cam.IsStreaming():
             self.cam.BeginAcquisition()
-        self.last_frame_number = 0
+        self.last_frame_number = -1
 
     def stop_capturing(self) -> None:
         """Stop the camera from streaming"""
@@ -182,14 +178,14 @@ class SpinnakerCamera(GenericCamera):
                 chunk_data = next_image.GetChunkData()  # Additional image data.
                 timestamps_buffer.append(chunk_data.GetTimestamp())  # Image timestamp (ns?)
                 frame_number = chunk_data.GetFrameID()
-                if (frame_number - self.last_frame_number) > 1:
-                    print(f"Dropped frame: {frame_number, self.last_frame_number}")
+                if (frame_number - self.last_frame_number) != 1:
+                    print(f"Dropped frame, frame counter diff: {frame_number - self.last_frame_number}")
                 self.last_frame_number = frame_number
                 if self.camera_model == "Chameleon3":
                     img_data = next_image.GetData()
                     gpio_buffer.append([(img_data[32] >> 4) & 1, (img_data[32] >> 5) & 1, (img_data[32] >> 7) & 1])
-                else: 
-                    gpio_binary = format(chunk_data.GetExposureEndLineStatusAll(), '04b')
+                else:
+                    gpio_binary = format(chunk_data.GetExposureEndLineStatusAll(), "04b")
                     gpio_buffer.append([int(gpio_binary[3]), int(gpio_binary[1]), int(gpio_binary[0])])
                 next_image.Release()  # Clears image from buffer.
         except PySpin.SpinnakerException:  # Buffer is empty.
