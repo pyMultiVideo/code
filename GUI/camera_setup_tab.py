@@ -15,9 +15,16 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import QTimer
 from dataclasses import asdict
 
-from config.config import ffmpeg_config, paths_config
-from .utility import CameraSettingsConfig, find_all_cameras, load_saved_setups, load_camera_dict, init_camera_api,  get_valid_supported_encoder_formats
-from .preview_dialog import CameraPreviewDialog
+from config.config import ffmpeg_config, paths_config, default_camera_config
+from .utility import (
+    CameraSettingsConfig,
+    find_all_cameras,
+    load_saved_setups,
+    load_camera_dict,
+    init_camera_api,
+    get_valid_supported_encoder_formats,
+)
+from .preview_dialog import CameraPreviewWidget
 
 
 class CamerasTab(QWidget):
@@ -61,6 +68,11 @@ class CamerasTab(QWidget):
     def tab_deselected(self):
         """Called when tab deselected."""
         self.refresh_timer.stop()
+        # Deinitialise all camera apis on tab being deselected
+        for unique_id in self.setups:
+            if self.GUI.preview_showing:
+                self.setups[unique_id].close_preview_camera()
+            self.setups[unique_id].camera_api.stop_capturing()
 
     def get_saved_setups(self, unique_id: str = None, name: str = None) -> CameraSettingsConfig:
         """Get a saved Setup_info object from a name or unique_id from self.saved_setups."""
@@ -117,11 +129,11 @@ class CamerasTab(QWidget):
                         setups_table=self.camera_table,
                         name=None,
                         unique_id=unique_id,
-                        fps="30",
-                        pxl_fmt="Mono8",
-                        downsampling_factor=1,
-                        exposure_time=15000,
-                        gain=0,
+                        fps=default_camera_config["fps"],
+                        pxl_fmt=default_camera_config["pxl_fmt"],
+                        downsampling_factor=default_camera_config["downsampling_factor"],
+                        exposure_time=default_camera_config["exposure_time"],
+                        gain=default_camera_config["gain"],
                     )
 
                 self.update_saved_setups(self.setups[unique_id])
@@ -196,7 +208,17 @@ class CameraOverviewTable(QTableWidget):
 class Camera_table_item:
     """Class representing single camera in the Camera Tab table."""
 
-    def __init__(self, setups_table, name, unique_id, fps, exposure_time, gain, pxl_fmt, downsampling_factor):
+    def __init__(
+        self,
+        setups_table,
+        name,
+        unique_id,
+        fps,
+        exposure_time,
+        gain,
+        pxl_fmt,
+        downsampling_factor,
+    ):
         self.setups_table = setups_table
         self.setups_tab = setups_table.setups_tab
         self.GUI = self.setups_tab.GUI
@@ -211,6 +233,7 @@ class Camera_table_item:
         self.label = self.label if self.label is not None else self.unique_id
         self.GUI.preview_showing = False
         self.camera_api = init_camera_api(_id=self.unique_id)
+
         # Name edit
         self.name_edit = QLineEdit()
         if self.label:
@@ -232,6 +255,7 @@ class Camera_table_item:
             self.fps = str(self.fps[0])
             self.fps_edit.setValue(int(self.fps))
         self.fps_edit.valueChanged.connect(self.camera_fps_changed)
+        self.fps_edit.setEnabled(False)
 
         # Exposure time edit
         self.exposure_time_edit = QSpinBox()
@@ -241,6 +265,8 @@ class Camera_table_item:
         if self.exposure_time:
             self.exposure_time_edit.setValue(int(self.exposure_time))
         self.exposure_time_edit.valueChanged.connect(self.camera_exposure_time_changed)
+        self.exposure_time_edit.setEnabled(False)
+
         # Gain edit
         self.gain_edit = QSpinBox()
         self.gain_edit.setRange(*self.camera_api.get_gain_range())
@@ -290,7 +316,7 @@ class Camera_table_item:
         self.setups_tab.update_saved_setups(setup=self)
         if self.GUI.preview_showing is True:
             self.setups_tab.camera_preview.camera_api.set_frame_rate(self.fps)
-        # reset the range of the exposure time
+
         self.exposure_time_edit.setRange(*self.camera_api.get_exposure_time_range())
 
     def camera_pxl_fmt_changed(self):
@@ -325,13 +351,23 @@ class Camera_table_item:
     def open_preview_camera(self):
         """Button to preview the camera in the row"""
         if self.GUI.preview_showing:
-            self.setups_tab.camera_preview.close()
-            self.GUI.preview_showing = False
-        self.setups_tab.camera_preview = CameraPreviewDialog(gui=self.GUI, unique_id=self.unique_id)
+            self.close_preview_camera()
+        self.setups_tab.camera_preview = CameraPreviewWidget(
+            gui=self.GUI, camera_table_item=self, unique_id=self.unique_id
+        )  # camera_api=self.camera_api)
         self.setups_tab.page_layout.addWidget(self.setups_tab.camera_preview)
         self.GUI.preview_showing = True
-        # refresh timer off
-        
+
+        self.fps_edit.setEnabled(self.GUI.preview_showing)
+        self.exposure_time_edit.setEnabled(self.GUI.preview_showing)
+
+    def close_preview_camera(self):
+        self.setups_tab.camera_preview.close()
+        self.GUI.preview_showing = False
+
+        self.fps_edit.setEnabled(self.GUI.preview_showing)
+        self.exposure_time_edit.setEnabled(self.GUI.preview_showing)
+
     def getCameraSettingsConfig(self):
         """Get the camera settings config datastruct from the setups table."""
         return CameraSettingsConfig(

@@ -24,10 +24,7 @@ def check_module(module_name):
 
 check_module("PyQt6")
 check_module("pyqtgraph")
-# check_module("ffmpeg")
 check_module("PySpin")
-check_module("cv2_enumerate_cameras")
-check_module("cv2")
 
 # Import GUI now that dependancies are verified.
 import PyQt6.QtWidgets as QtWidgets

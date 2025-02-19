@@ -1,6 +1,6 @@
 import os
 from collections import deque
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QPushButton
+from PyQt6.QtWidgets import QVBoxLayout, QPushButton, QWidget
 from PyQt6.QtCore import QTimer
 from PyQt6.QtGui import QIcon, QFont
 import pyqtgraph as pg
@@ -10,21 +10,23 @@ from .utility import init_camera_api
 from config.config import paths_config, gui_config
 
 
-class CameraPreviewDialog(QDialog):
+class CameraPreviewWidget(QWidget):
     """Dialog for previewing the video feed from the setups tab"""
 
-    def __init__(self, gui, unique_id: str):
+    def __init__(self, gui, camera_table_item, unique_id):  # camera_api):
         super().__init__()
         # self.setups_tab = parent
-        self.main_gui = gui
-        self.window_title = f"Camera {unique_id}"
+        self.GUI = gui
+        self.camera_table_item = camera_table_item
         self.unique_id = unique_id
+        # self.unique_id = self.camera_api.unique_id
+        self.window_title = f"Camera {self.unique_id}"
         self.paths = paths_config
 
         self.setWindowTitle(self.window_title)
         icon = QIcon(os.path.join(self.paths["assets_dir"], "logo.svg"))
         self.setWindowIcon(icon)
-        main_gui_geometry = self.main_gui.geometry()
+        main_gui_geometry = self.GUI.geometry()
         self.setGeometry(
             main_gui_geometry.x() + main_gui_geometry.width() + 10,
             main_gui_geometry.y(),
@@ -84,8 +86,8 @@ class CameraPreviewDialog(QDialog):
         self.frame_timestamps.extend(self.buffered_data["timestamps"])
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
         calculated_framerate = 1e9 / avg_time_diff
-        # Display timestamps data
-        self.frame_rate_text.setText(f"FPS: {calculated_framerate:.2f}", color="r")
+        color = "r" if (abs(calculated_framerate - int(self.camera_table_item.fps)) > 1) else "g"
+        self.frame_rate_text.setText(f"FPS: {calculated_framerate:.2f}", color=color)
         self.exposure_time_text.setText(
             f"Exposure Time (us) : {self.camera_api.get_exposure_time():.2f}",
             color="magenta",
@@ -102,14 +104,18 @@ class CameraPreviewDialog(QDialog):
 
     def closeEvent(self, event):
         """Handle the close event to stop the timer and release resources"""
-        if hasattr(self, "timer"):
-            self.display_update_timer.stop()
         self.camera_api.stop_capturing()
-        self.main_gui.preview_showing = False
+        self.display_update_timer.stop()
+        self.GUI.preview_showing = False
+        self.camera_table_item.exposure_time_edit.setEnabled(False)
+        self.camera_table_item.fps_edit.setEnabled(False)
+        self.close()
+        super().closeEvent(event)
         event.accept()
 
     def resizeEvent(self, event, scale_factor=0.02):
         """Scale the font size to the window"""
+        super().resizeEvent(event)
         font_size = int(min(self.width(), self.height()) * scale_factor)
         self.frame_rate_text.setFont(QFont("Arial", font_size))
         self.exposure_time_text.setFont(QFont("Arial", font_size))

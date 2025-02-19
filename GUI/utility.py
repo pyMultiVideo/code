@@ -7,7 +7,7 @@ import subprocess
 from typing import Dict, Any
 from dataclasses import dataclass
 
-from config.config import ffmpeg_config
+from config.config import ffmpeg_config, default_camera_config
 
 # Custom data classes -----------------------------------------------------------------
 
@@ -84,6 +84,7 @@ def get_valid_ffmpeg_encoders() -> list:
             valid_encoders_keys.append(key)
     return valid_encoders_keys
 
+
 def get_valid_supported_encoder_formats(camera_formats: list[str]) -> list[str]:
     """Get the list of supported encoder formats by comparing the camera formats to the config pxl_fmt keys"""
     supported_formats = []
@@ -91,6 +92,7 @@ def get_valid_supported_encoder_formats(camera_formats: list[str]) -> list[str]:
         if fmt in ffmpeg_config["output"]["pxl_fmt"]:
             supported_formats.append(fmt)
     return supported_formats
+
 
 def validate_ffmpeg_path(ffmpeg_path):
     """Validate the provided ffmpeg path."""
@@ -194,13 +196,13 @@ def load_saved_setups(camera_data) -> list[CameraSettingsConfig]:
     for cam in camera_data:
         setups_from_database.append(
             CameraSettingsConfig(
-                name=cam["name"],
-                unique_id=cam["unique_id"],
-                fps=cam["fps"],
-                pxl_fmt=cam["pxl_fmt"],
-                downsample_factor=cam["downsample_factor"],
-                exposure_time=cam["exposure_time"],
-                gain=cam["gain"],
+                name=cam.get("name", None),
+                unique_id=cam.get("unique_id"),
+                fps=cam.get("fps", default_camera_config["fps"]),
+                pxl_fmt=cam.get("pxl_fmt", default_camera_config["pxl_fmt"]),
+                downsample_factor=cam.get("downsample_factor", default_camera_config["downsample_factor"]),
+                exposure_time=cam.get("exposure_time", default_camera_config["exposure_time"]),
+                gain=cam.get("gain", default_camera_config["gain"]),
             )
         )
     return setups_from_database

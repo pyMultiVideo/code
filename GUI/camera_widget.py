@@ -20,7 +20,12 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from .utility import cbox_update_options, CameraSetupConfig, init_camera_api, validate_ffmpeg_path
+from .utility import (
+    cbox_update_options,
+    CameraSetupConfig,
+    init_camera_api,
+    validate_ffmpeg_path,
+)
 from .message_dialogs import show_warning_message
 from config.config import ffmpeg_config, paths_config
 
@@ -39,7 +44,9 @@ class CameraWidget(QWidget):
             self.paths["FFMPEG"]
             if validate_ffmpeg_path(self.paths["FFMPEG"])
             else show_warning_message(
-                f"FFMPEG path {self.paths['FFMPEG']} not valid", okayButtonPresent=False, ignoreButtonPresent=True
+                f"FFMPEG path {self.paths['FFMPEG']} not valid",
+                okayButtonPresent=False,
+                ignoreButtonPresent=True,
             )
         )
 

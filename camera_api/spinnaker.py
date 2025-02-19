@@ -16,8 +16,6 @@ class SpinnakerCamera(GenericCamera):
         self.serial_number, self.api = unique_id.split("-")
         self.cam = self.system.GetCameras().GetBySerial(self.serial_number)
         self.camera_model = self.cam.TLDevice.DeviceModelName.GetValue()[:10]
-        if self.cam.IsInitialized():
-            self.cam.DeInit()
         self.cam.Init()
         self.nodemap = self.cam.GetNodeMap()
         self.stream_nodemap = self.cam.GetTLStreamNodeMap()
@@ -131,7 +129,7 @@ class SpinnakerCamera(GenericCamera):
 
     # Functions to set camera paramteters.
 
-    def set_frame_rate(self, frame_rate: isinstance) -> None:
+    def set_frame_rate(self, frame_rate: float) -> None:
         """Set the frame rate of the camera in Hz."""
         PySpin.CFloatPtr(self.nodemap.GetNode("AcquisitionFrameRate")).SetValue(int(frame_rate))
 

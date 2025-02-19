@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import QMessageBox
 
+
 def show_info_message(input_text: str):
     """
     Display an information message dialog box.
@@ -13,9 +14,7 @@ def show_info_message(input_text: str):
     info_dialog.exec()
 
 
-def show_warning_message(
-    input_text: str, okayButtonPresent: bool, ignoreButtonPresent: bool
-    ) -> bool:
+def show_warning_message(input_text: str, okayButtonPresent: bool, ignoreButtonPresent: bool) -> bool:
     """
     Displays a warning message with Ignore button.
     Returns True if ignore button clicked else False.

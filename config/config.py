@@ -22,10 +22,7 @@ ffmpeg_config = {
             "CPU (H264)": "libx264",
             "CPU (H265)": "libx265",
         },
-        "pxl_fmt": {
-            "Mono8": "yuv420p",
-            "Mono16": "yuv420p"
-            }
+        "pxl_fmt": {"Mono8": "yuv420p", "Mono16": "yuv420p"},
     },
 }
 
@@ -41,4 +38,14 @@ paths_config = {
     "data_dir": os.path.join(ROOT, "data"),
     "config_dir": os.path.join(ROOT, "config"),
     "assets_dir": os.path.join(ROOT, "assets", "icons"),
+}
+
+# Default Camera Settings -------------------------------------------------------------
+
+default_camera_config = {
+    "fps": "60",
+    "pxl_fmt": "Mono8",
+    "downsample_factor": 1,
+    "exposure_time": 15000,
+    "gain": 0,
 }

@@ -49,10 +49,10 @@ class GUIMain(QMainWindow):
         self.show()
 
     def on_tab_change(self):
-        """Function that is run on tab change"""
+        """Function that is run on tab change: Deselect the tab you are in before selecting a new tab"""
         if self.tab_widget.currentIndex() == 0:
-            self.video_capture_tab.tab_selected()
             self.camera_setup_tab.tab_deselected()
+            self.video_capture_tab.tab_selected()
         else:
             self.video_capture_tab.tab_deselected()
             self.camera_setup_tab.tab_selected()
