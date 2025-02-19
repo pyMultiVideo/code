@@ -16,7 +16,7 @@ from PyQt6.QtCore import QTimer
 from dataclasses import asdict
 
 from config.config import ffmpeg_config, paths_config
-from .utility import CameraSettingsConfig, find_all_cameras, load_saved_setups, load_camera_dict, init_camera_api
+from .utility import CameraSettingsConfig, find_all_cameras, load_saved_setups, load_camera_dict, init_camera_api,  get_valid_supported_encoder_formats
 from .preview_dialog import CameraPreviewDialog
 
 
@@ -251,7 +251,7 @@ class Camera_table_item:
 
         # Pxl format edit
         self.pxl_fmt_edit = QComboBox()
-        self.pxl_fmt_edit.addItems(self.camera_api.get_available_pixel_fmt())
+        self.pxl_fmt_edit.addItems(get_valid_supported_encoder_formats(self.camera_api.get_available_pixel_fmt()))
         if self.pxl_fmt:
             self.pxl_fmt_edit.setCurrentText(self.pxl_fmt)
         self.pxl_fmt_edit.activated.connect(self.camera_pxl_fmt_changed)
@@ -290,6 +290,8 @@ class Camera_table_item:
         self.setups_tab.update_saved_setups(setup=self)
         if self.GUI.preview_showing is True:
             self.setups_tab.camera_preview.camera_api.set_frame_rate(self.fps)
+        # reset the range of the exposure time
+        self.exposure_time_edit.setRange(*self.camera_api.get_exposure_time_range())
 
     def camera_pxl_fmt_changed(self):
         """Called when pixel format text of setup is edited."""
@@ -305,6 +307,7 @@ class Camera_table_item:
 
         if self.GUI.preview_showing:
             self.setups_tab.camera_preview.camera_api.set_exposure_time(self.exposure_time)
+        self.fps_edit.setRange(*self.camera_api.get_frame_rate_range())
 
     def camera_gain_changed(self):
         """"""
@@ -327,7 +330,8 @@ class Camera_table_item:
         self.setups_tab.camera_preview = CameraPreviewDialog(gui=self.GUI, unique_id=self.unique_id)
         self.setups_tab.page_layout.addWidget(self.setups_tab.camera_preview)
         self.GUI.preview_showing = True
-
+        # refresh timer off
+        
     def getCameraSettingsConfig(self):
         """Get the camera settings config datastruct from the setups table."""
         return CameraSettingsConfig(

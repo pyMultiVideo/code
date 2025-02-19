@@ -22,7 +22,10 @@ ffmpeg_config = {
             "CPU (H264)": "libx264",
             "CPU (H265)": "libx265",
         },
-        "pxl_fmt": {"Mono8": "yuv420p"}
+        "pxl_fmt": {
+            "Mono8": "yuv420p",
+            "Mono16": "yuv420p"
+            }
     },
 }
 

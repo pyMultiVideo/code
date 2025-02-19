@@ -84,6 +84,13 @@ def get_valid_ffmpeg_encoders() -> list:
             valid_encoders_keys.append(key)
     return valid_encoders_keys
 
+def get_valid_supported_encoder_formats(camera_formats: list[str]) -> list[str]:
+    """Get the list of supported encoder formats by comparing the camera formats to the config pxl_fmt keys"""
+    supported_formats = []
+    for fmt in camera_formats:
+        if fmt in ffmpeg_config["output"]["pxl_fmt"]:
+            supported_formats.append(fmt)
+    return supported_formats
 
 def validate_ffmpeg_path(ffmpeg_path):
     """Validate the provided ffmpeg path."""
