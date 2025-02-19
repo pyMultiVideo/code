@@ -1,6 +1,5 @@
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtWidgets import QMainWindow, QTabWidget
-from PyQt6.QtCore import QTimer
 
 import ctypes
 import logging
@@ -52,9 +51,11 @@ class GUIMain(QMainWindow):
     def on_tab_change(self):
         """Function that is run on tab change"""
         if self.tab_widget.currentIndex() == 0:
-            self.video_capture_tab.play_camera_streaming()
+            self.video_capture_tab.tab_selected()
+            self.camera_setup_tab.tab_deselected()
         else:
-            self.video_capture_tab.pause_camera_streaming()
+            self.video_capture_tab.tab_deselected()
+            self.camera_setup_tab.tab_selected()
 
     def resizeEvent(self, event):
         """Resize the GUI"""

@@ -1,7 +1,7 @@
 import json
 import os
-import PyQt6.QtWidgets as QtWidgets
 from PyQt6.QtWidgets import (
+    QWidget,
     QGroupBox,
     QVBoxLayout,
     QTableWidget,
@@ -9,15 +9,18 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QSpinBox,
     QPushButton,
+    QSizePolicy,
+    QHeaderView,
 )
+from PyQt6.QtCore import QTimer
 from dataclasses import asdict
 
 from config.config import ffmpeg_config, paths_config
-from .utility import CameraSettingsConfig, find_all_cameras, load_saved_setups, load_camera_dict,init_camera_api
+from .utility import CameraSettingsConfig, find_all_cameras, load_saved_setups, load_camera_dict, init_camera_api
 from .preview_dialog import CameraPreviewDialog
 
 
-class CamerasTab(QtWidgets.QWidget):
+class CamerasTab(QWidget):
     """Tab for naming cameras and editing camera-level settings."""
 
     def __init__(self, parent=None):
@@ -31,7 +34,7 @@ class CamerasTab(QtWidgets.QWidget):
         self.camera_table_groupbox = QGroupBox("Camera Table")
         self.camera_table = CameraOverviewTable(parent=self)
         self.camera_table.setMinimumSize(1, 1)
-        self.camera_table.setSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Minimum)
+        self.camera_table.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
 
         self.camera_table_layout = QVBoxLayout()
         self.camera_table_layout.addWidget(self.camera_table)
@@ -46,6 +49,18 @@ class CamerasTab(QtWidgets.QWidget):
         self.ffmpeg_config: dict = ffmpeg_config
         self.refresh()
         self.setups_changed = False
+
+        # Initialise timer
+        self.refresh_timer = QTimer()
+        self.refresh_timer.timeout.connect(self.refresh)
+
+    def tab_selected(self):
+        """Called when tab deselected."""
+        self.refresh_timer.start(1000)
+
+    def tab_deselected(self):
+        """Called when tab deselected."""
+        self.refresh_timer.stop()
 
     def get_saved_setups(self, unique_id: str = None, name: str = None) -> CameraSettingsConfig:
         """Get a saved Setup_info object from a name or unique_id from self.saved_setups."""
@@ -95,7 +110,7 @@ class CamerasTab(QtWidgets.QWidget):
                         pxl_fmt=camera_settings_config.pxl_fmt,
                         downsampling_factor=camera_settings_config.downsample_factor,
                         exposure_time=camera_settings_config.exposure_time,
-                        gain=camera_settings_config.gain
+                        gain=camera_settings_config.gain,
                     )
                 else:  # unique_id has not been seen before, create a new setup
                     self.setups[unique_id] = Camera_table_item(
@@ -106,7 +121,7 @@ class CamerasTab(QtWidgets.QWidget):
                         pxl_fmt="Mono8",
                         downsampling_factor=1,
                         exposure_time=15000,
-                        gain=0
+                        gain=0,
                     )
 
                 self.update_saved_setups(self.setups[unique_id])
@@ -124,27 +139,6 @@ class CamerasTab(QtWidgets.QWidget):
     def get_camera_labels(self) -> list[str]:
         """Function to get the names of the cameras if they exist. if they have not been named, use the unique_id"""
         return sorted([setup.label if setup.label else setup.unique_id for setup in self.setups.values()])
-
-    def get_camera_unique_ids(self) -> list[str]:
-        """Function to get the unique_ids of the cameras"""
-        return sorted([setup.unique_id for setup in self.setups.values()])
-
-    def setups_recording_status_dict(self) -> dict[str, bool]:
-        """
-        Function to get the recording status of the camera from the label.
-        Returns:
-            dict[str, bool]: Dictionary of the camera labels and their recording status
-        """
-        recording_status = {}
-        for setup in self.setups.values():
-            camera_object = [
-                camera.camera_object
-                for camera in self.GUI.viewfinder_tab.camera_widgets
-                if camera.unique_id == setup.unique_id
-            ]
-            for camera_object in camera_object:
-                recording_status[setup.label] = camera_object.is_Recording()
-        return recording_status
 
     def get_camera_unique_id_from_label(self, camera_label: str) -> str:
         """Function to get the unique_id of the camera from the label"""
@@ -173,14 +167,24 @@ class CameraOverviewTable(QTableWidget):
         # Set the camera table to the camera_table in the database
         self.camera_dict = load_camera_dict(os.path.join(self.paths["config_dir"], "camera_configs.json"))
         # Configure the camera table
-        self.header_names = ["Name", "Unique ID", "FPS","Exposure (us)", "Gain (dB)","Pxl Fmt", "Downsample Factor", "Camera Preview"]
+        self.header_names = [
+            "Name",
+            "Unique ID",
+            "FPS",
+            "Exposure (μs)",
+            "Gain (dB)",
+            "Pxl Fmt",
+            "Downsample Factor",
+            "Camera Preview",
+        ]
         self.setColumnCount(len(self.header_names))
         self.setRowCount(len(self.camera_dict))
         self.verticalHeader().setVisible(False)
 
         self.setHorizontalHeaderLabels(self.header_names)
         for i in range(len(self.header_names)):
-            self.horizontalHeader().setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeMode.Stretch if i < 2 else QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
+            resize_mode = QHeaderView.ResizeMode.Stretch if i < 2 else QHeaderView.ResizeMode.ResizeToContents
+            self.horizontalHeader().setSectionResizeMode(i, resize_mode)
 
     def remove(self, unique_id):
         for row in range(self.rowCount()):
@@ -192,15 +196,15 @@ class CameraOverviewTable(QTableWidget):
 class Camera_table_item:
     """Class representing single camera in the Camera Tab table."""
 
-    def __init__(self, setups_table, name, unique_id, fps,exposure_time,gain, pxl_fmt, downsampling_factor):
+    def __init__(self, setups_table, name, unique_id, fps, exposure_time, gain, pxl_fmt, downsampling_factor):
         self.setups_table = setups_table
         self.setups_tab = setups_table.setups_tab
         self.GUI = self.setups_tab.GUI
         self.label = name
         self.unique_id = unique_id
         self.fps = (fps,)
-        self.exposure_time=exposure_time
-        self.gain=gain
+        self.exposure_time = exposure_time
+        self.gain = gain
         self.pxl_fmt = pxl_fmt
         self.downsampling_factor = downsampling_factor
 
@@ -239,7 +243,7 @@ class Camera_table_item:
         self.exposure_time_edit.valueChanged.connect(self.camera_exposure_time_changed)
         # Gain edit
         self.gain_edit = QSpinBox()
-        self.gain_edit.setRange(*self.camera_api.get_gain_range()) 
+        self.gain_edit.setRange(*self.camera_api.get_gain_range())
         self.gain_edit.setValue(int(self.gain))
         if self.gain:
             self.gain_edit.setValue(int(self.gain))
@@ -277,10 +281,6 @@ class Camera_table_item:
         """Called when name text of setup is edited."""
         self.label = str(self.name_edit.text())
         self.label = self.label if self.label else self.unique_id
-        if self.label == "_hidden_":
-            self.name_edit.setStyleSheet("color: grey;")
-        else:
-            self.name_edit.setStyleSheet("color: black;")
         self.setups_tab.update_saved_setups(setup=self)
         self.setups_tab.setups_changed = True
 
@@ -295,26 +295,25 @@ class Camera_table_item:
         """Called when pixel format text of setup is edited."""
         self.pxl_fmt = str(self.pxl_fmt_edit.currentText())
         self.setups_tab.update_saved_setups(setup=self)
-        if self.GUI.preview_showing is True: 
+        if self.GUI.preview_showing is True:
             self.setups_tab.camera_preview.camera_api.set_pixel_format(self.pxl_fmt)
-    
+
     def camera_exposure_time_changed(self):
         """"""
         self.exposure_time = int(self.exposure_time_edit.text())
         self.setups_tab.update_saved_setups(setup=self)
-        
+
         if self.GUI.preview_showing:
             self.setups_tab.camera_preview.camera_api.set_exposure_time(self.exposure_time)
-         
+
     def camera_gain_changed(self):
         """"""
         self.gain = float(self.gain_edit.text())
         self.setups_tab.update_saved_setups(setup=self)
-        
+
         if self.GUI.preview_showing:
             self.setups_tab.camera_preview.camera_api.set_gain(self.gain)
-         
-            
+
     def camera_downsampling_factor(self):
         """Called when the downsampling factor of the seutp is edited"""
         self.downsampling_factor = int(self.downsampling_factor_edit.currentText())
@@ -322,12 +321,10 @@ class Camera_table_item:
 
     def open_preview_camera(self):
         """Button to preview the camera in the row"""
-        if self.GUI.preview_showing: 
+        if self.GUI.preview_showing:
             self.setups_tab.camera_preview.close()
             self.GUI.preview_showing = False
-        self.setups_tab.camera_preview = CameraPreviewDialog(
-            gui=self.GUI, unique_id=self.unique_id, window_title=f"Camera {self.unique_id}"
-        )
+        self.setups_tab.camera_preview = CameraPreviewDialog(gui=self.GUI, unique_id=self.unique_id)
         self.setups_tab.page_layout.addWidget(self.setups_tab.camera_preview)
         self.GUI.preview_showing = True
 
@@ -340,5 +337,5 @@ class Camera_table_item:
             pxl_fmt=self.pxl_fmt,
             downsample_factor=self.downsampling_factor,
             exposure_time=self.exposure_time,
-            gain=self.gain
+            gain=self.gain,
         )

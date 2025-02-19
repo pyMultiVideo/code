@@ -14,9 +14,7 @@ from config.config import ffmpeg_config
 
 @dataclass
 class CameraSetupConfig:
-    """
-    Data class to hold the configuration of a single user set camera settings
-    """
+    """Represents the configuration of a Camera_widget in the VideoCaptureTab."""
 
     label: str
     subject_id: str
@@ -24,9 +22,7 @@ class CameraSetupConfig:
 
 @dataclass
 class ExperimentConfig:
-    """
-    Data to hold the use set conPfiguPration of a single experiment
-    """
+    """Represents the configuration of the whole VideoCaptureTab."""
 
     data_dir: str
     encoder: str
@@ -37,9 +33,7 @@ class ExperimentConfig:
 
 @dataclass
 class CameraSettingsConfig:
-    """
-    Data class to hold the camera settings for a single camera
-    """
+    """Represents the CamerasTab settings for one camera"""
 
     name: str
     unique_id: str
@@ -48,6 +42,7 @@ class CameraSettingsConfig:
     downsample_factor: int
     exposure_time: float
     gain: float
+
 
 # Utility functions -------------------------------------------------------------------
 
@@ -89,21 +84,23 @@ def get_valid_ffmpeg_encoders() -> list:
             valid_encoders_keys.append(key)
     return valid_encoders_keys
 
+
 def validate_ffmpeg_path(ffmpeg_path):
     """Validate the provided ffmpeg path."""
     if type(ffmpeg_path) is type(None):
         return False
     if not os.path.isfile(ffmpeg_path):
         raise FileNotFoundError(f"ffmpeg executable not found at {ffmpeg_path}")
-    
+
     try:
         result = subprocess.run([ffmpeg_path, "-version"], capture_output=True, text=True)
         if result.returncode != 0:
             raise ValueError(f"Invalid ffmpeg executable at {ffmpeg_path}")
     except Exception as e:
         raise ValueError(f"Error validating ffmpeg path: {e}")
-    
+
     return True
+
 
 def get_modules_in_package(package_name):
     """
@@ -178,12 +175,9 @@ def find_all_cameras() -> list[str]:
 
 
 def init_camera_api(_id, CameraSettingsConfig=None):
-    """Go through each"""
-    # Split the camera unique_id into its api and its serial_no
+    """Initialise a camera API object given the camera ID and any camera settings."""
     serial_no, module_name = _id.split("-")
-
     camera_module = importlib.import_module(f"camera_api.{module_name}")
-
     return camera_module.initialise_by_id(_id=_id, CameraSettingsConfig=CameraSettingsConfig)
 
 
@@ -199,7 +193,7 @@ def load_saved_setups(camera_data) -> list[CameraSettingsConfig]:
                 pxl_fmt=cam["pxl_fmt"],
                 downsample_factor=cam["downsample_factor"],
                 exposure_time=cam["exposure_time"],
-                gain=cam["gain"]
+                gain=cam["gain"],
             )
         )
     return setups_from_database

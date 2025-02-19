@@ -3,7 +3,6 @@ Generic API defining functionality needed for for camera system to interact with
 """
 
 import numpy as np
-from datetime import datetime
 
 # GenericCamera class -------------------------------------------------------------------
 
