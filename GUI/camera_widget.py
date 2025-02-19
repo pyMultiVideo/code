@@ -53,14 +53,8 @@ class CameraWidget(QWidget):
         # Camera attributes
         self.label = label
         self.subject_id = subject_id
-        if self.label in self.camera_setup_tab.get_camera_labels():
-            self.camera_settings = self.camera_setup_tab.getCameraSettingsConfig(self.label)
-        self.fps = self.camera_settings.fps
-        self.pxl_fmt = self.camera_settings.pxl_fmt
-        self.unique_id = self.camera_settings.unique_id
-        self.downsampling_factor = 1
-
-        self.camera_api = init_camera_api(self.unique_id, self.camera_settings)
+        self.settings = self.camera_setup_tab.getCameraSettingsConfig(self.label)
+        self.camera_api = init_camera_api(self.settings.unique_id, self.settings)
         self.cam_width = self.camera_api.get_width()
         self.cam_height = self.camera_api.get_height()
         self._image_data = None
@@ -200,7 +194,7 @@ class CameraWidget(QWidget):
         # Create metadata file.
         self.metadata = {
             "subject_ID": self.subject_id,
-            "camera_unique_id": self.unique_id,
+            "camera_unique_id": self.settings.unique_id,
             "recorded_frames": 0,
             "begin_time": self.record_start_time.isoformat(timespec="milliseconds"),
             "end_time": None,
@@ -209,8 +203,8 @@ class CameraWidget(QWidget):
             json.dump(self.metadata, meta_data_file, indent=4)
 
         # Initalise ffmpeg process
-        downsampled_width = int(self.cam_width / self.downsampling_factor)
-        downsampled_height = int(self.cam_height / self.downsampling_factor)
+        downsampled_width = int(self.cam_width / self.settings.downsampling_factor)
+        downsampled_height = int(self.cam_height / self.settings.downsampling_factor)
         ffmpeg_command = " ".join(
             [
                 self.ffmpeg_path,  # Path to binary
@@ -218,10 +212,10 @@ class CameraWidget(QWidget):
                 "-f rawvideo",  # Input codec
                 "-pix_fmt gray",  # Input Pixel format
                 f"-s {downsampled_width}x{downsampled_height}",  # Output resolution
-                f"-r {self.fps}",  # Frame rate
+                f"-r {self.settings.fps}",  # Frame rate
                 "-i pipe:",  # input comes from a pipe
                 f"-vcodec {ffmpeg_config['output']['encoder'][self.video_capture_tab.encoder]}",  # Output codec
-                f"-pix_fmt {ffmpeg_config['output']['pxl_fmt'][self.pxl_fmt]}",  # pixel format
+                f"-pix_fmt {ffmpeg_config['output']['pxl_fmt'][self.settings.pxl_fmt]}",  # pixel format
                 "-preset fast",  # Encoding speed [fast, medium, slow], higher speed -> less compression.
                 "-crf 23",  # Controls quality vs filesize, range [0, 51] where 0 is max quality and filesize.
                 f'"{self.video_filepath}"',  # Output file path.
@@ -274,7 +268,7 @@ class CameraWidget(QWidget):
         # Compute average framerate and display over image.
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
         calculated_framerate = 1e9 / avg_time_diff
-        color = "r" if (abs(calculated_framerate - int(self.fps)) > 1) else "g"
+        color = "r" if (abs(calculated_framerate - int(self.settings.fps)) > 1) else "g"
         self.frame_rate_text.setText(f"FPS: {calculated_framerate:.2f}", color=color)
         # Update GPIO status indicators.
         self.gpio_state_smoothed = gpio_smoothing_decay * self.gpio_state_smoothed
@@ -339,27 +333,17 @@ class CameraWidget(QWidget):
         # shut down old camera
         if self.camera_api is not None:
             self.camera_api.stop_capturing()
-        # Get the new camera ID
-        new_camera_label = str(self.camera_dropdown.currentText())
-        # from the setups tab, get the unique id of the camera
-        camera_unique_id = self.camera_setup_tab.get_camera_unique_id_from_label(new_camera_label)
-        self._initialise_camera(camera_unique_id, new_camera_label)
-
-    def _initialise_camera(self, new_unique_id, new_camera_label) -> None:
-        # Set the new camera name
-        self.unique_id = new_unique_id
-        self.label = new_camera_label
-        # Get the new camera settings
-        self.camera_settings = self.camera_setup_tab.getCameraSettingsConfig(self.label)
-        # Set the new camera object
-        self.camera_api = init_camera_api(new_unique_id, self.camera_settings)
+        # Initialise the new camera
+        self.label = str(self.camera_dropdown.currentText())
+        self.settings = self.camera_setup_tab.getCameraSettingsConfig(self.label)
+        self.camera_api = init_camera_api(self.settings.unique_id, self.settings)
         self.camera_api.begin_capturing()
         self.camera_setup_groupbox.setTitle(self.label)
 
     ### Functions for changing camera settings ----------------------------------------
 
     def rename(self, new_label):
-        """Function to rename the camera"""
+        """Rename the camera"""
         self.camera_dropdown.removeItem(self.camera_dropdown.findText(self.label))
         self.label = new_label
         self.camera_dropdown.setCurrentText(new_label)

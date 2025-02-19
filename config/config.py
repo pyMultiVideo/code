@@ -45,7 +45,7 @@ paths_config = {
 default_camera_config = {
     "fps": "60",
     "pxl_fmt": "Mono8",
-    "downsample_factor": 1,
+    "downsampling_factor": 1,
     "exposure_time": 15000,
     "gain": 0,
 }

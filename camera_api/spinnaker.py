@@ -161,8 +161,6 @@ class SpinnakerCamera(GenericCamera):
         if self.cam.IsInitialized():
             self.cam.DeInit()
 
-    # Function to aquire images from the camera
-
     def get_available_images(self):
         """Gets all available images from the buffer and return images GPIO pinstate data and timestamps."""
         img_buffer = []
