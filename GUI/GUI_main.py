@@ -47,6 +47,7 @@ class GUIMain(QMainWindow):
         view_menu.addAction(full_screen_controls_action)
         # Display main window.
         self.show()
+        self.video_capture_tab.tab_selected()
 
     def on_tab_change(self):
         """Function that is run on tab change: Deselect the tab you are in before selecting a new tab"""

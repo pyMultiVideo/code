@@ -13,29 +13,29 @@ class GenericCamera:
         pass
 
     def get_width(self) -> int:
-        """Function that returns the width of the camera resolution"""
+        """Return the width of the camera resolution"""
         pass
 
     def get_height(self) -> int:
-        """Function that returns the height of the camera resolution"""
+        """Returns the height of the camera resolution"""
         pass
 
     def set_frame_rate(self, frame_rate: int) -> None:
-        """Function to set the aquisition frame rate of the camera"""
+        """Set the aquisition frame rate of the camera"""
         pass
 
     def begin_capturing(self) -> None:
-        """Function to start aquiruing images from the camera"""
+        """Start aquiruing images from the camera"""
         pass
 
     def stop_capturing(self) -> None:
-        """Function to the aquisition of images from the camera"""
+        """Stop acquiring images from the camera"""
         pass
 
     def get_available_images(
         self,
     ) -> dict[list[np.ndarray], list[dict[str, bool]], list[int]]:
-        """Function to returns all the data from the camera buffer as a dictionary.
+        """Return all the data from the camera buffer as a dictionary.
 
         Important notes:
         1. This function must empty the buffer to make sure that no frames are dropped from the recording.
@@ -54,28 +54,12 @@ class GenericCamera:
             "timestamps": timestamps_buffer,
         }
 
-    def begin_capturing(self) -> None:
-        """Function that sends a signal to trigger recording if the output of this function is True.
-        This function will be called from by a refresh function enough times to be fast enough to start recording if required.
-
-        For this camera, the recording will be triggered by one of the GPIO line states being set to High.
-
-        In principle this function could do anything to start recording by doing something that means this function returns True.
-        """
-        pass
-
-    def stop_capturing(self) -> None:
-        """Conceptually same as above. This function is called if the camera is recording, and will take the outcome of this function (True / False) as a Trigger to stop recording"""
-        pass
-
 
 # Camera system utility functions -------------------------------------------------------
 
 
 def list_available_cameras() -> list[str]:
-    """Place holder function which returns a list of the available cameras.
-    The should be uniquly idenified as a string.
-
+    """Return a list of the available cameras identifier strings.
     naming format requirements: NUMBERS-MODULENAME
     type(name) == str
     """
@@ -84,6 +68,5 @@ def list_available_cameras() -> list[str]:
 
 
 def initialise_by_id(_id, CameraSettingsConfig=None):
-    """Function that returns a camera instance based on the _id"""
-
+    """Returns a camera instance based on the _id"""
     return GenericCamera()

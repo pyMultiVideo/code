@@ -39,7 +39,7 @@ class CameraSettingsConfig:
     unique_id: str
     fps: str
     pxl_fmt: str
-    downsample_factor: int
+    downsampling_factor: int
     exposure_time: float
     gain: float
 
@@ -191,18 +191,18 @@ def init_camera_api(_id, CameraSettingsConfig=None):
 
 
 def load_saved_setups(camera_data) -> list[CameraSettingsConfig]:
-    """Function to load the saved setups from the database as a list of Setup objects"""
-    setups_from_database = []
+    """Load saved camera settings?"""
+    saved_camera_settings = []
     for cam in camera_data:
-        setups_from_database.append(
+        saved_camera_settings.append(
             CameraSettingsConfig(
                 name=cam.get("name", None),
                 unique_id=cam.get("unique_id"),
                 fps=cam.get("fps", default_camera_config["fps"]),
                 pxl_fmt=cam.get("pxl_fmt", default_camera_config["pxl_fmt"]),
-                downsample_factor=cam.get("downsample_factor", default_camera_config["downsample_factor"]),
+                downsampling_factor=cam.get("downsampling_factor", default_camera_config["downsampling_factor"]),
                 exposure_time=cam.get("exposure_time", default_camera_config["exposure_time"]),
                 gain=cam.get("gain", default_camera_config["gain"]),
             )
         )
-    return setups_from_database
+    return saved_camera_settings
