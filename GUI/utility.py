@@ -64,15 +64,17 @@ def cbox_update_options(cbox, options, used_cameras_labels, selected):
     cbox.setCurrentIndex(i)
 
 
-def get_valid_ffmpeg_encoders() -> list:
+def get_valid_ffmpeg_encoders(VERBOSE=False) -> list:
     """Return list of valid encoders given GPU availibility."""
     # Check if GPU is available.
     try:
         subprocess.check_output("nvidia-smi")
-        print("Nvidia GPU detected")
+        if VERBOSE:
+            print("Nvidia GPU detected")
         GPU_AVAIALABLE = True
     except Exception:
-        print("No Nvidia GPU available")
+        if VERBOSE:
+            print("No Nvidia GPU available")
         GPU_AVAIALABLE = False
     # Get all corresponding encoders.
     encoder_dict_keys = ffmpeg_config["output"]["encoder"].keys()
