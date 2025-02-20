@@ -15,19 +15,14 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QSpinBox,
     QLabel,
-    QCheckBox,
 )
-from PyQt6.QtGui import QFont, QFontMetrics, QIcon
+from PyQt6.QtGui import QFontMetrics, QIcon
 from PyQt6.QtCore import QTimer
 
 from dataclasses import asdict
 from .camera_widget import CameraWidget
 from .message_dialogs import show_info_message
-from .utility import (
-    ExperimentConfig,
-    CameraWidgetConfig,
-    gui_available,
-)
+from .utility import ExperimentConfig, CameraWidgetConfig
 from config.config import gui_config, paths_config
 
 
@@ -42,8 +37,6 @@ class VideoCaptureTab(QWidget):
         self.camera_widgets = []
         self.paths = paths_config
         self.camera_layout = QGridLayout()
-        self.viewfinder_groupbox = QGroupBox("")
-        self.viewfinder_groupbox.setLayout(self.camera_layout)
 
         self.ffmpeg_gui_encoder_map = {
             "GPU (H264)": "h264_nvenc",
@@ -59,7 +52,6 @@ class VideoCaptureTab(QWidget):
         # Encoder select dropdown
         self.encoder_settings_group_box = QGroupBox("FFMPEG Settings")
         self.encoder_selection = QComboBox()
-        # if gui_available():
         self.encoder_selection.addItems(self.ffmpeg_gui_encoder_map.keys())
         self.encoder_selection.setCurrentIndex(1)
         self.encoder = self.encoder_selection.currentText()
@@ -71,39 +63,39 @@ class VideoCaptureTab(QWidget):
 
         self.config_groupbox = QGroupBox("Experiment Configuration")
 
-        # Text box for displaying the number of camera
-        self.camera_config_textbox_label = QLabel("Cameras:")
+        # Camera quantity select
+        self.n_cameras_label = QLabel("Cameras:")
+        self.n_cameras_spinbox = QSpinBox()
+        self.n_cameras_spinbox.setRange(1, self.camera_setup_tab.n_setups)
+        self.n_cameras_spinbox.valueChanged.connect(self.add_or_remove_camera_widgets)
+        self.n_cameras_spinbox.setValue(1)
 
-        self.camera_quantity_spin_box = QSpinBox()
-        self.camera_quantity_spin_box.setFont(QFont("Courier", 12))
-        self.camera_quantity_spin_box.setReadOnly(False)
-        maxCameras = len(self.camera_setup_tab.setups.keys())
-        self.camera_quantity_spin_box.setRange(1, maxCameras)
-        self.camera_quantity_spin_box.setSingleStep(1)
-        self.camera_quantity_spin_box.valueChanged.connect(self.add_or_remove_camera_widgets)
-        self.camera_quantity_spin_box.setValue(1)
-        #
-        self.save_camera_config_button = QPushButton("Save Layout")
+        # Num columns select.
+        self.n_columns_label = QLabel("Columns:")
+        self.n_columns_spinbox = QSpinBox()
+        self.n_columns_spinbox.setRange(1, self.camera_setup_tab.n_setups)
+        self.n_columns_spinbox.valueChanged.connect(self.set_number_of_columns)
+        self.n_columns_spinbox.setValue(1)
+
+        # Save layout button
+        self.save_camera_config_button = QPushButton("Save")
         self.save_camera_config_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "save.svg")))
         self.save_camera_config_button.setFixedHeight(30)
         self.save_camera_config_button.clicked.connect(self.save_experiment_config)
 
-        # Button for loading camera configuration
-        self.load_experiment_config_button = QPushButton("Load Layout")
+        # Load layout button
+        self.load_experiment_config_button = QPushButton("Load")
         self.load_experiment_config_button.setFixedHeight(30)
         self.load_experiment_config_button.clicked.connect(self.load_experiment_config)
 
-        # Check box for changing the layout of the camera widgets
-        self.layout_checkbox = QCheckBox("Grid Layout")
-        self.layout_checkbox.setChecked(True)
-        self.layout_checkbox.stateChanged.connect(self.change_layout)
-
+        # Config layout
         self.config_hlayout = QHBoxLayout()
         self.config_hlayout.addWidget(self.save_camera_config_button)
         self.config_hlayout.addWidget(self.load_experiment_config_button)
-        self.config_hlayout.addWidget(self.camera_config_textbox_label)
-        self.config_hlayout.addWidget(self.camera_quantity_spin_box)
-        self.config_hlayout.addWidget(self.layout_checkbox)
+        self.config_hlayout.addWidget(self.n_cameras_label)
+        self.config_hlayout.addWidget(self.n_cameras_spinbox)
+        self.config_hlayout.addWidget(self.n_columns_label)
+        self.config_hlayout.addWidget(self.n_columns_spinbox)
         self.config_groupbox.setLayout(self.config_hlayout)
 
         self.save_dir_groupbox = QGroupBox("Save Directory")
@@ -118,7 +110,6 @@ class VideoCaptureTab(QWidget):
         # Display the save directory
         self.save_dir_textbox = QPlainTextEdit(self.paths["data_dir"])
         self.save_dir_textbox.setMaximumBlockCount(1)
-        self.save_dir_textbox.setFont(QFont("Courier", 12))
         self.save_dir_textbox.setReadOnly(True)
         self.temp_data_dir = self.paths["data_dir"]
         self.save_dir_textbox.setPlainText(self.temp_data_dir)
@@ -162,7 +153,7 @@ class VideoCaptureTab(QWidget):
         # page layout initalisastion
         self.page_layout = QVBoxLayout()
         self.page_layout.addWidget(self.header_groupbox)
-        self.page_layout.addWidget(self.viewfinder_groupbox)
+        self.page_layout.addLayout(self.camera_layout)
         self.setLayout(self.page_layout)
 
         # Check if the config file is present
@@ -204,7 +195,7 @@ class VideoCaptureTab(QWidget):
             camera_widget.update_video_display()
 
     def refresh(self):
-        """Refresh the viewfinder tab"""
+        """Refresh tab"""
         for camera_widget in self.camera_widgets:
             camera_widget.refresh()
         # Check the setups_changed flag
@@ -271,36 +262,23 @@ class VideoCaptureTab(QWidget):
             list(set(self.camera_setup_tab.get_camera_labels()) - set(self.get_camera_widget_labels())), key=str.lower
         )
         # Add camera widgets.
-        while self.camera_quantity_spin_box.value() > len(self.camera_widgets):
+        while self.n_cameras_spinbox.value() > len(self.camera_widgets):
             if available_cameras:
                 label = available_cameras.pop(0)
                 self.initialize_camera_widget(label=label)
             else:
                 break
         # Remove camera widgets.
-        while self.camera_quantity_spin_box.value() < len(self.camera_widgets):
+        while self.n_cameras_spinbox.value() < len(self.camera_widgets):
             self.remove_camera_widget(self.camera_widgets.pop())
         self.refresh()
 
     def initialize_camera_widget(self, label: str, subject_id=None):
-        """Create a new camera widget and add it to the viewfinder tab"""
-        # create_new_viewfinder(self, label, subject_id)
-        self.camera_widgets.append(
-            CameraWidget(
-                parent=self,
-                label=label,
-                subject_id=subject_id,
-            )
-        )
-
-        if type(self.camera_layout) is QGridLayout:
-            # Grid Layout
-            position = len(self.camera_widgets) - 1
-            self.camera_layout.addWidget(self.camera_widgets[-1], position // 2, position % 2)
-        elif type(self.camera_layout) is QVBoxLayout:
-            # Vertical Layout
-            self.camera_layout.addWidget(self.camera_widgets[-1])
-
+        """Create a new camera widget and add it to the tab"""
+        self.camera_widgets.append(CameraWidget(parent=self, label=label, subject_id=subject_id))
+        position = len(self.camera_widgets) - 1
+        n_columns = self.n_columns_spinbox.value()
+        self.camera_layout.addWidget(self.camera_widgets[-1], position // n_columns, position % n_columns)
         self.refresh()
 
     def remove_camera_widget(self, camera_widget):
@@ -314,27 +292,22 @@ class VideoCaptureTab(QWidget):
         while self.camera_widgets:
             self.remove_camera_widget(self.camera_widgets.pop())
 
-    def change_layout(self):
-        """Function to change the layout of the camera widgets between grid and vertical."""
-        # Create new layout and populate with existing camera widgets.
-        new_layout = QGridLayout() if self.layout_checkbox.isChecked() else QVBoxLayout()
-        for index, camera_widget in enumerate(self.camera_widgets):
-            if isinstance(new_layout, QGridLayout):
-                new_layout.addWidget(camera_widget, index // 2, index % 2)
-            else:
-                new_layout.addWidget(camera_widget)
-        # Assign old layout to temporary widget to remove it from viewfinder_groupbox.
-        QWidget().setLayout(self.camera_layout)
-        # Set new layout to viewfinder_groupbox.
-        self.camera_layout = new_layout
-        self.viewfinder_groupbox.setLayout(self.camera_layout)
-
     def toggle_full_screen_mode(self):
         """Toggle full screen video display mode on/off."""
         is_visible = self.header_groupbox.isVisible()
         self.header_groupbox.setVisible(not is_visible)
         for camera_widget in self.camera_widgets:
             camera_widget.toggle_control_visibility()
+
+    def set_number_of_columns(self):
+        """Set the number of columns in the camera grid layout."""
+        # Remove all widgets from grid.
+        for i in reversed(range(self.camera_layout.count())):
+            self.camera_layout.itemAt(i).widget().setParent(None)
+        # Add widgets to the grid with the new number of columns
+        for i, camera_widget in enumerate(self.camera_widgets):
+            n_columns = self.n_columns_spinbox.value()
+            self.camera_layout.addWidget(camera_widget, i // n_columns, i % n_columns)
 
     # Saving and loading experiment configs -------------------------------------------
 
@@ -344,8 +317,8 @@ class VideoCaptureTab(QWidget):
         experiment_config = ExperimentConfig(
             data_dir=self.save_dir_textbox.toPlainText(),
             encoder=self.encoder_selection.currentText(),
-            num_cameras=self.camera_quantity_spin_box.value(),
-            grid_layout=self.layout_checkbox.isChecked(),
+            n_cameras=self.n_cameras_spinbox.value(),
+            n_columns=self.n_columns_spinbox.value(),
             cameras=[camera_widget.get_camera_config() for camera_widget in self.camera_widgets],
         )
         with open(file_path[0], "w") as config_file:
@@ -373,10 +346,10 @@ class VideoCaptureTab(QWidget):
         for cam_config in experiment_config.cameras:
             self.initialize_camera_widget(label=cam_config.label, subject_id=cam_config.subject_id)
         # Set the values of the spinbox and encoder selection based on config file
-        self.camera_quantity_spin_box.setValue(experiment_config.num_cameras)
+        self.n_cameras_spinbox.setValue(experiment_config.n_cameras)
+        self.n_columns_spinbox.setValue(experiment_config.n_columns)
         self.encoder_selection.setCurrentText(experiment_config.encoder)
         self.save_dir_textbox.setPlainText(experiment_config.data_dir)
-        self.layout_checkbox.setChecked(experiment_config.grid_layout)
 
     def handle_camera_setups_modified(self):
         """Handle the renamed cameras by renaming the relevent attributes of the camera groupboxes"""
@@ -419,4 +392,4 @@ class VideoCaptureTab(QWidget):
         self.save_dir_button.setEnabled(not disable_controls)
         self.encoder_selection.setEnabled(not disable_controls)
         self.load_experiment_config_button.setEnabled(not disable_controls)
-        self.camera_quantity_spin_box.setEnabled(not disable_controls)
+        self.n_cameras_spinbox.setEnabled(not disable_controls)

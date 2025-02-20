@@ -133,14 +133,13 @@ class CamerasTab(QWidget):
                         exposure_time=default_camera_config["exposure_time"],
                         gain=default_camera_config["gain"],
                     )
-
                 self.update_saved_setups(self.setups[unique_id])
-
             # Remove any setups that are no longer connected
             for unique_id in set(self.setups.keys()) - set(connected_cameras):
                 # Sequence for removed a setup from the table (and deleting it)
                 self.setups.pop(unique_id)
                 self.camera_table.remove(unique_id)
+        self.n_setups = len(self.setups.keys())
 
     def get_camera_names(self) -> list[str]:
         """Get the labels of the available cameras. The label is the camera's name if available, else unique ID."""
@@ -201,17 +200,7 @@ class CameraOverviewTable(QTableWidget):
 class Camera_table_item:
     """Class representing single camera in the Camera Tab table."""
 
-    def __init__(
-        self,
-        setups_table,
-        label,
-        unique_id,
-        fps,
-        exposure_time,
-        gain,
-        downsampling_factor
-    ):
-
+    def __init__(self, setups_table, label, unique_id, fps, exposure_time, gain, downsampling_factor):
         self.settings = CameraSettingsConfig(
             name=label if label is not None else unique_id,
             unique_id=unique_id,
@@ -220,7 +209,6 @@ class Camera_table_item:
             downsampling_factor=downsampling_factor,
             exposure_time=exposure_time,
             gain=gain,
-
         )
 
         self.setups_table = setups_table
@@ -283,7 +271,6 @@ class Camera_table_item:
         if self.settings.downsampling_factor:
             self.downsampling_factor_edit.setCurrentText(str(self.settings.downsampling_factor))
         self.downsampling_factor_edit.activated.connect(self.camera_downsampling_factor_changed)
-
 
         # Preview button.
         self.preview_camera_button = QPushButton("Preview")

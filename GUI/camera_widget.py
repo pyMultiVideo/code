@@ -17,7 +17,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QTextEdit,
     QVBoxLayout,
-    QWidget,
 )
 
 from .utility import (
@@ -30,7 +29,7 @@ from .message_dialogs import show_warning_message
 from config.config import ffmpeg_config, paths_config
 
 
-class CameraWidget(QWidget):
+class CameraWidget(QGroupBox):
     """Widget for displaying camera video and camera controls."""
 
     def __init__(self, parent, label, subject_id):
@@ -59,6 +58,7 @@ class CameraWidget(QWidget):
         self.cam_height = self.camera_api.get_height()
         self._image_data = None
         self.frame_timestamps = deque(maxlen=10)
+        self.controls_visible = True
 
         # Video display
         self.video_feed = pg.ImageView()
@@ -95,8 +95,6 @@ class CameraWidget(QWidget):
         self.video_feed.addItem(self.frame_rate_text)
         self.frame_rate_text.setText("FPS:", color="r")
 
-        self.camera_setup_groupbox = QGroupBox(f"{self.label}")
-
         # Subject ID text edit
         self.subject_id_label = QLabel("Subject ID:")
         self.subject_id_text = QTextEdit()
@@ -119,29 +117,26 @@ class CameraWidget(QWidget):
         self.stop_recording_button.clicked.connect(self.stop_recording)
 
         # Camera select dropdown
-        self.camera_id_label = QLabel("Camera ID:")
+        self.camera_id_label = QLabel("Camera:")
         self.camera_dropdown = QComboBox()
         self.camera_dropdown.currentTextChanged.connect(self.change_camera)
         self.update_camera_dropdown()
         self.camera_dropdown.setCurrentText(self.label)
 
         # Layout
-        self.camera_header_layout = QHBoxLayout()
-        self.camera_header_layout.addWidget(self.camera_id_label)
-        self.camera_header_layout.addWidget(self.camera_dropdown)
-        self.camera_header_layout.addWidget(self.subject_id_label)
-        self.camera_header_layout.addWidget(self.subject_id_text)
-        self.camera_header_layout.addWidget(self.start_recording_button)
-        self.camera_header_layout.addWidget(self.stop_recording_button)
+        self.header_layout = QHBoxLayout()
+        self.header_layout.addWidget(self.camera_id_label)
+        self.header_layout.addWidget(self.camera_dropdown)
+        self.header_layout.addWidget(self.subject_id_label)
+        self.header_layout.addWidget(self.subject_id_text)
+        self.header_layout.addWidget(self.start_recording_button)
+        self.header_layout.addWidget(self.stop_recording_button)
 
-        self.camera_setup_groupbox.setLayout(self.camera_header_layout)
-        self.camera_setup_groupbox.setFixedHeight(75)
+        self.vlayout = QVBoxLayout()
+        self.vlayout.addLayout(self.header_layout)
+        self.vlayout.addWidget(self.video_feed, stretch=100)
 
-        self.camera_setup_hlayout = QVBoxLayout()
-        self.camera_setup_hlayout.addWidget(self.camera_setup_groupbox)
-        self.camera_setup_hlayout.addWidget(self.video_feed)
-
-        self.setLayout(self.camera_setup_hlayout)
+        self.setLayout(self.vlayout)
 
         self.begin_capturing()
 
@@ -216,7 +211,7 @@ class CameraWidget(QWidget):
                 f"-r {self.settings.fps}",  # Frame rate
                 # input comes from a pipe
                 f"-vcodec {self.video_capture_tab.ffmpeg_gui_encoder_map[self.video_capture_tab.encoder_selection.currentText()]}",  # Output codec
-                f"-pix_fmt yuv420p",  # pixel format
+                "-pix_fmt yuv420p",  # pixel format
                 f"-preset {ffmpeg_config['encoding_speed']}",  # Encoding speed [fast, medium, slow], higher speed -> less compression.
                 f"-crf {ffmpeg_config['crf']}",  # Controls quality vs filesize, range [0, 51] where 0 is max quality and filesize.
                 f'"{self.video_filepath}"',  # Output file path.
@@ -309,8 +304,10 @@ class CameraWidget(QWidget):
 
     def toggle_control_visibility(self) -> None:
         """Toggle the visibility of the camera controls."""
-        is_visible = self.camera_setup_groupbox.isVisible()
-        self.camera_setup_groupbox.setVisible(not is_visible)
+        self.controls_visible = not self.controls_visible
+        for i in range(self.header_layout.count()):
+            widget = self.header_layout.itemAt(i).widget()
+            widget.setVisible(self.controls_visible)
 
     def resizeEvent(self, event, scale_factor=0.015):
         """Update display element font sizes on resizeEvent."""
@@ -338,7 +335,6 @@ class CameraWidget(QWidget):
         self.settings = self.camera_setup_tab.get_camera_settings_from_label(self.label)
         self.camera_api = init_camera_api(self.settings)
         self.camera_api.begin_capturing()
-        self.camera_setup_groupbox.setTitle(self.label)
 
     ### Functions for changing camera settings ----------------------------------------
 
@@ -347,4 +343,3 @@ class CameraWidget(QWidget):
         self.camera_dropdown.removeItem(self.camera_dropdown.findText(self.label))
         self.label = new_label
         self.camera_dropdown.setCurrentText(new_label)
-        self.camera_setup_groupbox.setTitle(new_label)

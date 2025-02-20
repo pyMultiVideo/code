@@ -1,13 +1,12 @@
 import importlib
 import pkgutil
-import sys
 import os
 import json
 import subprocess
 from typing import Dict, Any
 from dataclasses import dataclass
 
-from config.config import ffmpeg_config, default_camera_config
+from config.config import default_camera_config
 
 # Custom data classes -----------------------------------------------------------------
 
@@ -26,8 +25,8 @@ class ExperimentConfig:
 
     data_dir: str
     encoder: str
-    num_cameras: int
-    grid_layout: bool
+    n_cameras: int
+    n_columns: int
     cameras: list[CameraWidgetConfig]
 
 
@@ -38,7 +37,6 @@ class CameraSettingsConfig:
     name: str
     unique_id: str
     fps: str
-    # pxl_fmt: str
     exposure_time: float
     gain: float
     downsampling_factor: int
@@ -64,7 +62,7 @@ def cbox_update_options(cbox, options, used_cameras_labels, selected):
     cbox.setCurrentIndex(i)
 
 
-def gui_available(VERBOSE=False) -> list:
+def gpu_available(VERBOSE=False) -> list:
     """Return list of valid encoders given GPU availibility."""
     # Check if GPU is available.
     try:
@@ -168,7 +166,7 @@ def load_saved_setups(camera_data) -> list[CameraSettingsConfig]:
                 # pxl_fmt=cam.get("pxl_fmt", default_camera_config["pxl_fmt"]),
                 downsampling_factor=cam.get("downsampling_factor", default_camera_config["downsampling_factor"]),
                 exposure_time=cam.get("exposure_time", default_camera_config["exposure_time"]),
-                gain=cam.get("gain", default_camera_config["gain"])
+                gain=cam.get("gain", default_camera_config["gain"]),
             )
         )
     return saved_camera_settings
