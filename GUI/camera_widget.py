@@ -22,7 +22,7 @@ from PyQt6.QtWidgets import (
 
 from .utility import (
     cbox_update_options,
-    CameraSetupConfig,
+    CameraWidgetConfig,
     init_camera_api,
     validate_ffmpeg_path,
 )
@@ -51,10 +51,10 @@ class CameraWidget(QWidget):
         )
 
         # Camera attributes
-        self.label = label
         self.subject_id = subject_id
-        self.settings = self.camera_setup_tab.getCameraSettingsConfig(self.label)
-        self.camera_api = init_camera_api(self.settings.unique_id, self.settings)
+        self.label = label
+        self.settings = self.camera_setup_tab.get_camera_settings_from_label(label)
+        self.camera_api = init_camera_api(settings=self.settings)
         self.cam_width = self.camera_api.get_width()
         self.cam_height = self.camera_api.get_height()
         self._image_data = None
@@ -65,7 +65,7 @@ class CameraWidget(QWidget):
         self.video_feed.ui.histogram.hide()
         self.video_feed.ui.roiBtn.hide()
         self.video_feed.ui.menuBtn.hide()
-        self.video_feed.view.setMouseEnabled(x=False, y=False)  # Disable zoom and pan
+        self.video_feed.view.setMouseEnabled(x=False, y=False)
 
         # Recording Information overlay
         self.recording_status_item = pg.TextItem()
@@ -150,6 +150,7 @@ class CameraWidget(QWidget):
     def begin_capturing(self):
         """Start streaming video from camera."""
         self.recording = False
+        # Begin capturing using the camera API
         self.camera_api.begin_capturing()
 
     def stop_capturing(self):
@@ -210,14 +211,14 @@ class CameraWidget(QWidget):
                 self.ffmpeg_path,  # Path to binary
                 "-y",  # overwrite output file if it exists
                 "-f rawvideo",  # Input codec
-                "-pix_fmt gray",  # Input Pixel format
+                # "-pix_fmt gray",  # Input Pixel format
                 f"-s {downsampled_width}x{downsampled_height}",  # Output resolution
                 f"-r {self.settings.fps}",  # Frame rate
-                "-i pipe:",  # input comes from a pipe
-                f"-vcodec {ffmpeg_config['output']['encoder'][self.video_capture_tab.encoder]}",  # Output codec
-                f"-pix_fmt {ffmpeg_config['output']['pxl_fmt'][self.settings.pxl_fmt]}",  # pixel format
-                "-preset fast",  # Encoding speed [fast, medium, slow], higher speed -> less compression.
-                "-crf 23",  # Controls quality vs filesize, range [0, 51] where 0 is max quality and filesize.
+                # input comes from a pipe
+                f"-vcodec {self.video_capture_tab.ffmpeg_gui_encoder_map[self.video_capture_tab.encoder_selection.currentText()]}",  # Output codec
+                f"-pix_fmt yuv420p",  # pixel format
+                f"-preset {ffmpeg_config['encoding_speed']}",  # Encoding speed [fast, medium, slow], higher speed -> less compression.
+                f"-crf {ffmpeg_config['crf']}",  # Controls quality vs filesize, range [0, 51] where 0 is max quality and filesize.
                 f'"{self.video_filepath}"',  # Output file path.
             ]
         )
@@ -291,7 +292,7 @@ class CameraWidget(QWidget):
         self.camera_dropdown.currentTextChanged.disconnect(self.change_camera)
         cbox_update_options(
             cbox=self.camera_dropdown,
-            options=self.camera_setup_tab.get_camera_labels(),
+            options=self.camera_setup_tab.get_camera_names(),
             used_cameras_labels=list([cam.label for cam in self.video_capture_tab.camera_widgets]),
             selected=self.label,
         )
@@ -326,17 +327,16 @@ class CameraWidget(QWidget):
 
     def get_camera_config(self):
         """Get the camera configuration"""
-        return CameraSetupConfig(label=self.label, subject_id=self.subject_id)
+        return CameraWidgetConfig(label=self.label, subject_id=self.subject_id)
 
     def change_camera(self) -> None:
-        self.logger.info("Changing camera")
         # shut down old camera
         if self.camera_api is not None:
             self.camera_api.stop_capturing()
         # Initialise the new camera
         self.label = str(self.camera_dropdown.currentText())
-        self.settings = self.camera_setup_tab.getCameraSettingsConfig(self.label)
-        self.camera_api = init_camera_api(self.settings.unique_id, self.settings)
+        self.settings = self.camera_setup_tab.get_camera_settings_from_label(self.label)
+        self.camera_api = init_camera_api(self.settings)
         self.camera_api.begin_capturing()
         self.camera_setup_groupbox.setTitle(self.label)
 

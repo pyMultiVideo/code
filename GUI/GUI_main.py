@@ -27,7 +27,7 @@ class GUIMain(QMainWindow):
         self.logger = logging.getLogger(__name__)
         self.paths = paths_config
         # Set window size, title, icon.
-        self.setGeometry(100, 100, 700, 800)  # x, y, width, height
+        self.setGeometry(100, 100, 1000, 1000)  # x, y, width, height
         self.setWindowTitle(f"pyMultiVideo v{__version__}")  # default window title
         self.setWindowIcon(QIcon(os.path.join(self.paths["assets_dir"], "logo.svg")))
         # Initialise the tabs and tab widget.

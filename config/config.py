@@ -10,20 +10,12 @@ gui_config = {
     "fetch_image_rate": 60,  # Rate at which the function that fetches images from cameras is called (Hz).
 }
 
-# FFMPEG config -----------------------------------------------------------------------
+# Default FFMPEG config -----------------------------------------------------------------------
 
 ffmpeg_config = {
-    "output": {
-        # Encoders available to ffmpeg
-        # {'GUI Name: ffmpeg_encoder name'}
-        "encoder": {
-            "GPU (H264)": "h264_nvenc",
-            "GPU (H265)": "hevc_nvenc",
-            "CPU (H264)": "libx264",
-            "CPU (H265)": "libx265",
-        },
-        "pxl_fmt": {"Mono8": "yuv420p", "Mono16": "yuv420p"},
-    },
+    "pxl_fmt": {"Mono8": "yuv420p", "Mono16": "?"},
+    "crf": 23,
+    "encoding_speed": "slow",
 }
 
 # Paths -------------------------------------------------------------------------------
@@ -44,7 +36,6 @@ paths_config = {
 
 default_camera_config = {
     "fps": "60",
-    "pxl_fmt": "Mono8",
     "downsampling_factor": 1,
     "exposure_time": 15000,
     "gain": 0,

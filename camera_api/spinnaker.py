@@ -68,8 +68,11 @@ class SpinnakerCamera(GenericCamera):
         # Configure user settings.
         if self.camera_config is not None:
             self.set_frame_rate(self.camera_config.fps)
-            self.set_pixel_format(self.camera_config.pxl_fmt)
+            # self.set_pxl_fmt(self.camera_config.pxl_fmt)
+            self.set_gain(self.camera_config.gain)
+            self.set_exposure_time(self.camera_config.exposure_time)
 
+            
     # Functions to get the camera parameters ----------------------------------------------
 
     def get_width(self) -> int:
@@ -133,7 +136,7 @@ class SpinnakerCamera(GenericCamera):
         """Set the frame rate of the camera in Hz."""
         PySpin.CFloatPtr(self.nodemap.GetNode("AcquisitionFrameRate")).SetValue(int(frame_rate))
 
-    def set_pixel_format(self, pixel_format):
+    def set_pxl_fmt(self, pixel_format):
         pass
 
     def set_exposure_time(self, exposure_time: float) -> None:
@@ -144,10 +147,13 @@ class SpinnakerCamera(GenericCamera):
         """Set gain (dB)"""
         PySpin.CFloatPtr(self.nodemap.GetNode("Gain")).SetValue(float(gain))
 
+    def set_camera_config(self, CameraSettingsConfig) -> None:
+        pass
     # Functions to control the camera streaming and check status.
 
     def begin_capturing(self) -> None:
         """Start camera streaming images."""
+        
         if not self.cam.IsInitialized():
             self.cam.Init()
         if not self.cam.IsStreaming():

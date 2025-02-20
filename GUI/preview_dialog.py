@@ -13,14 +13,13 @@ from config.config import paths_config, gui_config
 class CameraPreviewWidget(QWidget):
     """Dialog for previewing the video feed from the setups tab"""
 
-    def __init__(self, gui, camera_table_item, unique_id):  # camera_api):
+    def __init__(self, gui, camera_table_item):  # camera_api):
         super().__init__()
         # self.setups_tab = parent
         self.GUI = gui
         self.camera_table_item = camera_table_item
-        self.unique_id = unique_id
-        # self.unique_id = self.camera_api.unique_id
-        self.window_title = f"Camera {self.unique_id}"
+        self.settings = self.camera_table_item.settings
+        self.window_title = f"Camera {self.settings.unique_id}"
         self.paths = paths_config
 
         self.setWindowTitle(self.window_title)
@@ -39,7 +38,7 @@ class CameraPreviewWidget(QWidget):
         self.video_feed.ui.histogram.hide()
         self.video_feed.ui.roiBtn.hide()
         self.video_feed.ui.menuBtn.hide()
-        self.video_feed.view.setMouseEnabled(x=False, y=False)  # Disable zoom and pan
+        self.video_feed.view.setMouseEnabled(x=False, y=False)
 
         # Framerate overlay
         self.frame_rate_text = pg.TextItem()
@@ -71,7 +70,9 @@ class CameraPreviewWidget(QWidget):
         self.setLayout(self.hlayout)
 
         # Init camera
-        self.camera_api = init_camera_api(_id=self.unique_id)
+        self.camera_api = init_camera_api(
+            settings=self.settings,
+        )
         self.camera_api.begin_capturing()
 
         self.start_timer()
@@ -86,7 +87,7 @@ class CameraPreviewWidget(QWidget):
         self.frame_timestamps.extend(self.buffered_data["timestamps"])
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
         calculated_framerate = 1e9 / avg_time_diff
-        color = "r" if (abs(calculated_framerate - int(self.camera_table_item.fps)) > 1) else "g"
+        color = "r" if (abs(calculated_framerate - int(self.settings.fps)) > 1) else "g"
         self.frame_rate_text.setText(f"FPS: {calculated_framerate:.2f}", color=color)
         self.exposure_time_text.setText(
             f"Exposure Time (us) : {self.camera_api.get_exposure_time():.2f}",
@@ -97,7 +98,7 @@ class CameraPreviewWidget(QWidget):
         self.video_feed.setImage(self._image_data.T)
 
     def start_timer(self):
-        """Start a timer to refresh the video feed every second"""
+        """Start a timer to refresh the video feed at the config `display_update_rate`"""
         self.display_update_timer = QTimer()
         self.display_update_timer.timeout.connect(self.display_data)
         self.display_update_timer.start(int(1000 / gui_config["display_update_rate"]))
@@ -114,7 +115,7 @@ class CameraPreviewWidget(QWidget):
         event.accept()
 
     def resizeEvent(self, event, scale_factor=0.02):
-        """Scale the font size to the window"""
+        """Scale the font size to the widget"""
         super().resizeEvent(event)
         font_size = int(min(self.width(), self.height()) * scale_factor)
         self.frame_rate_text.setFont(QFont("Arial", font_size))

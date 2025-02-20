@@ -25,8 +25,8 @@ from .camera_widget import CameraWidget
 from .message_dialogs import show_info_message
 from .utility import (
     ExperimentConfig,
-    CameraSetupConfig,
-    get_valid_ffmpeg_encoders,
+    CameraWidgetConfig,
+    gui_available,
 )
 from config.config import gui_config, paths_config
 
@@ -42,8 +42,15 @@ class VideoCaptureTab(QWidget):
         self.camera_widgets = []
         self.paths = paths_config
         self.camera_layout = QGridLayout()
-        self.viewfinder_groupbox = QGroupBox("Viewfinder")
+        self.viewfinder_groupbox = QGroupBox("")
         self.viewfinder_groupbox.setLayout(self.camera_layout)
+
+        self.ffmpeg_gui_encoder_map = {
+            "GPU (H264)": "h264_nvenc",
+            "GPU (H265)": "hevc_nvenc",
+            "CPU (H264)": "libx264",
+            "CPU (H265)": "libx265",
+        }
 
         # Initialise Header Group box
         self.header_groupbox = QGroupBox()
@@ -52,7 +59,8 @@ class VideoCaptureTab(QWidget):
         # Encoder select dropdown
         self.encoder_settings_group_box = QGroupBox("FFMPEG Settings")
         self.encoder_selection = QComboBox()
-        self.encoder_selection.addItems(get_valid_ffmpeg_encoders())
+        # if gui_available():
+        self.encoder_selection.addItems(self.ffmpeg_gui_encoder_map.keys())
         self.encoder_selection.setCurrentIndex(1)
         self.encoder = self.encoder_selection.currentText()
         self.encoder_selection.currentIndexChanged.connect(self.change_encoder)
@@ -160,7 +168,7 @@ class VideoCaptureTab(QWidget):
         # Check if the config file is present
         if self.GUI.startup_config is None:
             available_cameras = sorted(
-                list(set(self.camera_setup_tab.get_camera_labels()) - set(self.get_camera_widget_labels())),
+                list(set(self.camera_setup_tab.get_camera_names()) - set(self.get_camera_widget_labels())),
                 key=str.lower,
             )
             for camera_label in available_cameras[:1]:  # One camera by default
@@ -171,7 +179,7 @@ class VideoCaptureTab(QWidget):
             # Load the default config file
             with open(self.GUI.startup_config, "r") as config_file:
                 config_data = json.load(config_file)
-                config_data["cameras"] = [CameraSetupConfig(**camera) for camera in config_data["cameras"]]
+                config_data["cameras"] = [CameraWidgetConfig(**camera) for camera in config_data["cameras"]]
             experiment_config = ExperimentConfig(**config_data)
 
             self.configure_tab_from_config(experiment_config)
@@ -230,7 +238,6 @@ class VideoCaptureTab(QWidget):
     def tab_selected(self):
         """Called when tab deselected to start aqusition of the camera video streams."""
         for camera_widget in self.camera_widgets:
-            camera_widget.settings = self.camera_setup_tab.getCameraSettingsConfig(camera_widget.label)
             camera_widget.begin_capturing()
         self.fetch_images_timer.start(int(1000 / gui_config["fetch_image_rate"]))
         self.display_update_timer.start(int(1000 / gui_config["display_update_rate"]))
@@ -258,7 +265,7 @@ class VideoCaptureTab(QWidget):
         return text_edit_width // char_width - 2
 
     def add_or_remove_camera_widgets(self):
-        """Called when camera_quantity_spin_box is changed to add or remove camera widgets from tab."""
+        """Add or remove the camera widgets from the"""
         # Get the set of useable cameras
         available_cameras = sorted(
             list(set(self.camera_setup_tab.get_camera_labels()) - set(self.get_camera_widget_labels())), key=str.lower
@@ -285,10 +292,7 @@ class VideoCaptureTab(QWidget):
                 subject_id=subject_id,
             )
         )
-        self.add_widget_to_layout()
 
-    def add_widget_to_layout(self):
-        """ """
         if type(self.camera_layout) is QGridLayout:
             # Grid Layout
             position = len(self.camera_widgets) - 1
@@ -352,7 +356,7 @@ class VideoCaptureTab(QWidget):
         file_path = QFileDialog.getOpenFileName(self, "Open File", "experiments", "JSON Files (*.json)")[0]
         with open(file_path, "r") as config_file:
             config_data = json.load(config_file)
-        config_data["cameras"] = [CameraSetupConfig(**cam_config) for cam_config in config_data["cameras"]]
+        config_data["cameras"] = [CameraWidgetConfig(**cam_config) for cam_config in config_data["cameras"]]
         experiment_config = ExperimentConfig(**config_data)
         # Check if the config file is valid.
         for camera in experiment_config.cameras:

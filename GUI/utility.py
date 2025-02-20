@@ -13,7 +13,7 @@ from config.config import ffmpeg_config, default_camera_config
 
 
 @dataclass
-class CameraSetupConfig:
+class CameraWidgetConfig:
     """Represents the configuration of a Camera_widget in the VideoCaptureTab."""
 
     label: str
@@ -28,7 +28,7 @@ class ExperimentConfig:
     encoder: str
     num_cameras: int
     grid_layout: bool
-    cameras: list[CameraSetupConfig]
+    cameras: list[CameraWidgetConfig]
 
 
 @dataclass
@@ -38,10 +38,10 @@ class CameraSettingsConfig:
     name: str
     unique_id: str
     fps: str
-    pxl_fmt: str
-    downsampling_factor: int
+    # pxl_fmt: str
     exposure_time: float
     gain: float
+    downsampling_factor: int
 
 
 # Utility functions -------------------------------------------------------------------
@@ -64,36 +64,19 @@ def cbox_update_options(cbox, options, used_cameras_labels, selected):
     cbox.setCurrentIndex(i)
 
 
-def get_valid_ffmpeg_encoders(VERBOSE=False) -> list:
+def gui_available(VERBOSE=False) -> list:
     """Return list of valid encoders given GPU availibility."""
     # Check if GPU is available.
     try:
         subprocess.check_output("nvidia-smi")
         if VERBOSE:
             print("Nvidia GPU detected")
-        GPU_AVAIALABLE = True
+        GPU_DETECTED = True
     except Exception:
         if VERBOSE:
             print("No Nvidia GPU available")
-        GPU_AVAIALABLE = False
-    # Get all corresponding encoders.
-    encoder_dict_keys = ffmpeg_config["output"]["encoder"].keys()
-    valid_encoders_keys = []
-    for key in encoder_dict_keys:
-        if "CPU" in key:
-            valid_encoders_keys.append(key)
-        elif "GPU" in key and GPU_AVAIALABLE:
-            valid_encoders_keys.append(key)
-    return valid_encoders_keys
-
-
-def get_valid_supported_encoder_formats(camera_formats: list[str]) -> list[str]:
-    """Get the list of supported encoder formats by comparing the camera formats to the config pxl_fmt keys"""
-    supported_formats = []
-    for fmt in camera_formats:
-        if fmt in ffmpeg_config["output"]["pxl_fmt"]:
-            supported_formats.append(fmt)
-    return supported_formats
+        GPU_DETECTED = False
+    return GPU_DETECTED
 
 
 def validate_ffmpeg_path(ffmpeg_path):
@@ -127,14 +110,6 @@ def get_modules_in_package(package_name):
     for _, module_name, _ in pkgutil.iter_modules(package_path):
         modules.append(module_name)
 
-    # If running in a frozen environment (e.g., PyInstaller), include the frozen modules
-    if getattr(sys, "frozen", False):
-        frozen_path = os.path.join(sys._MEIPASS, package_name)
-        if os.path.exists(frozen_path):
-            for _, module_name, _ in pkgutil.iter_modules([frozen_path]):
-                if module_name not in modules:
-                    modules.append(module_name)
-
     return modules
 
 
@@ -161,19 +136,8 @@ def load_camera_dict(camera_config_path: str) -> Dict[str, Any]:
 def find_all_cameras() -> list[str]:
     """Get a list of unique camera IDs for all the different types of cameras connected to the machine."""
     # for each module in the camera class, run the get unique ids function
-    try:
-        if getattr(sys, "frozen", False):
-            sys.path.append(os.path.join(sys._MEIPASS, "code", "camera_api"))
-        modules = get_modules_in_package("camera_api")
-    except ModuleNotFoundError:
-        if getattr(sys, "frozen", False):
-            frozen_path = os.path.join(sys._MEIPASS, "camera_api")
-            if os.path.exists(frozen_path):
-                modules = [name for _, name, _ in pkgutil.iter_modules([frozen_path])]
-            else:
-                modules = []
-        else:
-            raise
+
+    modules = get_modules_in_package("camera_api")
 
     camera_list = []
     for module in modules:
@@ -185,15 +149,15 @@ def find_all_cameras() -> list[str]:
     return camera_list
 
 
-def init_camera_api(_id, CameraSettingsConfig=None):
+def init_camera_api(settings: CameraSettingsConfig):
     """Initialise a camera API object given the camera ID and any camera settings."""
-    serial_no, module_name = _id.split("-")
+    _, module_name = settings.unique_id.split("-")
     camera_module = importlib.import_module(f"camera_api.{module_name}")
-    return camera_module.initialise_by_id(_id=_id, CameraSettingsConfig=CameraSettingsConfig)
+    return camera_module.initialise_by_id(_id=settings.unique_id, CameraSettingsConfig=settings)
 
 
 def load_saved_setups(camera_data) -> list[CameraSettingsConfig]:
-    """Load saved camera settings?"""
+    """Load camera settings. If there are none, replace them with default values."""
     saved_camera_settings = []
     for cam in camera_data:
         saved_camera_settings.append(
@@ -201,10 +165,10 @@ def load_saved_setups(camera_data) -> list[CameraSettingsConfig]:
                 name=cam.get("name", None),
                 unique_id=cam.get("unique_id"),
                 fps=cam.get("fps", default_camera_config["fps"]),
-                pxl_fmt=cam.get("pxl_fmt", default_camera_config["pxl_fmt"]),
+                # pxl_fmt=cam.get("pxl_fmt", default_camera_config["pxl_fmt"]),
                 downsampling_factor=cam.get("downsampling_factor", default_camera_config["downsampling_factor"]),
                 exposure_time=cam.get("exposure_time", default_camera_config["exposure_time"]),
-                gain=cam.get("gain", default_camera_config["gain"]),
+                gain=cam.get("gain", default_camera_config["gain"])
             )
         )
     return saved_camera_settings
