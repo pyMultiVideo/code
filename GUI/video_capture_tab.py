@@ -49,10 +49,8 @@ class VideoCaptureTab(QWidget):
                 "CPU (H264)": "libx264",
                 "CPU (H265)": "libx265",
             }
-            
-        # Initialise Header Group box
-        self.header_groupbox = QGroupBox()
-        self.header_groupbox.setMaximumHeight(95)
+
+
 
         # Encoder select dropdown
         self.encoder_settings_group_box = QGroupBox("FFMPEG Settings")
@@ -90,6 +88,7 @@ class VideoCaptureTab(QWidget):
 
         # Load layout button
         self.load_experiment_config_button = QPushButton("Load")
+        # self.load_experiment_config_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "upload.svg")))
         self.load_experiment_config_button.setFixedHeight(30)
         self.load_experiment_config_button.clicked.connect(self.load_experiment_config)
 
@@ -103,7 +102,7 @@ class VideoCaptureTab(QWidget):
         self.config_hlayout.addWidget(self.n_columns_spinbox)
         self.config_groupbox.setLayout(self.config_hlayout)
 
-        self.save_dir_groupbox = QGroupBox("Save Directory")
+        self.save_dir_groupbox = QGroupBox("Data Directory")
 
         # Buttons for saving and loading camera configurations
         self.save_dir_button = QPushButton("")
@@ -153,10 +152,16 @@ class VideoCaptureTab(QWidget):
         self.header_hlayout.addWidget(self.encoder_settings_group_box)
         self.header_hlayout.addWidget(self.save_dir_groupbox)
         self.header_hlayout.addWidget(self.control_all_groupbox)
-        self.header_groupbox.setLayout(self.header_hlayout)
 
+        # Initialise Header Group box
+        self.header_groupbox = QGroupBox()
+        self.header_groupbox.setMaximumHeight(95)
+        self.header_groupbox.setLayout(self.header_hlayout)
+        
         # page layout initalisastion
+        self.header_groupbox.setMaximumHeight(95)
         self.page_layout = QVBoxLayout()
+        # self.page_layout.addLayout(self.header_hlayout)
         self.page_layout.addWidget(self.header_groupbox)
         self.page_layout.addLayout(self.camera_layout)
         self.setLayout(self.page_layout)
@@ -255,11 +260,10 @@ class VideoCaptureTab(QWidget):
         font = self.save_dir_textbox.font()
         char_width = QFontMetrics(font).horizontalAdvance("W")
         n_char = text_edit_width // char_width
-        
-        if len(save_dir) > n_char:
-            save_dir = ".." + save_dir[-(n_char) :]
-        self.save_dir_textbox.setPlainText(save_dir)
 
+        if len(save_dir) > n_char:
+            save_dir = ".." + save_dir[-(n_char):]
+        self.save_dir_textbox.setPlainText(save_dir)
 
     def add_or_remove_camera_widgets(self):
         """Add or remove the camera widgets from the"""
@@ -278,7 +282,6 @@ class VideoCaptureTab(QWidget):
         while self.n_cameras_spinbox.value() < len(self.camera_widgets):
             self.remove_camera_widget(self.camera_widgets.pop())
         self.refresh()
-
 
     def initialize_camera_widget(self, label: str, subject_id=None):
         """Create a new camera widget and add it to the tab"""
@@ -320,7 +323,8 @@ class VideoCaptureTab(QWidget):
 
     def save_experiment_config(self):
         """Save the tab configuration to a json file"""
-        file_path = QFileDialog.getSaveFileName(self, "Save File", "experiments", "JSON Files (*.json)")
+        default_name = os.path.join("experiments", "experiment_config.json")
+        file_path = QFileDialog.getSaveFileName(self, "Save File", default_name, "JSON Files (*.json)")
         experiment_config = ExperimentConfig(
             data_dir=self.temp_data_dir,
             encoder=self.encoder_selection.currentText(),
@@ -356,7 +360,7 @@ class VideoCaptureTab(QWidget):
         self.n_cameras_spinbox.setValue(experiment_config.n_cameras)
         self.n_columns_spinbox.setValue(experiment_config.n_columns)
         self.encoder_selection.setCurrentText(experiment_config.encoder)
-        self.temp_data_dir=experiment_config.data_dir
+        self.temp_data_dir = experiment_config.data_dir
         self.update_save_directory_display()
 
     def handle_camera_setups_modified(self):
@@ -387,7 +391,10 @@ class VideoCaptureTab(QWidget):
 
     def get_camera_widget_labels(self) -> List[str]:
         """Return the camera labels for all camera widgets."""
-        return [camera_widget.label for camera_widget in self.camera_widgets]
+        return [
+            camera_widget.label if camera_widget.label else camera_widget.unique_id
+            for camera_widget in self.camera_widgets
+        ]
 
     def update_global_recording_button_states(self):
         """Update the states of global recording buttons based on the readiness and recording status of cameras."""

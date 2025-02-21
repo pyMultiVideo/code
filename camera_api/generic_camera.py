@@ -12,17 +12,62 @@ class GenericCamera:
         """Template class for representing a camera. Defines functionallity that must be implemented for interaction with the GUI."""
         pass
 
+    # Functions to get the camera parameters -----------------------------------------------------------------
+
     def get_width(self) -> int:
-        """Return the width of the camera resolution"""
+        """Get the width of the camera image in pixels."""
         pass
 
     def get_height(self) -> int:
-        """Returns the height of the camera resolution"""
+        """Get the height of the camera image in pixels."""
         pass
+
+    def get_frame_rate(self) -> int:
+        """Get the camera frame rate in Hz."""
+        pass
+
+    def get_frame_rate_range(self) -> tuple[int, int]:
+        """Get the min and max frame rate in Hz."""
+        pass
+
+    def get_exposure_time(self) -> float:
+        """Get exposure of camera"""
+
+    def get_exposure_time_range(self) -> tuple[int, int]:
+        """Get exposure time range of camera"""
+        pass
+
+    def get_gain(self) -> int:
+        """Get camera gain setting in dB."""
+        pass
+
+    def get_gain_range(self) -> tuple[int, int]:
+        """Get range of gain"""
+        pass
+
+    def get_pixel_format(self) -> str:
+        """Get string specifying camera pixel format"""
+        pass
+
+    def get_available_pixel_fmt(self) -> list[str]:
+        """Gets a string of the pixel formats available to the camera"""
+        pass
+
+    # Functions to set the camera parameters -----------------------------------------------------------------
 
     def set_frame_rate(self, frame_rate: int) -> None:
         """Set the aquisition frame rate of the camera"""
         pass
+
+    def set_exposure_time(self, exposure_time) -> None:
+        """Set the exposure_time of the camera"""
+        pass
+
+    def set_gain(self, gain):
+        """Set the gain of the camera"""
+        pass
+
+    #  Functions to control the camera streaming and check status ---------------------------------------------
 
     def begin_capturing(self) -> None:
         """Start aquiruing images from the camera"""

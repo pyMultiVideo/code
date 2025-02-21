@@ -35,7 +35,7 @@ class ExperimentConfig:
 class CameraSettingsConfig:
     """Represents the CamerasTab settings for one camera"""
 
-    label: str
+    name: str
     unique_id: str
     fps: str
     exposure_time: float
@@ -161,10 +161,9 @@ def load_saved_setups(camera_data) -> list[CameraSettingsConfig]:
     for cam in camera_data:
         saved_camera_settings.append(
             CameraSettingsConfig(
-                label=cam.get("label", None),
+                name=cam.get("label", None),
                 unique_id=cam.get("unique_id"),
                 fps=cam.get("fps", default_camera_config["fps"]),
-                # pxl_fmt=cam.get("pxl_fmt", default_camera_config["pxl_fmt"]),
                 downsampling_factor=cam.get("downsampling_factor", default_camera_config["downsampling_factor"]),
                 exposure_time=cam.get("exposure_time", default_camera_config["exposure_time"]),
                 gain=cam.get("gain", default_camera_config["gain"]),

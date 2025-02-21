@@ -14,8 +14,8 @@ gui_config = {
 
 ffmpeg_config = {
     "pxl_fmt": {"Mono8": "yuv420p", "Mono16": "?"},
-    "crf": 23,
-    "encoding_speed": "slow",
+    "crf": 23, # between 1 - 51
+    "encoding_speed": "slow", #["fast", "medium", "slow"]
 }
 
 # Paths -------------------------------------------------------------------------------

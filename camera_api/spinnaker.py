@@ -135,9 +135,6 @@ class SpinnakerCamera(GenericCamera):
         """Set the frame rate of the camera in Hz."""
         PySpin.CFloatPtr(self.nodemap.GetNode("AcquisitionFrameRate")).SetValue(int(frame_rate))
 
-    def set_pxl_fmt(self, pixel_format):
-        pass
-
     def set_exposure_time(self, exposure_time: float) -> None:
         """Set the exposure time of the camera in microseconds."""
         PySpin.CFloatPtr(self.nodemap.GetNode("ExposureTime")).SetValue(float(exposure_time))
@@ -146,8 +143,6 @@ class SpinnakerCamera(GenericCamera):
         """Set gain (dB)"""
         PySpin.CFloatPtr(self.nodemap.GetNode("Gain")).SetValue(float(gain))
 
-    def set_camera_config(self, CameraSettingsConfig) -> None:
-        pass
     # Functions to control the camera streaming and check status.
 
     def begin_capturing(self) -> None:
