@@ -37,7 +37,6 @@ class CameraWidget(QGroupBox):
         self.video_capture_tab = parent
         self.GUI = self.video_capture_tab.GUI
         self.camera_setup_tab = self.video_capture_tab.GUI.camera_setup_tab
-        self.logger = logging.getLogger(__name__)
         self.paths = paths_config
         self.ffmpeg_path = (
             self.paths["FFMPEG"]
@@ -287,7 +286,7 @@ class CameraWidget(QGroupBox):
         self.camera_dropdown.currentTextChanged.disconnect(self.change_camera)
         cbox_update_options(
             cbox=self.camera_dropdown,
-            options=self.camera_setup_tab.get_camera_names(),
+            options=self.camera_setup_tab.get_camera_labels(),
             used_cameras_labels=list([cam.label for cam in self.video_capture_tab.camera_widgets]),
             selected=self.label,
         )

@@ -24,7 +24,6 @@ class GUIMain(QMainWindow):
     def __init__(self, parsed_args):
         super().__init__()
         self.startup_config = parsed_args.config
-        self.logger = logging.getLogger(__name__)
         self.paths = paths_config
         # Set window size, title, icon.
         self.setGeometry(100, 100, 1000, 1000)  # x, y, width, height

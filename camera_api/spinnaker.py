@@ -68,7 +68,6 @@ class SpinnakerCamera(GenericCamera):
         # Configure user settings.
         if self.camera_config is not None:
             self.set_frame_rate(self.camera_config.fps)
-            # self.set_pxl_fmt(self.camera_config.pxl_fmt)
             self.set_gain(self.camera_config.gain)
             self.set_exposure_time(self.camera_config.exposure_time)
 

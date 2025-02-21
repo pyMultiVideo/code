@@ -34,7 +34,7 @@ class ExperimentConfig:
 class CameraSettingsConfig:
     """Represents the CamerasTab settings for one camera"""
 
-    name: str
+    label: str
     unique_id: str
     fps: str
     exposure_time: float
@@ -160,7 +160,7 @@ def load_saved_setups(camera_data) -> list[CameraSettingsConfig]:
     for cam in camera_data:
         saved_camera_settings.append(
             CameraSettingsConfig(
-                name=cam.get("name", None),
+                label=cam.get("label", None),
                 unique_id=cam.get("unique_id"),
                 fps=cam.get("fps", default_camera_config["fps"]),
                 # pxl_fmt=cam.get("pxl_fmt", default_camera_config["pxl_fmt"]),
@@ -170,3 +170,17 @@ def load_saved_setups(camera_data) -> list[CameraSettingsConfig]:
             )
         )
     return saved_camera_settings
+
+
+def import_default_config_if_no_other_exists(folder_path: str):
+    """
+    Import 'default_config.py' if there are no other 'config.py' files in the specified folder.
+    """
+    config_files = [f for f in os.listdir(folder_path) if f.endswith("config.py")]
+
+    if len(config_files) == 0:
+        importlib.import_module("default_config")
+    else:
+        for config_file in config_files:
+            module_name = config_file[:-3]  # Remove the '.py' extension
+            importlib.import_module(module_name)

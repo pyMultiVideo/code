@@ -33,7 +33,6 @@ class VideoCaptureTab(QWidget):
         super(VideoCaptureTab, self).__init__(parent)
         self.GUI = parent
         self.camera_setup_tab = self.GUI.camera_setup_tab
-        self.logging = logging.getLogger(__name__)
         self.camera_widgets = []
         self.paths = paths_config
         self.camera_layout = QGridLayout()
@@ -159,7 +158,7 @@ class VideoCaptureTab(QWidget):
         # Check if the config file is present
         if self.GUI.startup_config is None:
             available_cameras = sorted(
-                list(set(self.camera_setup_tab.get_camera_names()) - set(self.get_camera_widget_labels())),
+                list(set(self.camera_setup_tab.get_camera_labels()) - set(self.get_camera_widget_labels())),
                 key=str.lower,
             )
             for camera_label in available_cameras[:1]:  # One camera by default
@@ -232,6 +231,7 @@ class VideoCaptureTab(QWidget):
             camera_widget.begin_capturing()
         self.fetch_images_timer.start(int(1000 / gui_config["fetch_image_rate"]))
         self.display_update_timer.start(int(1000 / gui_config["display_update_rate"]))
+        self.refresh()
 
     def tab_deselected(self):
         """Called when tab deselected to pause aqusition of the camera video streams."""
@@ -315,7 +315,7 @@ class VideoCaptureTab(QWidget):
         """Save the tab configuration to a json file"""
         file_path = QFileDialog.getSaveFileName(self, "Save File", "experiments", "JSON Files (*.json)")
         experiment_config = ExperimentConfig(
-            data_dir=self.save_dir_textbox.toPlainText(),
+            data_dir=self.temp_data_dir,
             encoder=self.encoder_selection.currentText(),
             n_cameras=self.n_cameras_spinbox.value(),
             n_columns=self.n_columns_spinbox.value(),
@@ -360,7 +360,7 @@ class VideoCaptureTab(QWidget):
                 unique_id = self.camera_setup_tab.get_camera_unique_id_from_label(label)
                 # if the unique id is not in the list of camera groupboxes is it a uninitialized camera
                 if unique_id in [camera_widget.settings.unique_id for camera_widget in self.camera_widgets]:
-                    camera_widget = [c_w for c_w in self.camera_widgets if c_w.unique_id == unique_id][0]
+                    camera_widget = [c_w for c_w in self.camera_widgets if c_w.settings.unique_id == unique_id][0]
                     # Rename the camera with the queried label
                     camera_widget.rename(new_label=label)
                 else:
