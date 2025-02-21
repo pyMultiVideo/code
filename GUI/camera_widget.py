@@ -2,7 +2,6 @@ import os
 import csv
 import json
 import subprocess
-import logging
 import numpy as np
 from datetime import datetime
 from collections import deque
@@ -204,16 +203,16 @@ class CameraWidget(QGroupBox):
             [
                 self.ffmpeg_path,  # Path to binary
                 "-y",  # overwrite output file if it exists
-                "-f rawvideo",  # Input codec
-                # "-pix_fmt gray",  # Input Pixel format
-                f"-s {downsampled_width}x{downsampled_height}",  # Output resolution
+                "-f rawvideo",  # Input codec (raw video)
+                "-pix_fmt gray",  # Input Pixel format?
+                f"-s {downsampled_width}x{downsampled_height}",  # Input resolution
                 f"-r {self.settings.fps}",  # Frame rate
-                # input comes from a pipe
+                "-i -",  # input comes from a pipe (stdin)
                 f"-vcodec {self.video_capture_tab.ffmpeg_gui_encoder_map[self.video_capture_tab.encoder_selection.currentText()]}",  # Output codec
-                "-pix_fmt yuv420p",  # pixel format
-                f"-preset {ffmpeg_config['encoding_speed']}",  # Encoding speed [fast, medium, slow], higher speed -> less compression.
-                f"-crf {ffmpeg_config['crf']}",  # Controls quality vs filesize, range [0, 51] where 0 is max quality and filesize.
-                f'"{self.video_filepath}"',  # Output file path.
+                "-pix_fmt yuv420p",  # Output pixel format
+                f"-preset {ffmpeg_config['encoding_speed']}",  # Encoding speed [fast, medium, slow]
+                f"-crf {ffmpeg_config['crf']}",  # Controls quality vs filesize
+                f'"{self.video_filepath}"',  # Output file path
             ]
         )
         self.ffmpeg_process = subprocess.Popen(ffmpeg_command, stdin=subprocess.PIPE)
@@ -229,6 +228,7 @@ class CameraWidget(QGroupBox):
         self.start_recording_button.setEnabled(False)
         self.subject_id_text.setEnabled(False)
         self.video_capture_tab.GUI.tab_widget.tabBar().setEnabled(False)
+        self.video_capture_tab.update_global_recording_button_states()
 
     def stop_recording(self) -> None:
         """Close data files and FFMPEG process, update GUI elements."""
@@ -249,9 +249,9 @@ class CameraWidget(QGroupBox):
         self.start_recording_button.setEnabled(True)
         self.subject_id_text.setEnabled(True)
         self.camera_dropdown.setEnabled(True)
+        self.video_capture_tab.update_global_recording_button_states()
         # Tabs can be changed
         self.video_capture_tab.GUI.tab_widget.tabBar().setEnabled(True)
-        self.logger.info("Recording Stopped")
 
     # Video display -------------------------------------------------------------------
 

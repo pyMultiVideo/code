@@ -5,6 +5,7 @@ import json
 import subprocess
 from typing import Dict, Any
 from dataclasses import dataclass
+from PyQt6.QtWidgets import QComboBox
 
 from config.config import default_camera_config
 
@@ -59,6 +60,7 @@ def cbox_update_options(cbox, options, used_cameras_labels, selected):
         pass
     cbox.clear()
     cbox.addItems(available_options)
+    cbox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)  # Adjust size to fit contents
     cbox.setCurrentIndex(i)
 
 
@@ -69,12 +71,11 @@ def gpu_available(VERBOSE=False) -> list:
         subprocess.check_output("nvidia-smi")
         if VERBOSE:
             print("Nvidia GPU detected")
-        GPU_DETECTED = True
+        return True
     except Exception:
         if VERBOSE:
             print("No Nvidia GPU available")
-        GPU_DETECTED = False
-    return GPU_DETECTED
+        return False
 
 
 def validate_ffmpeg_path(ffmpeg_path):

@@ -258,13 +258,6 @@ class Camera_table_item:
             self.gain_edit.setValue(int(self.settings.gain))
         self.gain_edit.valueChanged.connect(self.camera_gain_changed)
 
-        # # Pxl format edit
-        # self.pxl_fmt_edit = QComboBox()
-        # self.pxl_fmt_edit.addItems(["IMPLEMENT THIS"])
-        # if self.settings.pxl_fmt:
-        #     self.pxl_fmt_edit.setCurrentText(self.settings.pxl_fmt)
-        # self.pxl_fmt_edit.activated.connect(self.camera_pxl_fmt_changed)
-
         # Downsampling factor edit
         self.downsampling_factor_edit = QComboBox()
         self.downsampling_factor_edit.addItems(["1", "2", "4", "8"])
@@ -289,7 +282,11 @@ class Camera_table_item:
     def camera_label_changed(self):
         """Called when label text of setup is edited."""
         label = str(self.label_edit.text())
-        self.settings.label = label if label else self.settings.unique_id
+        if label and label not in [setup.settings.label for setup in self.setups_tab.setups.values() if setup.settings.unique_id != self.settings.unique_id]:
+            self.settings.label = label
+        else:
+            self.settings.label = self.settings.unique_id
+            self.label_edit.setText(self.settings.unique_id)
         self.setups_tab.update_saved_setups(setup=self)
         self.setups_tab.setups_changed = True
 

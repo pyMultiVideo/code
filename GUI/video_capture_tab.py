@@ -1,6 +1,5 @@
 import os
 import json
-import logging
 from typing import List
 
 from PyQt6.QtWidgets import (
@@ -22,7 +21,7 @@ from PyQt6.QtCore import QTimer
 from dataclasses import asdict
 from .camera_widget import CameraWidget
 from .message_dialogs import show_info_message
-from .utility import ExperimentConfig, CameraWidgetConfig
+from .utility import ExperimentConfig, CameraWidgetConfig, gpu_available
 from config.config import gui_config, paths_config
 
 
@@ -37,13 +36,20 @@ class VideoCaptureTab(QWidget):
         self.paths = paths_config
         self.camera_layout = QGridLayout()
 
-        self.ffmpeg_gui_encoder_map = {
-            "GPU (H264)": "h264_nvenc",
-            "GPU (H265)": "hevc_nvenc",
-            "CPU (H264)": "libx264",
-            "CPU (H265)": "libx265",
-        }
-
+        # Specify the FFMPEG encoders available
+        if gpu_available():
+            self.ffmpeg_gui_encoder_map = {
+                "GPU (H264)": "h264_nvenc",
+                "GPU (H265)": "hevc_nvenc",
+                "CPU (H264)": "libx264",
+                "CPU (H265)": "libx265",
+            }
+        else:
+            self.ffmpeg_gui_encoder_map = {
+                "CPU (H264)": "libx264",
+                "CPU (H265)": "libx265",
+            }
+            
         # Initialise Header Group box
         self.header_groupbox = QGroupBox()
         self.header_groupbox.setMaximumHeight(95)
@@ -112,7 +118,7 @@ class VideoCaptureTab(QWidget):
         self.save_dir_textbox.setReadOnly(True)
         self.temp_data_dir = self.paths["data_dir"]
         self.save_dir_textbox.setPlainText(self.temp_data_dir)
-        self.display_save_dir_text()
+        self.update_save_directory_display()
 
         self.save_dir_hlayout = QHBoxLayout()
         self.save_dir_hlayout.addWidget(self.save_dir_textbox)
@@ -202,10 +208,12 @@ class VideoCaptureTab(QWidget):
             self.camera_setup_tab.setups_changed = False
             # Handle the renamed cameras
             self.handle_camera_setups_modified()
+        # Update button states
+        self.update_global_recording_button_states()
 
     def resizeEvent(self, event):
         """Called on resized widget"""
-        self.display_save_dir_text()
+        self.update_save_directory_display()
         super().resizeEvent(event)
 
     # Camera acquisition and recording control ----------------------------------------
@@ -221,7 +229,6 @@ class VideoCaptureTab(QWidget):
     def change_encoder(self):
         """Change the encoder used for recording video."""
         self.encoder = self.encoder_selection.currentText()
-        self.logging.info("Encoder changed to {}".format(self.encoder))
 
     # GUI element update functions ----------------------------------------------------
 
@@ -240,20 +247,19 @@ class VideoCaptureTab(QWidget):
         self.fetch_images_timer.stop()
         self.display_update_timer.stop()
 
-    def display_save_dir_text(self):
+    def update_save_directory_display(self):
         """Display the path in the textbox"""
         save_dir = self.temp_data_dir
-        n_char = self.calculate_text_field_width()
-        if len(save_dir) > n_char:
-            save_dir = ".." + save_dir[-(n_char - 2) :]
-        self.save_dir_textbox.setPlainText(save_dir)
-
-    def calculate_text_field_width(self) -> int:
-        """Change the amount of text shown in save_dir textfield"""
+        # Calculate the width of the textbox
         text_edit_width = self.save_dir_textbox.viewport().width()
         font = self.save_dir_textbox.font()
-        char_width = QFontMetrics(font).horizontalAdvance("A")
-        return text_edit_width // char_width - 2
+        char_width = QFontMetrics(font).horizontalAdvance("W")
+        n_char = text_edit_width // char_width
+        
+        if len(save_dir) > n_char:
+            save_dir = ".." + save_dir[-(n_char) :]
+        self.save_dir_textbox.setPlainText(save_dir)
+
 
     def add_or_remove_camera_widgets(self):
         """Add or remove the camera widgets from the"""
@@ -272,6 +278,7 @@ class VideoCaptureTab(QWidget):
         while self.n_cameras_spinbox.value() < len(self.camera_widgets):
             self.remove_camera_widget(self.camera_widgets.pop())
         self.refresh()
+
 
     def initialize_camera_widget(self, label: str, subject_id=None):
         """Create a new camera widget and add it to the tab"""
@@ -349,7 +356,8 @@ class VideoCaptureTab(QWidget):
         self.n_cameras_spinbox.setValue(experiment_config.n_cameras)
         self.n_columns_spinbox.setValue(experiment_config.n_columns)
         self.encoder_selection.setCurrentText(experiment_config.encoder)
-        self.save_dir_textbox.setPlainText(experiment_config.data_dir)
+        self.temp_data_dir=experiment_config.data_dir
+        self.update_save_directory_display()
 
     def handle_camera_setups_modified(self):
         """Handle the renamed cameras by renaming the relevent attributes of the camera groupboxes"""

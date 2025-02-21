@@ -26,7 +26,7 @@ class GUIMain(QMainWindow):
         self.startup_config = parsed_args.config
         self.paths = paths_config
         # Set window size, title, icon.
-        self.setGeometry(100, 100, 1000, 1000)  # x, y, width, height
+        self.setGeometry(100, 100, 700, 800)  # x, y, width, height
         self.setWindowTitle(f"pyMultiVideo v{__version__}")  # default window title
         self.setWindowIcon(QIcon(os.path.join(self.paths["assets_dir"], "logo.svg")))
         # Initialise the tabs and tab widget.
@@ -64,7 +64,6 @@ class GUIMain(QMainWindow):
 
     def closeEvent(self, event):
         """Close the GUI"""
-        logging.info("Closing the GUI")
         event.accept()
         sys.exit(0)
 
