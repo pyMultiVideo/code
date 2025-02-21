@@ -9,14 +9,13 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QGridLayout,
     QWidget,
-    QComboBox,
     QPushButton,
     QFileDialog,
     QSpinBox,
     QLabel,
 )
 from PyQt6.QtGui import QFontMetrics, QIcon
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, Qt
 
 from dataclasses import asdict
 from .camera_widget import CameraWidget
@@ -38,31 +37,15 @@ class VideoCaptureTab(QWidget):
 
         # Specify the FFMPEG encoders available
         if gpu_available():
-            self.ffmpeg_gui_encoder_map = {
-                "GPU (H264)": "h264_nvenc",
-                "GPU (H265)": "hevc_nvenc",
-                "CPU (H264)": "libx264",
-                "CPU (H265)": "libx265",
+            self.ffmpeg_encoder_map = {
+                "h264": "h264_nvenc",
+                "h265": "hevc_nvenc",
             }
         else:
-            self.ffmpeg_gui_encoder_map = {
-                "CPU (H264)": "libx264",
-                "CPU (H265)": "libx265",
+            self.ffmpeg_encoder_map = {
+                "h264": "libx264",
+                "h265": "libx265",
             }
-
-
-
-        # Encoder select dropdown
-        self.encoder_settings_group_box = QGroupBox("FFMPEG Settings")
-        self.encoder_selection = QComboBox()
-        self.encoder_selection.addItems(self.ffmpeg_gui_encoder_map.keys())
-        self.encoder_selection.setCurrentIndex(1)
-        self.encoder = self.encoder_selection.currentText()
-        self.encoder_selection.currentIndexChanged.connect(self.change_encoder)
-
-        self.aquire_hlayout = QHBoxLayout()
-        self.aquire_hlayout.addWidget(self.encoder_selection)
-        self.encoder_settings_group_box.setLayout(self.aquire_hlayout)
 
         self.config_groupbox = QGroupBox("Experiment Configuration")
 
@@ -113,6 +96,8 @@ class VideoCaptureTab(QWidget):
 
         # Display the save directory
         self.save_dir_textbox = QPlainTextEdit(self.paths["data_dir"])
+        self.save_dir_textbox.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.save_dir_textbox.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.save_dir_textbox.setMaximumBlockCount(1)
         self.save_dir_textbox.setReadOnly(True)
         self.temp_data_dir = self.paths["data_dir"]
@@ -149,7 +134,6 @@ class VideoCaptureTab(QWidget):
 
         self.header_hlayout = QHBoxLayout()
         self.header_hlayout.addWidget(self.config_groupbox)
-        self.header_hlayout.addWidget(self.encoder_settings_group_box)
         self.header_hlayout.addWidget(self.save_dir_groupbox)
         self.header_hlayout.addWidget(self.control_all_groupbox)
 
@@ -157,7 +141,7 @@ class VideoCaptureTab(QWidget):
         self.header_groupbox = QGroupBox()
         self.header_groupbox.setMaximumHeight(95)
         self.header_groupbox.setLayout(self.header_hlayout)
-        
+
         # page layout initalisastion
         self.header_groupbox.setMaximumHeight(95)
         self.page_layout = QVBoxLayout()
@@ -230,10 +214,6 @@ class VideoCaptureTab(QWidget):
     def stop_recording(self):
         for camera_widget in self.camera_widgets:
             camera_widget.stop_recording()
-
-    def change_encoder(self):
-        """Change the encoder used for recording video."""
-        self.encoder = self.encoder_selection.currentText()
 
     # GUI element update functions ----------------------------------------------------
 
@@ -327,7 +307,6 @@ class VideoCaptureTab(QWidget):
         file_path = QFileDialog.getSaveFileName(self, "Save File", default_name, "JSON Files (*.json)")
         experiment_config = ExperimentConfig(
             data_dir=self.temp_data_dir,
-            encoder=self.encoder_selection.currentText(),
             n_cameras=self.n_cameras_spinbox.value(),
             n_columns=self.n_columns_spinbox.value(),
             cameras=[camera_widget.get_camera_config() for camera_widget in self.camera_widgets],
@@ -359,7 +338,6 @@ class VideoCaptureTab(QWidget):
         # Set the values of the spinbox and encoder selection based on config file
         self.n_cameras_spinbox.setValue(experiment_config.n_cameras)
         self.n_columns_spinbox.setValue(experiment_config.n_columns)
-        self.encoder_selection.setCurrentText(experiment_config.encoder)
         self.temp_data_dir = experiment_config.data_dir
         self.update_save_directory_display()
 
@@ -405,6 +383,5 @@ class VideoCaptureTab(QWidget):
         # If any of the cameras are recording, disable certain buttons
         disable_controls = any_recording
         self.save_dir_button.setEnabled(not disable_controls)
-        self.encoder_selection.setEnabled(not disable_controls)
         self.load_experiment_config_button.setEnabled(not disable_controls)
         self.n_cameras_spinbox.setEnabled(not disable_controls)

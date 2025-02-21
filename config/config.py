@@ -3,7 +3,7 @@ import shutil
 
 # GUI settings ------------------------------------------------------------------------
 
-__version__ = "1.0.5.3"
+__version__ = "1.0.0"
 
 gui_config = {
     "display_update_rate": 30,  # Rate at which function to update video displays is called (Hz).
@@ -13,9 +13,10 @@ gui_config = {
 # Default FFMPEG config -----------------------------------------------------------------------
 
 ffmpeg_config = {
-    "pxl_fmt": {"Mono8": "yuv420p", "Mono16": "?"},
-    "crf": 23, # between 1 - 51
-    "encoding_speed": "slow", #["fast", "medium", "slow"]
+    # "pxl_fmt": {"Mono8": "yuv420p", "Mono16": "?"},
+    "crf": 23,  # between 1 - 51
+    "encoding_speed": "slow",  # ["fast", "medium", "slow"]
+    "compression_standard": "h265",  # ["h265" , "h264"]
 }
 
 # Paths -------------------------------------------------------------------------------
@@ -29,7 +30,7 @@ paths_config = {
     "encoder_dir": os.path.join(ROOT, "config"),
     "data_dir": os.path.join(ROOT, "data"),
     "config_dir": os.path.join(ROOT, "config"),
-    "assets_dir": os.path.join(ROOT, "assets", "icons"),
+    "assets_dir": os.path.join(ROOT, "GUI", "icons"),
 }
 
 # Default Camera Settings -------------------------------------------------------------

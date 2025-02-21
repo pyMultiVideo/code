@@ -25,7 +25,6 @@ class ExperimentConfig:
     """Represents the configuration of the whole VideoCaptureTab."""
 
     data_dir: str
-    encoder: str
     n_cameras: int
     n_columns: int
     cameras: list[CameraWidgetConfig]

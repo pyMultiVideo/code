@@ -65,6 +65,13 @@ class CameraWidget(QGroupBox):
         self.video_feed.ui.menuBtn.hide()
         self.video_feed.view.setMouseEnabled(x=False, y=False)
 
+        # Video Feed's Camera Name
+        self.camera_name_item = pg.TextItem()
+        self.camera_name_item.setPos(10, -40)
+        self.camera_name_item.setText(
+            f"{self.settings.name if self.settings.name is not None else self.settings.unique_id}", color="white"
+        )
+
         # Recording Information overlay
         self.recording_status_item = pg.TextItem()
         self.recording_status_item.setPos(10, 10)
@@ -208,7 +215,7 @@ class CameraWidget(QGroupBox):
                 f"-s {downsampled_width}x{downsampled_height}",  # Input resolution
                 f"-r {self.settings.fps}",  # Frame rate
                 "-i -",  # input comes from a pipe (stdin)
-                f"-vcodec {self.video_capture_tab.ffmpeg_gui_encoder_map[self.video_capture_tab.encoder_selection.currentText()]}",  # Output codec
+                f"-vcodec {self.video_capture_tab.ffmpeg_encoder_map[ffmpeg_config['compression_standard']]}",  # Output codec
                 "-pix_fmt yuv420p",  # Output pixel format
                 f"-preset {ffmpeg_config['encoding_speed']}",  # Encoding speed [fast, medium, slow]
                 f"-crf {ffmpeg_config['crf']}",  # Controls quality vs filesize
@@ -307,6 +314,11 @@ class CameraWidget(QGroupBox):
         for i in range(self.header_layout.count()):
             widget = self.header_layout.itemAt(i).widget()
             widget.setVisible(self.controls_visible)
+        # Set the camera label onto the pygraph
+        if self.controls_visible:
+            self.video_feed.removeItem(self.camera_name_item)
+        else:
+            self.video_feed.addItem(self.camera_name_item)
 
     def resizeEvent(self, event, scale_factor=0.015):
         """Update display element font sizes on resizeEvent."""
@@ -317,6 +329,7 @@ class CameraWidget(QGroupBox):
         self.recording_status_item.setFont(QFont("Arial", font_size))
         self.recording_time_text.setFont(QFont("Arial", font_size))
         self.frame_rate_text.setFont(QFont("Arial", font_size))
+        self.camera_name_item.setFont(QFont("Arial", font_size))
         super().resizeEvent(event)
 
     ### Config related functions ------------------------------------------------------
@@ -334,6 +347,9 @@ class CameraWidget(QGroupBox):
         self.settings = self.camera_setup_tab.get_camera_settings_from_label(self.label)
         self.camera_api = init_camera_api(self.settings)
         self.camera_api.begin_capturing()
+        # Rename graph element
+        self.camera_name_item.setText(f"{self.settings.name if self.settings.name is not None else self.settings.unique_id}", color="white")
+        
 
     ### Functions for changing camera settings ----------------------------------------
 
