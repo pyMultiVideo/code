@@ -50,10 +50,10 @@ class SpinnakerCamera(GenericCamera):
 
         # Set frame rate control to manual.
         if self.camera_model == "Chameleon3":
-            fra_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("AcquisitionFrameRateAuto"))
-            fra_node.SetIntValue(fra_node.GetEntryByName("Off").GetValue())
             frc_node = PySpin.CBooleanPtr(self.nodemap.GetNode("AcquisitionFrameRateEnabled"))
             frc_node.SetValue(True)
+            fra_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("AcquisitionFrameRateAuto"))
+            fra_node.SetIntValue(fra_node.GetEntryByName("Off").GetValue())
         else:
             fra_node = PySpin.CBooleanPtr(self.nodemap.GetNode("AcquisitionFrameRateEnable"))
             fra_node.SetValue(True)
