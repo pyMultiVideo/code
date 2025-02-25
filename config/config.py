@@ -6,15 +6,14 @@ import shutil
 __version__ = "1.0.0"
 
 gui_config = {
-    "display_update_rate": 30,  # Rate at which function to update video displays is called (Hz).
-    "fetch_image_rate": 60,  # Rate at which the function that fetches images from cameras is called (Hz).
+    "camera_update_rate": 30,  # Rate at which to get new images from camera buffer.
 }
 
 # Default FFMPEG config -----------------------------------------------------------------------
 
 ffmpeg_config = {
     # "pxl_fmt": {"Mono8": "yuv420p", "Mono16": "?"},
-    "crf": 23,  # between 1 - 51 https://slhck.info/video/2017/02/24/crf-guide.html 
+    "crf": 23,  # between 1 - 51 https://slhck.info/video/2017/02/24/crf-guide.html
     "encoding_speed": "slow",  # ["fast", "medium", "slow"]
     "compression_standard": "h264",  # ["h265" , "h264"]
 }

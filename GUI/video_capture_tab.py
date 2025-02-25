@@ -130,7 +130,6 @@ class VideoCaptureTab(QWidget):
         self.stop_recording_button.clicked.connect(self.stop_recording)
         self.stop_recording_button.setEnabled(False)
         self.stop_recording_button.setToolTip("Stop recording all cameras")
-        
 
         self.control_all_hlayout = QHBoxLayout()
         self.control_all_hlayout.addWidget(self.start_recording_button)
@@ -175,22 +174,15 @@ class VideoCaptureTab(QWidget):
             self.configure_tab_from_config(experiment_config)
 
         # Timers
-        self.fetch_images_timer = QTimer()
-        self.fetch_images_timer.timeout.connect(self.fetch_image_data)
-
-        self.display_update_timer = QTimer()
-        self.display_update_timer.timeout.connect(self.update_display)
+        self.camera_widget_update_timer = QTimer()
+        self.camera_widget_update_timer.timeout.connect(self.update_camera_widgets)
 
     # Timer callbacks -----------------------------------------------------------------
 
-    def fetch_image_data(self):
-        """Fetch new images from all cameras and save if recording."""
+    def update_camera_widgets(self):
+        """Fetch new images from all cameras, save if recording, update video display."""
         for camera_widget in self.camera_widgets:
             camera_widget.fetch_image_data()
-
-    def update_display(self):
-        """Update cameras widget video displays."""
-        for camera_widget in self.camera_widgets:
             camera_widget.update_video_display()
 
     def refresh(self):
@@ -226,16 +218,14 @@ class VideoCaptureTab(QWidget):
         """Called when tab deselected to start aqusition of the camera video streams."""
         for camera_widget in self.camera_widgets:
             camera_widget.begin_capturing()
-        self.fetch_images_timer.start(int(1000 / gui_config["fetch_image_rate"]))
-        self.display_update_timer.start(int(1000 / gui_config["display_update_rate"]))
+        self.camera_widget_update_timer.start(int(1000 / gui_config["camera_update_rate"]))
         self.refresh()
 
     def tab_deselected(self):
         """Called when tab deselected to pause aqusition of the camera video streams."""
         for camera_widget in self.camera_widgets:
             camera_widget.stop_capturing()
-        self.fetch_images_timer.stop()
-        self.display_update_timer.stop()
+        self.camera_widget_update_timer.stop()
 
     def update_save_directory_display(self):
         """Display the path in the textbox"""
@@ -274,7 +264,6 @@ class VideoCaptureTab(QWidget):
         position = len(self.camera_widgets) - 1
         n_columns = self.n_columns_spinbox.value()
         self.camera_layout.addWidget(self.camera_widgets[-1], position // n_columns, position % n_columns)
-        self.refresh()
 
     def remove_camera_widget(self, camera_widget):
         """Remove camera widget from layout and delete."""

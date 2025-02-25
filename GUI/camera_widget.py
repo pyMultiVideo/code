@@ -121,7 +121,7 @@ class CameraWidget(QGroupBox):
         self.stop_recording_button.setEnabled(False)
         self.stop_recording_button.clicked.connect(self.stop_recording)
         self.stop_recording_button.setToolTip("Stop Recording")
-        
+
         # Camera select dropdown
         self.camera_id_label = QLabel("Camera:")
         self.camera_dropdown = QComboBox()
@@ -151,6 +151,7 @@ class CameraWidget(QGroupBox):
     def begin_capturing(self):
         """Start streaming video from camera."""
         self.recording = False
+        self.dropped_frames = 0
         # Begin capturing using the camera API
         self.camera_api.begin_capturing()
 
@@ -169,12 +170,15 @@ class CameraWidget(QGroupBox):
         self._image_data = new_images["images"][-1]
         self._GPIO_data = new_images["gpio_data"][-1]
         self.frame_timestamps.extend(new_images["timestamps"])
+        self.dropped_frames += new_images["dropped_frames"]
+        if new_images["dropped_frames"]:
+            print(f'Dropped {new_images["dropped_frames"]} frames')
         # Record data to disk.
         if self.recording:
             self.recorded_frames += len(new_images["images"])
             for frame in new_images["images"]:  # Send new images to FFMPEG for encoding.
                 # Downsample frame
-                frame = frame[::self.settings.downsampling_factor, ::self.settings.downsampling_factor]
+                frame = frame[:: self.settings.downsampling_factor, :: self.settings.downsampling_factor]
                 self.ffmpeg_process.stdin.write(frame.tobytes())
             for gpio_pinstate in new_images["gpio_data"]:  # Write GPIO pinstate to file.
                 self.gpio_writer.writerow(gpio_pinstate)
@@ -189,6 +193,7 @@ class CameraWidget(QGroupBox):
         self.video_filepath = os.path.join(save_dir, filename_stem + ".mp4")
         self.GPIO_filepath = os.path.join(save_dir, filename_stem + "_GPIO_data.csv")
         self.metadata_filepath = os.path.join(save_dir, filename_stem + "_metadata.json")
+        self.dropped_frames = 0
 
         # Open GPIO file and write header data.
         self.gpio_file = open(self.GPIO_filepath, mode="w", newline="")
@@ -200,9 +205,10 @@ class CameraWidget(QGroupBox):
             "subject_ID": self.subject_id,
             "camera_unique_id": self.settings.unique_id,
             "recorded_frames": 0,
-            "downsampling_factor":self.settings.downsampling_factor,
+            "downsampling_factor": self.settings.downsampling_factor,
             "begin_time": self.record_start_time.isoformat(timespec="milliseconds"),
             "end_time": None,
+            "dropped_frames": None,
         }
         with open(self.metadata_filepath, "w") as meta_data_file:
             json.dump(self.metadata, meta_data_file, indent=4)
@@ -221,7 +227,7 @@ class CameraWidget(QGroupBox):
                 f"-c:v {self.video_capture_tab.ffmpeg_encoder_map[ffmpeg_config['compression_standard']]}",  # Output codec
                 "-pix_fmt yuv420p",  # Output pixel format
                 f"-preset {ffmpeg_config['encoding_speed']}",  # Encoding speed [fast, medium, slow]
-                f"-qp {ffmpeg_config['crf']}",  # Controls quality vs filesize 
+                f"-qp {ffmpeg_config['crf']}",  # Controls quality vs filesize
                 f'"{self.video_filepath}"',  # Output file path
             ]
         )
@@ -249,6 +255,7 @@ class CameraWidget(QGroupBox):
         self.gpio_file.close()
         self.metadata["end_time"] = datetime.now().isoformat(timespec="milliseconds")
         self.metadata["recorded_frames"] = self.recorded_frames
+        self.metadata["dropped_frames"] = self.dropped_frames
         with open(self.metadata_filepath, "w") as self.meta_data_file:
             json.dump(self.metadata, self.meta_data_file, indent=4)
         # Close FFMPEG process

@@ -171,6 +171,7 @@ class SpinnakerCamera(GenericCamera):
         img_buffer = []
         timestamps_buffer = []
         gpio_buffer = []
+        dropped_frames = 0
         # Get all available images from camera buffer.
         try:
             while True:
@@ -179,8 +180,7 @@ class SpinnakerCamera(GenericCamera):
                 chunk_data = next_image.GetChunkData()  # Additional image data.
                 timestamps_buffer.append(chunk_data.GetTimestamp())  # Image timestamp (ns?)
                 frame_number = chunk_data.GetFrameID()
-                if (frame_number - self.last_frame_number) != 1:
-                    print(f"Dropped frame, frame counter diff: {frame_number - self.last_frame_number}")
+                dropped_frames += frame_number - self.last_frame_number - 1
                 self.last_frame_number = frame_number
                 if self.camera_model == "Chameleon3":
                     img_data = next_image.GetData()
@@ -197,6 +197,7 @@ class SpinnakerCamera(GenericCamera):
                     "images": img_buffer,
                     "gpio_data": gpio_buffer,
                     "timestamps": timestamps_buffer,
+                    "dropped_frames": dropped_frames,
                 }
 
 
