@@ -112,6 +112,6 @@ def list_available_cameras() -> list[str]:
     return unique_id_list
 
 
-def initialise_by_id(_id, CameraSettingsConfig=None):
+def initialise_camera_api(CameraSettingsConfig=None):
     """Returns a camera instance based on the _id"""
     return GenericCamera()

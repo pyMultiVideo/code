@@ -6,14 +6,14 @@ from . import GenericCamera
 class SpinnakerCamera(GenericCamera):
     """Inherits from the camera class and adds the spinnaker specific functions from the PySpin library"""
 
-    def __init__(self, unique_id: str, CameraConfig=None):
+    def __init__(self, CameraConfig=None):
         super().__init__(self)
         self.camera_config = CameraConfig
-        self.unique_id = unique_id
+        self.unique_id = self.camera_config.unique_id
         # Initialise camera -------------------------------------------------
 
         self.system = PySpin.System.GetInstance()
-        self.serial_number, self.api = unique_id.split("-")
+        self.serial_number, self.api = self.unique_id.split("-")
         self.cam = self.system.GetCameras().GetBySerial(self.serial_number)
         self.camera_model = self.cam.TLDevice.DeviceModelName.GetValue()[:10]
         self.cam.Init()
@@ -71,7 +71,6 @@ class SpinnakerCamera(GenericCamera):
             self.set_gain(self.camera_config.gain)
             self.set_exposure_time(self.camera_config.exposure_time)
 
-            
     # Functions to get the camera parameters ----------------------------------------------
 
     def get_width(self) -> int:
@@ -147,7 +146,7 @@ class SpinnakerCamera(GenericCamera):
 
     def begin_capturing(self) -> None:
         """Start camera streaming images."""
-        
+
         if not self.cam.IsInitialized():
             self.cam.Init()
         if not self.cam.IsStreaming():
@@ -160,6 +159,12 @@ class SpinnakerCamera(GenericCamera):
             self.cam.EndAcquisition()
         if self.cam.IsInitialized():
             self.cam.DeInit()
+
+    def close_api(self):
+        """Close the PySpin API and release resources."""
+        self.stop_capturing()
+        self.cam = None
+        self.system.ReleaseInstance()
 
     def get_available_images(self):
         """Gets all available images from the buffer and return images GPIO pinstate data and timestamps."""
@@ -226,6 +231,6 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
     return unique_id_list
 
 
-def initialise_by_id(_id, CameraSettingsConfig):
+def initialise_camera_api(CameraSettingsConfig):
     """Instantiate the SpinnakerCamera object based on the unique-id"""
-    return SpinnakerCamera(unique_id=_id, CameraConfig=CameraSettingsConfig)
+    return SpinnakerCamera(CameraConfig=CameraSettingsConfig)

@@ -25,9 +25,9 @@ for file_name in os.listdir(current_directory):
                 f"Error: {module} does not have the function 'list_available_cameras. \
                     This is a requirment of all modules in the camera package."
             )
-        if hasattr(module, "initialise_by_id") is False:
+        if hasattr(module, "initialise_camera_api") is False:
             print(
-                f"Error: {module} does not have the function 'initialise_by_id. \
+                f"Error: {module} does not have the function 'initialise_camera_api. \
                     This is a requirment of all modules in the camera package."
             )
 

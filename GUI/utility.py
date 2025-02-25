@@ -147,11 +147,11 @@ def find_all_cameras() -> list[str]:
     return camera_list
 
 
-def init_camera_api(settings: CameraSettingsConfig):
+def init_camera_api_from_module(settings: CameraSettingsConfig):
     """Initialise a camera API object given the camera ID and any camera settings."""
     _, module_name = settings.unique_id.split("-")
     camera_module = importlib.import_module(f"camera_api.{module_name}")
-    return camera_module.initialise_by_id(_id=settings.unique_id, CameraSettingsConfig=settings)
+    return camera_module.initialise_camera_api(CameraSettingsConfig=settings)
 
 
 def load_saved_setups(camera_data) -> list[CameraSettingsConfig]:
@@ -160,7 +160,7 @@ def load_saved_setups(camera_data) -> list[CameraSettingsConfig]:
     for cam in camera_data:
         saved_camera_settings.append(
             CameraSettingsConfig(
-                name=cam.get("label", None),
+                name=cam.get("name", None),
                 unique_id=cam.get("unique_id"),
                 fps=cam.get("fps", default_camera_config["fps"]),
                 downsampling_factor=cam.get("downsampling_factor", default_camera_config["downsampling_factor"]),

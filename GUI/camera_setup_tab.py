@@ -21,7 +21,7 @@ from .utility import (
     find_all_cameras,
     load_saved_setups,
     load_camera_dict,
-    init_camera_api,
+    init_camera_api_from_module,
 )
 from .preview_dialog import CameraPreviewWidget
 
@@ -114,7 +114,7 @@ class CamerasTab(QWidget):
                     # Instantiate the setup and add it to the setups dict
                     self.setups[unique_id] = Camera_table_item(
                         setups_table=self.camera_table,
-                        label=camera_settings_config.name,
+                        name=camera_settings_config.name,
                         unique_id=camera_settings_config.unique_id,
                         fps=camera_settings_config.fps,
                         downsampling_factor=camera_settings_config.downsampling_factor,
@@ -124,7 +124,7 @@ class CamerasTab(QWidget):
                 else:  # unique_id has not been seen before, create a new setup
                     self.setups[unique_id] = Camera_table_item(
                         setups_table=self.camera_table,
-                        label=None,
+                        name=None,
                         unique_id=unique_id,
                         fps=default_camera_config["fps"],
                         downsampling_factor=default_camera_config["downsampling_factor"],
@@ -204,9 +204,9 @@ class CameraOverviewTable(QTableWidget):
 class Camera_table_item:
     """Class representing single camera in the Camera Tab table."""
 
-    def __init__(self, setups_table, label, unique_id, fps, exposure_time, gain, downsampling_factor):
+    def __init__(self, setups_table, name, unique_id, fps, exposure_time, gain, downsampling_factor):
         self.settings = CameraSettingsConfig(
-            name=label,
+            name=name,
             unique_id=unique_id,
             fps=fps,
             downsampling_factor=downsampling_factor,
@@ -218,7 +218,7 @@ class Camera_table_item:
         self.setups_tab = setups_table.setups_tab
         self.GUI = self.setups_tab.GUI
         self.GUI.preview_showing = False
-        self.camera_api = init_camera_api(settings=self.settings)
+        self.camera_api = init_camera_api_from_module(settings=self.settings)
 
         # Label edit
         self.name_edit = QLineEdit()
@@ -343,7 +343,6 @@ class Camera_table_item:
         self.setups_tab.camera_preview = CameraPreviewWidget(gui=self.GUI, camera_table_item=self)
         self.setups_tab.page_layout.addWidget(self.setups_tab.camera_preview)
         self.GUI.preview_showing = True
-
         self.fps_edit.setEnabled(self.GUI.preview_showing)
         self.exposure_time_edit.setEnabled(self.GUI.preview_showing)
 

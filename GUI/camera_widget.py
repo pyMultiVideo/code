@@ -21,7 +21,7 @@ from PyQt6.QtWidgets import (
 from .utility import (
     cbox_update_options,
     CameraWidgetConfig,
-    init_camera_api,
+    init_camera_api_from_module,
     validate_ffmpeg_path,
 )
 from .message_dialogs import show_warning_message
@@ -51,7 +51,7 @@ class CameraWidget(QGroupBox):
         self.subject_id = subject_id
         self.label = label
         self.settings = self.camera_setup_tab.get_camera_settings_from_label(label)
-        self.camera_api = init_camera_api(settings=self.settings)
+        self.camera_api = init_camera_api_from_module(settings=self.settings)
         self.cam_width = self.camera_api.get_width()
         self.cam_height = self.camera_api.get_height()
         self._image_data = None
@@ -164,7 +164,7 @@ class CameraWidget(QGroupBox):
         new_images = self.camera_api.get_available_images()
         if new_images == None:
             return
-        # Store most recent image and GPIO state for display update.
+        # Store most recent image and GPIO state for the next display update.
         self._image_data = new_images["images"][-1]
         self._GPIO_data = new_images["gpio_data"][-1]
         self.frame_timestamps.extend(new_images["timestamps"])
@@ -341,15 +341,16 @@ class CameraWidget(QGroupBox):
     def change_camera(self) -> None:
         # shut down old camera
         if self.camera_api is not None:
-            self.camera_api.stop_capturing()
+            self.camera_api.close_api()
         # Initialise the new camera
         self.label = str(self.camera_dropdown.currentText())
         self.settings = self.camera_setup_tab.get_camera_settings_from_label(self.label)
-        self.camera_api = init_camera_api(self.settings)
+        self.camera_api = init_camera_api_from_module(self.settings)
         self.camera_api.begin_capturing()
         # Rename graph element
-        self.camera_name_item.setText(f"{self.settings.name if self.settings.name is not None else self.settings.unique_id}", color="white")
-        
+        self.camera_name_item.setText(
+            f"{self.settings.name if self.settings.name is not None else self.settings.unique_id}", color="white"
+        )
 
     ### Functions for changing camera settings ----------------------------------------
 

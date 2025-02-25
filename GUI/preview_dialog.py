@@ -6,7 +6,7 @@ from PyQt6.QtGui import QIcon, QFont
 import pyqtgraph as pg
 
 # Local Imports
-from .utility import init_camera_api
+from .utility import init_camera_api_from_module
 from config.config import paths_config, gui_config
 
 
@@ -70,7 +70,7 @@ class CameraPreviewWidget(QWidget):
         self.setLayout(self.hlayout)
 
         # Init camera
-        self.camera_api = init_camera_api(
+        self.camera_api = init_camera_api_from_module(
             settings=self.settings,
         )
         self.camera_api.begin_capturing()
@@ -105,7 +105,7 @@ class CameraPreviewWidget(QWidget):
 
     def closeEvent(self, event):
         """Handle the close event to stop the timer and release resources"""
-        self.camera_api.stop_capturing()
+        self.camera_api.close_api()
         self.display_update_timer.stop()
         self.GUI.preview_showing = False
         self.camera_table_item.exposure_time_edit.setEnabled(False)
