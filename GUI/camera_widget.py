@@ -113,6 +113,7 @@ class CameraWidget(QGroupBox):
         self.start_recording_button.setFixedWidth(30)
         self.start_recording_button.setEnabled(bool(self.subject_id))
         self.start_recording_button.clicked.connect(self.start_recording)
+        self.start_recording_button.setToolTip("Start Recording")
 
         # Stop button.
         self.stop_recording_button = QPushButton("")
@@ -120,7 +121,8 @@ class CameraWidget(QGroupBox):
         self.stop_recording_button.setFixedWidth(30)
         self.stop_recording_button.setEnabled(False)
         self.stop_recording_button.clicked.connect(self.stop_recording)
-
+        self.stop_recording_button.setToolTip("Stop Recording")
+        
         # Camera select dropdown
         self.camera_id_label = QLabel("Camera:")
         self.camera_dropdown = QComboBox()

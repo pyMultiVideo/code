@@ -68,12 +68,13 @@ class VideoCaptureTab(QWidget):
         self.save_camera_config_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "save.svg")))
         self.save_camera_config_button.setFixedHeight(30)
         self.save_camera_config_button.clicked.connect(self.save_experiment_config)
+        self.save_camera_config_button.setToolTip("Save the current camera configuration")
 
         # Load layout button
         self.load_experiment_config_button = QPushButton("Load")
-        # self.load_experiment_config_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "upload.svg")))
         self.load_experiment_config_button.setFixedHeight(30)
         self.load_experiment_config_button.clicked.connect(self.load_experiment_config)
+        self.load_experiment_config_button.setToolTip("Load a saved camera configuration")
 
         # Config layout
         self.config_hlayout = QHBoxLayout()
@@ -93,6 +94,7 @@ class VideoCaptureTab(QWidget):
         self.save_dir_button.setFixedWidth(30)
         self.save_dir_button.setFixedHeight(30)
         self.save_dir_button.clicked.connect(self.get_save_dir)
+        self.save_dir_button.setToolTip("Change the directory to save data")
 
         # Display the save directory
         self.save_dir_textbox = QPlainTextEdit(self.paths["data_dir"])
@@ -118,6 +120,7 @@ class VideoCaptureTab(QWidget):
         self.start_recording_button.setFixedHeight(30)
         self.start_recording_button.clicked.connect(self.start_recording)
         self.start_recording_button.setEnabled(False)
+        self.start_recording_button.setToolTip("Start recording all cameras")
 
         # Button for stopping recording
         self.stop_recording_button = QPushButton("")
@@ -126,6 +129,8 @@ class VideoCaptureTab(QWidget):
         self.stop_recording_button.setFixedHeight(30)
         self.stop_recording_button.clicked.connect(self.stop_recording)
         self.stop_recording_button.setEnabled(False)
+        self.stop_recording_button.setToolTip("Stop recording all cameras")
+        
 
         self.control_all_hlayout = QHBoxLayout()
         self.control_all_hlayout.addWidget(self.start_recording_button)

@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
     QWidget,
     QGroupBox,
     QVBoxLayout,
+    QHBoxLayout,
     QTableWidget,
     QLineEdit,
     QComboBox,
@@ -273,6 +274,7 @@ class Camera_table_item:
         # Preview button.
         self.preview_camera_button = QPushButton("Preview")
         self.preview_camera_button.clicked.connect(self.open_preview_camera)
+        self.preview_camera_button.setToolTip(f"Preview camera: {self.settings.name if self.settings.name is not None else self.settings.unique_id}")
 
         # Populate the table
         self.setups_table.insertRow(0)
