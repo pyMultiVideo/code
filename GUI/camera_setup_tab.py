@@ -54,10 +54,13 @@ class CamerasTab(QWidget):
         self.refresh_cameras_button.setToolTip("Refresh the list of connected cameras")
 
         # Initialise a check box that allows automatic refreshing
-        self.auto_refresh_checkbox = QCheckBox("Auto Refresh")
+        self.auto_refresh_checkbox = QCheckBox()
+        self.auto_refresh_checkbox.setText("Auto Refresh")
+        self.auto_refresh_checkbox.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.auto_refresh_checkbox.stateChanged.connect(self.toggle_auto_refresh)
-        self.refresh_layout.addWidget(self.refresh_cameras_button, alignment=Qt.AlignmentFlag.AlignRight)
-        self.refresh_layout.addWidget(self.auto_refresh_checkbox, alignment=Qt.AlignmentFlag.AlignRight)
+        self.refresh_layout.addWidget(self.auto_refresh_checkbox)
+        self.refresh_layout.addWidget(self.refresh_cameras_button)
+        self.refresh_layout.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.camera_table_layout = QVBoxLayout()
         self.camera_table_layout.addWidget(self.camera_table)
