@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QComboBox,
     QSpinBox,
+    QCheckBox,
     QPushButton,
     QSizePolicy,
     QHeaderView,
@@ -45,11 +46,25 @@ class CamerasTab(QWidget):
         self.camera_table.setMinimumSize(1, 1)
         self.camera_table.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
 
+        # Initialise Refresh button
+        self.refresh_layout = QHBoxLayout()
+        self.refresh_cameras_button = QPushButton()
+        self.refresh_cameras_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "refresh.svg")))
+        self.refresh_cameras_button.clicked.connect(self.refresh)
+        self.refresh_cameras_button.setToolTip("Refresh the list of connected cameras")
+
+        # Initialise a check box that allows automatic refreshing
+        self.auto_refresh_checkbox = QCheckBox("Auto Refresh")
+        self.auto_refresh_checkbox.stateChanged.connect(self.toggle_auto_refresh)
+        self.refresh_layout.addWidget(self.refresh_cameras_button, alignment=Qt.AlignmentFlag.AlignRight)
+        self.refresh_layout.addWidget(self.auto_refresh_checkbox, alignment=Qt.AlignmentFlag.AlignRight)
+
         self.camera_table_layout = QVBoxLayout()
         self.camera_table_layout.addWidget(self.camera_table)
         self.camera_table_groupbox.setLayout(self.camera_table_layout)
 
         self.page_layout = QVBoxLayout()
+        self.page_layout.addLayout(self.refresh_layout)
         self.page_layout.addWidget(self.camera_table_groupbox)
         self.setLayout(self.page_layout)
 
@@ -62,18 +77,33 @@ class CamerasTab(QWidget):
         self.refresh_timer = QTimer()
         self.refresh_timer.timeout.connect(self.refresh)
 
+    # Refresh timer / tab changing logic -------------------------------------------------------------------------------
+
+    def toggle_auto_refresh(self):
+        """Based on the value of the checkbox start or stop the timer and enable/disable the refresh button"""
+        if self.auto_refresh_checkbox.isChecked():
+            self.refresh_timer.start(1000)
+            self.refresh_cameras_button.setEnabled(False)
+        else:
+            self.refresh_timer.stop()
+            self.refresh_cameras_button.setEnabled(True)
+
     def tab_selected(self):
         """Called when tab deselected."""
-        self.refresh_timer.start(1000)
+        if self.auto_refresh_checkbox.isChecked():
+            self.refresh_timer.start(1000)
 
     def tab_deselected(self):
         """Called when tab deselected."""
-        self.refresh_timer.stop()
+        if self.refresh_timer.isActive():
+            self.refresh_timer.stop()
         # Deinitialise all camera apis on tab being deselected
         for unique_id in self.setups:
             if self.GUI.preview_showing:
                 self.setups[unique_id].close_preview_camera()
             self.setups[unique_id].camera_api.stop_capturing()
+
+    # Reading / Writing the Camera setups saved function --------------------------------------------------------
 
     def get_saved_setups(self, unique_id: str = None, name: str = None) -> CameraSettingsConfig:
         """Get a saved CameraSettingsConfig object from a name or unique_id from self.saved_setups."""
@@ -276,7 +306,9 @@ class Camera_table_item:
         # Preview button.
         self.preview_camera_button = QPushButton("Preview")
         self.preview_camera_button.clicked.connect(self.open_preview_camera)
-        self.preview_camera_button.setToolTip(f"Preview camera: {self.settings.name if self.settings.name is not None else self.settings.unique_id}")
+        self.preview_camera_button.setToolTip(
+            f"Preview camera: {self.settings.name if self.settings.name is not None else self.settings.unique_id}"
+        )
 
         # Populate the table
         self.setups_table.insertRow(0)
