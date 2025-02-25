@@ -9,7 +9,6 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QComboBox,
     QSpinBox,
-    QCheckBox,
     QPushButton,
     QSizePolicy,
     QHeaderView,

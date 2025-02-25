@@ -2,7 +2,6 @@ import os
 import csv
 import json
 import subprocess
-import signal
 import numpy as np
 from datetime import datetime
 from collections import deque
@@ -99,6 +98,12 @@ class CameraWidget(QGroupBox):
         self.video_feed.addItem(self.frame_rate_text)
         self.frame_rate_text.setText("FPS:", color="r")
 
+        # Dropped frames overlay
+        self.dropped_frames_text = pg.TextItem()
+        self.dropped_frames_text.setPos(10, 100)
+        self.video_feed.addItem(self.dropped_frames_text)
+        self.dropped_frames_text.setText("", color="r")
+
         # Subject ID text edit
         self.subject_id_label = QLabel("Subject ID:")
         self.subject_id_text = QTextEdit()
@@ -169,10 +174,9 @@ class CameraWidget(QGroupBox):
         # Store most recent image and GPIO state for the next display update.
         self._image_data = new_images["images"][-1]
         self._GPIO_data = new_images["gpio_data"][-1]
+        self._newly_dropped_frames = new_images["dropped_frames"]
         self.frame_timestamps.extend(new_images["timestamps"])
         self.dropped_frames += new_images["dropped_frames"]
-        if new_images["dropped_frames"]:
-            print(f'Dropped {new_images["dropped_frames"]} frames')
         # Record data to disk.
         if self.recording:
             self.recorded_frames += len(new_images["images"])
@@ -293,6 +297,11 @@ class CameraWidget(QGroupBox):
         if self.recording:
             elapsed_time = datetime.now() - self.record_start_time
             self.recording_time_text.setText(str(elapsed_time).split(".")[0], color="g")
+        # Update dropped frames indicator.
+        if self._newly_dropped_frames:
+            self.dropped_frames_text.setText("DROPPED FRAMES", color="r")
+        else:
+            self.dropped_frames_text.setText("")
 
     # GUI element updates -------------------------------------------------------------
 

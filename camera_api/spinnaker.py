@@ -22,9 +22,11 @@ class SpinnakerCamera(GenericCamera):
 
         # Configure camera --------------------------------------------------
 
-        # Set Buffer handling mode to Oldest First
+        # Set Buffer handling mode to Oldest First Overwrite and buffer size to 100 frames.
         bh_node = PySpin.CEnumerationPtr(self.stream_nodemap.GetNode("StreamBufferHandlingMode"))
-        bh_node.SetIntValue(bh_node.GetEntryByName("OldestFirst").GetValue())
+        bh_node.SetIntValue(bh_node.GetEntryByName("OldestFirstOverwrite").GetValue())
+        sbc_node = PySpin.CIntegerPtr(self.stream_nodemap.GetNode("StreamBufferCountManual"))
+        sbc_node.SetValue(100)  # Set buffer size to 100 frames.
 
         # Configure ChunkData to include frame count and timestamp.
         chunk_selector = PySpin.CEnumerationPtr(self.nodemap.GetNode("ChunkSelector"))
