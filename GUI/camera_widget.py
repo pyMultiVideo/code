@@ -2,6 +2,7 @@ import os
 import csv
 import json
 import subprocess
+import signal
 import numpy as np
 from datetime import datetime
 from collections import deque
@@ -52,8 +53,6 @@ class CameraWidget(QGroupBox):
         self.label = label
         self.settings = self.camera_setup_tab.get_camera_settings_from_label(label)
         self.camera_api = init_camera_api_from_module(settings=self.settings)
-        self.cam_width = self.camera_api.get_width()
-        self.cam_height = self.camera_api.get_height()
         self._image_data = None
         self.frame_timestamps = deque(maxlen=10)
         self.controls_visible = True
@@ -174,6 +173,8 @@ class CameraWidget(QGroupBox):
         if self.recording:
             self.recorded_frames += len(new_images["images"])
             for frame in new_images["images"]:  # Send new images to FFMPEG for encoding.
+                # Downsample frame
+                frame = frame[::self.settings.downsampling_factor, ::self.settings.downsampling_factor]
                 self.ffmpeg_process.stdin.write(frame.tobytes())
             for gpio_pinstate in new_images["gpio_data"]:  # Write GPIO pinstate to file.
                 self.gpio_writer.writerow(gpio_pinstate)
@@ -199,6 +200,7 @@ class CameraWidget(QGroupBox):
             "subject_ID": self.subject_id,
             "camera_unique_id": self.settings.unique_id,
             "recorded_frames": 0,
+            "downsampling_factor":self.settings.downsampling_factor,
             "begin_time": self.record_start_time.isoformat(timespec="milliseconds"),
             "end_time": None,
         }
@@ -206,21 +208,20 @@ class CameraWidget(QGroupBox):
             json.dump(self.metadata, meta_data_file, indent=4)
 
         # Initalise ffmpeg process
-        downsampled_width = int(self.cam_width / self.settings.downsampling_factor)
-        downsampled_height = int(self.cam_height / self.settings.downsampling_factor)
+        self.downsampled_width = int(self.camera_api.get_width() / self.settings.downsampling_factor)
+        self.downsampled_height = int(self.camera_api.get_height() / self.settings.downsampling_factor)
         ffmpeg_command = " ".join(
             [
                 self.ffmpeg_path,  # Path to binary
-                "-y",  # overwrite output file if it exists
                 "-f rawvideo",  # Input codec (raw video)
-                "-pix_fmt gray",  # Input Pixel format?
-                f"-s {downsampled_width}x{downsampled_height}",  # Input resolution
+                "-pix_fmt gray",  # Input Pixel Format: 8-bit grayscale input to ffmpeg process. Input array 1D
+                f"-s {self.downsampled_width}x{self.downsampled_height}",  # Input resolution
                 f"-r {self.settings.fps}",  # Frame rate
                 "-i -",  # input comes from a pipe (stdin)
-                f"-vcodec {self.video_capture_tab.ffmpeg_encoder_map[ffmpeg_config['compression_standard']]}",  # Output codec
+                f"-c:v {self.video_capture_tab.ffmpeg_encoder_map[ffmpeg_config['compression_standard']]}",  # Output codec
                 "-pix_fmt yuv420p",  # Output pixel format
                 f"-preset {ffmpeg_config['encoding_speed']}",  # Encoding speed [fast, medium, slow]
-                f"-crf {ffmpeg_config['crf']}",  # Controls quality vs filesize
+                f"-qp {ffmpeg_config['crf']}",  # Controls quality vs filesize 
                 f'"{self.video_filepath}"',  # Output file path
             ]
         )
@@ -253,6 +254,7 @@ class CameraWidget(QGroupBox):
         # Close FFMPEG process
         self.ffmpeg_process.stdin.close()
         self.ffmpeg_process.wait()
+
         # Update GUI
         self.stop_recording_button.setEnabled(False)
         self.start_recording_button.setEnabled(True)

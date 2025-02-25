@@ -13,7 +13,9 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
     QHeaderView,
 )
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, Qt
+from PyQt6.QtGui import QIcon
+
 from dataclasses import asdict
 
 from config.config import paths_config, default_camera_config

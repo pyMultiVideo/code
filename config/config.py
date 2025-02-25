@@ -14,9 +14,9 @@ gui_config = {
 
 ffmpeg_config = {
     # "pxl_fmt": {"Mono8": "yuv420p", "Mono16": "?"},
-    "crf": 23,  # between 1 - 51
+    "crf": 23,  # between 1 - 51 https://slhck.info/video/2017/02/24/crf-guide.html 
     "encoding_speed": "slow",  # ["fast", "medium", "slow"]
-    "compression_standard": "h265",  # ["h265" , "h264"]
+    "compression_standard": "h264",  # ["h265" , "h264"]
 }
 
 # Paths -------------------------------------------------------------------------------
