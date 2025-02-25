@@ -177,8 +177,6 @@ class CameraWidget(QGroupBox):
         if self.recording:
             self.recorded_frames += len(new_images["images"])
             for frame in new_images["images"]:  # Send new images to FFMPEG for encoding.
-                # Downsample frame
-                frame = frame[:: self.settings.downsampling_factor, :: self.settings.downsampling_factor]
                 self.ffmpeg_process.stdin.write(frame.tobytes())
             for gpio_pinstate in new_images["gpio_data"]:  # Write GPIO pinstate to file.
                 self.gpio_writer.writerow(gpio_pinstate)
@@ -214,17 +212,20 @@ class CameraWidget(QGroupBox):
             json.dump(self.metadata, meta_data_file, indent=4)
 
         # Initalise ffmpeg process
-        self.downsampled_width = int(self.camera_api.get_width() / self.settings.downsampling_factor)
-        self.downsampled_height = int(self.camera_api.get_height() / self.settings.downsampling_factor)
+        self.camera_image_width = int(self.camera_api.get_width())
+        self.camera_image_height = int(self.camera_api.get_height())
+        self.downsampled_width = self.camera_image_width // self.settings.downsampling_factor
+        self.downsampled_height = self.camera_image_height // self.settings.downsampling_factor
         ffmpeg_command = " ".join(
             [
                 self.ffmpeg_path,  # Path to binary
                 "-f rawvideo",  # Input codec (raw video)
+                f"-s {self.camera_image_width}x{self.camera_image_height}",  # Input frame size
                 "-pix_fmt gray",  # Input Pixel Format: 8-bit grayscale input to ffmpeg process. Input array 1D
-                f"-s {self.downsampled_width}x{self.downsampled_height}",  # Input resolution
                 f"-r {self.settings.fps}",  # Frame rate
                 "-i -",  # input comes from a pipe (stdin)
                 f"-c:v {self.video_capture_tab.ffmpeg_encoder_map[ffmpeg_config['compression_standard']]}",  # Output codec
+                f"-s {self.downsampled_width}x{self.downsampled_height}",  # Output frame size after any downsampling.
                 "-pix_fmt yuv420p",  # Output pixel format
                 f"-preset {ffmpeg_config['encoding_speed']}",  # Encoding speed [fast, medium, slow]
                 f"-qp {ffmpeg_config['crf']}",  # Controls quality vs filesize
