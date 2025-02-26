@@ -175,15 +175,21 @@ class VideoCaptureTab(QWidget):
 
         # Timers
         self.camera_widget_update_timer = QTimer()
-        self.camera_widget_update_timer.timeout.connect(self.update_camera_widgets)
+        self.camera_widget_update_timer.timeout.connect(self.update_camera_gui)
+        self.camera_image_update_timer = QTimer()
+        self.camera_image_update_timer.timeout.connect(self.fetch_image_buffers)
 
     # Timer callbacks -----------------------------------------------------------------
 
-    def update_camera_widgets(self):
-        """Fetch new images from all cameras, save if recording, update video display."""
+    def update_camera_gui(self):
+        """Display new image from to all camera widgets"""
+        for camera_widget in self.camera_widgets:
+            camera_widget.update_video_display()
+            
+    def fetch_image_buffers(self):
+        """Fetch new images from all cameras, save if recording"""
         for camera_widget in self.camera_widgets:
             camera_widget.fetch_image_data()
-            camera_widget.update_video_display()
 
     def refresh(self):
         """Refresh tab"""
@@ -218,7 +224,8 @@ class VideoCaptureTab(QWidget):
         """Called when tab deselected to start aqusition of the camera video streams."""
         for camera_widget in self.camera_widgets:
             camera_widget.begin_capturing()
-        self.camera_widget_update_timer.start(int(1000 / gui_config["camera_update_rate"]))
+        self.camera_widget_update_timer.start(int(1000 / gui_config["gui_update_rate"]))
+        self.camera_image_update_timer.start(int(1000 / gui_config["camera_update_rate"]))
         self.refresh()
 
     def tab_deselected(self):
@@ -226,6 +233,7 @@ class VideoCaptureTab(QWidget):
         for camera_widget in self.camera_widgets:
             camera_widget.stop_capturing()
         self.camera_widget_update_timer.stop()
+        self.camera_image_update_timer.stop()
 
     def update_save_directory_display(self):
         """Display the path in the textbox"""

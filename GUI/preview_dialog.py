@@ -101,7 +101,7 @@ class CameraPreviewWidget(QWidget):
         """Start a timer to refresh the video feed at the config `display_update_rate`"""
         self.display_update_timer = QTimer()
         self.display_update_timer.timeout.connect(self.display_data)
-        self.display_update_timer.start(int(1000 / gui_config["camera_update_rate"]))
+        self.display_update_timer.start(int(1000 / gui_config["gui_update_rate"]))
 
     def closeEvent(self, event):
         """Handle the close event to stop the timer and release resources"""
