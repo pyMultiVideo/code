@@ -9,12 +9,10 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QComboBox,
     QSpinBox,
-    QCheckBox,
     QPushButton,
     QSizePolicy,
     QHeaderView,
 )
-from PyQt6.QtCore import QTimer, Qt
 from PyQt6.QtGui import QIcon
 
 from dataclasses import asdict
@@ -48,19 +46,12 @@ class CamerasTab(QWidget):
 
         # Initialise Refresh button
         self.refresh_layout = QHBoxLayout()
-        self.refresh_cameras_button = QPushButton()
+        self.refresh_cameras_button = QPushButton("Refresh camera list")
         self.refresh_cameras_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "refresh.svg")))
         self.refresh_cameras_button.clicked.connect(self.refresh)
         self.refresh_cameras_button.setToolTip("Refresh the list of connected cameras")
-
-        # Initialise a check box that allows automatic refreshing
-        self.auto_refresh_checkbox = QCheckBox()
-        self.auto_refresh_checkbox.setText("Auto Refresh")
-        self.auto_refresh_checkbox.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.auto_refresh_checkbox.stateChanged.connect(self.toggle_auto_refresh)
-        self.refresh_layout.addWidget(self.auto_refresh_checkbox)
+        self.refresh_layout.addStretch()
         self.refresh_layout.addWidget(self.refresh_cameras_button)
-        self.refresh_layout.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.camera_table_layout = QVBoxLayout()
         self.camera_table_layout.addWidget(self.camera_table)
@@ -76,31 +67,15 @@ class CamerasTab(QWidget):
         self.refresh()
         self.setups_changed = False
 
-        # Initialise timer
-        self.refresh_timer = QTimer()
-        self.refresh_timer.timeout.connect(self.refresh)
-
     # Refresh timer / tab changing logic -------------------------------------------------------------------------------
 
-    def toggle_auto_refresh(self):
-        """Based on the value of the checkbox start or stop the timer and enable/disable the refresh button"""
-        if self.auto_refresh_checkbox.isChecked():
-            self.refresh_timer.start(1000)
-            self.refresh_cameras_button.setEnabled(False)
-        else:
-            self.refresh_timer.stop()
-            self.refresh_cameras_button.setEnabled(True)
-
     def tab_selected(self):
-        """Called when tab deselected."""
-        if self.auto_refresh_checkbox.isChecked():
-            self.refresh_timer.start(1000)
+        """Called when tab selected."""
+        self.refresh()
 
     def tab_deselected(self):
         """Called when tab deselected."""
-        if self.refresh_timer.isActive():
-            self.refresh_timer.stop()
-        # Deinitialise all camera apis on tab being deselected
+        # Deinitialise all camera APIs on tab being deselected
         for unique_id in self.setups:
             if self.GUI.preview_showing:
                 self.setups[unique_id].close_preview_camera()
