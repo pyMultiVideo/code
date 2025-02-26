@@ -6,11 +6,11 @@ import shutil
 __version__ = "1.0.0"
 
 gui_config = {
-    "camera_update_rate": 500,  # Rate at which to get new images from camera buffer.
-    "gui_update_rate": 2,  # Rate at which the images are displayed to GUI.
+    "camera_update_rate": 100,  # Rate at which to get new images from camera buffer.
+    "gui_update_rate": 30,  # Rate at which the images are displayed to GUI.
 }
 
-# Default FFMPEG config -----------------------------------------------------------------------
+# Default FFMPEG config ----------------------------------------------------------------
 
 ffmpeg_config = {
     "crf": 23,  # Controls video quality vs file size, range [1 - 51], lower is higher quality and larger files.
@@ -39,4 +39,11 @@ default_camera_config = {
     "downsampling_factor": 1,
     "exposure_time": 15000,
     "gain": 0,
+}
+
+# Profiling Settings ------------------------------------------------------------------
+
+profiling_config = {
+    'profile_code' : True,
+    'profile_name' : 'profile'
 }
