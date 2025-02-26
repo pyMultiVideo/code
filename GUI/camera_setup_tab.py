@@ -352,6 +352,7 @@ class Camera_table_item:
 
     def open_preview_camera(self):
         """Button to preview the camera in the row"""
+        self.setups_tab.refresh()
         if self.GUI.preview_showing:
             self.close_preview_camera()
         self.setups_tab.camera_preview = CameraPreviewWidget(gui=self.GUI, camera_table_item=self)

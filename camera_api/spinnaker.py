@@ -14,7 +14,8 @@ class SpinnakerCamera(GenericCamera):
 
         self.system = PySpin.System.GetInstance()
         self.serial_number, self.api = self.unique_id.split("-")
-        self.cam = self.system.GetCameras().GetBySerial(self.serial_number)
+        self.cam_list = self.system.GetCameras()
+        self.cam = next((cam for cam in self.cam_list if cam.TLDevice.DeviceSerialNumber.GetValue() == self.serial_number), None)
         self.camera_model = self.cam.TLDevice.DeviceModelName.GetValue()[:10]
         self.cam.Init()
         self.nodemap = self.cam.GetNodeMap()
@@ -27,7 +28,6 @@ class SpinnakerCamera(GenericCamera):
         bh_node.SetIntValue(bh_node.GetEntryByName("OldestFirstOverwrite").GetValue())
         sbc_node = PySpin.CIntegerPtr(self.stream_nodemap.GetNode("StreamBufferCountManual"))
         sbc_node.SetValue(100)  # Set buffer size to 100 frames.
-
         # Configure ChunkData to include frame count and timestamp.
         chunk_selector = PySpin.CEnumerationPtr(self.nodemap.GetNode("ChunkSelector"))
         if self.camera_model == "Chameleon3":
@@ -166,6 +166,7 @@ class SpinnakerCamera(GenericCamera):
         """Close the PySpin API and release resources."""
         self.stop_capturing()
         self.cam = None
+        self.cam_list.Clear()
         self.system.ReleaseInstance()
 
     def get_available_images(self):

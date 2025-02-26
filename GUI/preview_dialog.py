@@ -13,7 +13,7 @@ from config.config import paths_config, gui_config
 class CameraPreviewWidget(QWidget):
     """Dialog for previewing the video feed from the setups tab"""
 
-    def __init__(self, gui, camera_table_item):  # camera_api):
+    def __init__(self, gui, camera_table_item):
         super().__init__()
         # self.setups_tab = parent
         self.GUI = gui
