@@ -10,7 +10,7 @@ import os
 from .video_capture_tab import VideoCaptureTab
 from .camera_setup_tab import CamerasTab
 
-from config.config import __version__, paths_config
+from config.config import __version__, paths_config, profiling_config
 
 if os.name == "nt":  # Needed on windows to get taskbar icon to display correctly.
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(f"pyMultiVideo v{__version__}")
@@ -25,6 +25,11 @@ class GUIMain(QMainWindow):
         super().__init__()
         self.startup_config = parsed_args.config
         self.paths = paths_config
+        # Profiling the application
+        if profiling_config['profile_code']:
+            from pyinstrument import Profiler
+            self.profiler = Profiler()
+            self.profiler.start()
         # Set window size, title, icon.
         self.setGeometry(100, 100, 700, 800)  # x, y, width, height
         self.setWindowTitle(f"pyMultiVideo v{__version__}")  # default window title
@@ -65,6 +70,11 @@ class GUIMain(QMainWindow):
     def closeEvent(self, event):
         """Close the GUI"""
         event.accept()
+        # End profiling application
+        if profiling_config['profile_code']:
+            self.profiler.stop()
+            with open(os.path.join(self.paths["data_dir"], f"{profiling_config['profile_name']}.html"), "w") as f:
+                f.write(self.profiler.output_html())
         sys.exit(0)
 
     # Exception handling
