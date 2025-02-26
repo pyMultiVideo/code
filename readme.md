@@ -1,3 +1,3 @@
 # pyMultiVideo
 
-See description in docs
+See description in [docs](https://pymultivideo.readthedocs.io/en/latest/)
