@@ -314,16 +314,15 @@ class Camera_table_item:
         self.setups_tab.update_saved_setups(setup=self)
         self.setups_tab.setups_changed = True
 
+    # Camera Parameters --------------------------------------------------------------------------
+
     def camera_fps_changed(self):
         """Called when fps text of setup is edited."""
         self.settings.fps = str(self.fps_edit.text())
         self.setups_tab.update_saved_setups(setup=self)
         if self.GUI.preview_showing is True:
             self.setups_tab.camera_preview.camera_api.set_frame_rate(self.settings.fps)
-
         self.exposure_time_edit.setRange(*self.camera_api.get_exposure_time_range())
-
-    # Camera Parameters --------------------------------------------------------------------------
 
     def camera_exposure_time_changed(self):
         """"""
