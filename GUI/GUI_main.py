@@ -72,6 +72,10 @@ class GUIMain(QMainWindow):
 
     def closeEvent(self, event):
         """Close the GUI"""
+        for c_w in self.video_capture_tab.camera_widgets:
+            if c_w.recording:
+                c_w.stop_recording()
+            c_w.deleteLater()
         event.accept()
         # End profiling application & Saving metadata to output folder
         if profiling_config["profile_code"]:
