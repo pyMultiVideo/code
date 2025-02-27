@@ -172,7 +172,9 @@ class CameraWidget(QGroupBox):
         if new_images == None:
             return
         # Store most recent image and GPIO state for the next display update.
-        self._image_data = new_images["images"][-1]
+        self._image_data = np.frombuffer(new_images["images"][-1], dtype=np.uint8).reshape(
+            self.camera_api.get_height(), self.camera_api.get_width()
+        )
         self._GPIO_data = new_images["gpio_data"][-1]
         self._newly_dropped_frames = new_images["dropped_frames"]
         self.frame_timestamps.extend(new_images["timestamps"])

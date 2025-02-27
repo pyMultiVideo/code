@@ -183,14 +183,14 @@ class SpinnakerCamera(GenericCamera):
         try:
             while True:
                 next_image = self.cam.GetNextImage(0)  # Raises exception if buffer empty.
-                img_buffer.append(next_image.GetNDArray())  # Image pixels as numpy array.
+                img_buffer.append(next_image.GetData())  # Image pixels as numpy array.
                 chunk_data = next_image.GetChunkData()  # Additional image data.
                 timestamps_buffer.append(chunk_data.GetTimestamp())  # Image timestamp (ns?)
                 frame_number = chunk_data.GetFrameID()
                 dropped_frames += frame_number - self.last_frame_number - 1
                 self.last_frame_number = frame_number
                 if self.camera_model == "Chameleon3":
-                    img_data = next_image.GetData()
+                    img_data = img_buffer[-1]
                     gpio_buffer.append([(img_data[32] >> 4) & 1, (img_data[32] >> 5) & 1, (img_data[32] >> 7) & 1])
                 else:
                     gpio_binary = format(chunk_data.GetExposureEndLineStatusAll(), "04b")
