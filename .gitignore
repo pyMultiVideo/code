@@ -2,7 +2,6 @@
 *.pyc
 vscode/
 .vscode/*
-pyproject.toml
 
 ErrorLog.txt
 todo.md
