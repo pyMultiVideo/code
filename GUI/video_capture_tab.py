@@ -211,6 +211,13 @@ class VideoCaptureTab(QWidget):
     # Camera acquisition and recording control ----------------------------------------
 
     def start_recording(self):
+        # Check whether all the files name will be the same
+        camera_labels = [camera_widget.subject_id_text.toPlainText() for camera_widget in self.camera_widgets if camera_widget.subject_id_text.toPlainText()]
+        if len(camera_labels) != len(set(camera_labels)):
+            self.start_recording_button.setEnabled(False)
+            show_info_message("Duplicate Subject IDs detected. Please ensure all are unique.")
+            return
+        
         for camera_widget in self.camera_widgets:
             camera_widget.start_recording()
 

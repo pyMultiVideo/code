@@ -64,6 +64,10 @@ class GUIMain(QMainWindow):
 
     def closeEvent(self, event):
         """Close the GUI"""
+        for c_w in self.video_capture_tab.camera_widgets:
+            if c_w.recording:
+                c_w.stop_recording()
+            c_w.deleteLater()
         event.accept()
         sys.exit(0)
 
