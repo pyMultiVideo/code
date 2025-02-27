@@ -52,6 +52,8 @@ class CameraWidget(QGroupBox):
         self.label = label
         self.settings = self.camera_setup_tab.get_camera_settings_from_label(label)
         self.camera_api = init_camera_api_from_module(settings=self.settings)
+        self.camera_image_width = int(self.camera_api.get_width())
+        self.camera_image_height = int(self.camera_api.get_height())
         self._image_data = None
         self.frame_timestamps = deque(maxlen=10)
         self.controls_visible = True
@@ -171,9 +173,9 @@ class CameraWidget(QGroupBox):
         new_images = self.camera_api.get_available_images()
         if new_images == None:
             return
-        # Store most recent image and GPIO state for the next display update.
+        # Store most recent image as np array and GPIO state for the next display update.
         self._image_data = np.frombuffer(new_images["images"][-1], dtype=np.uint8).reshape(
-            self.camera_api.get_height(), self.camera_api.get_width()
+            self.camera_image_height, self.camera_image_width
         )
         self._GPIO_data = new_images["gpio_data"][-1]
         self._newly_dropped_frames = new_images["dropped_frames"]
@@ -182,8 +184,10 @@ class CameraWidget(QGroupBox):
         # Record data to disk.
         if self.recording:
             self.recorded_frames += len(new_images["images"])
-            for frame in new_images["images"]:  # Send new images to FFMPEG for encoding.
-                self.ffmpeg_process.stdin.write(frame.tobytes())
+            concat_frames = np.concatenate(
+                [np.frombuffer(frame, dtype=np.uint8) for frame in new_images["images"]], axis=0
+            )
+            self.ffmpeg_process.stdin.write(concat_frames)
             for gpio_pinstate in new_images["gpio_data"]:  # Write GPIO pinstate to file.
                 self.gpio_writer.writerow(gpio_pinstate)
 
@@ -224,8 +228,6 @@ class CameraWidget(QGroupBox):
             json.dump(self.metadata, meta_data_file, indent=4)
 
         # Initalise ffmpeg process
-        self.camera_image_width = int(self.camera_api.get_width())
-        self.camera_image_height = int(self.camera_api.get_height())
         self.downsampled_width = self.camera_image_width // self.settings.downsampling_factor
         self.downsampled_height = self.camera_image_height // self.settings.downsampling_factor
         ffmpeg_command = " ".join(
@@ -375,6 +377,9 @@ class CameraWidget(QGroupBox):
         self.label = str(self.camera_dropdown.currentText())
         self.settings = self.camera_setup_tab.get_camera_settings_from_label(self.label)
         self.camera_api = init_camera_api_from_module(self.settings)
+        # Update the camera_hieght and width after the camera has changed.
+        self.camera_image_width = int(self.camera_api.get_width())
+        self.camera_image_height = int(self.camera_api.get_height())
         self.camera_api.begin_capturing()
         # Rename graph element
         self.camera_name_item.setText(
