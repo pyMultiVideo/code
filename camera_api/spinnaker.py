@@ -17,10 +17,9 @@ class SpinnakerCamera(GenericCamera):
 
         self.serial_number, self.api = self.unique_id.split("-")
         self.cam_list = PYSPINSYSTEM.GetCameras()
-        # self.cam = next(
-        #     (cam for cam in self.cam_list if cam.TLDevice.DeviceSerialNumber.GetValue() == self.serial_number), None
-        # )
-        self.cam = PYSPINSYSTEM.GetCameras().GetBySerial(self.serial_number)
+        self.cam = next(
+            (cam for cam in self.cam_list if cam.TLDevice.DeviceSerialNumber.GetValue() == self.serial_number), None
+        )
         self.camera_model = self.cam.TLDevice.DeviceModelName.GetValue()[:10]
         self.cam.Init()
         self.nodemap = self.cam.GetNodeMap()
