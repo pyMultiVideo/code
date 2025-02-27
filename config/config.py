@@ -6,7 +6,7 @@ import shutil
 __version__ = "1.0.0"
 
 gui_config = {
-    "camera_update_rate": 100,  # Rate at which to get new images from camera buffer.
+    "camera_update_rate": 150,  # Rate at which to get new images from camera buffer.
     "gui_update_rate": 30,  # Rate at which the images are displayed to GUI.
 }
 

@@ -26,10 +26,13 @@ class GUIMain(QMainWindow):
         self.startup_config = parsed_args.config
         self.paths = paths_config
         # Profiling the application
-        if profiling_config['profile_code']:
+        if profiling_config["profile_code"]:
             from pyinstrument import Profiler
+            from datetime import datetime
+
             self.profiler = Profiler()
             self.profiler.start()
+            profiling_config["save_dir_name"] = datetime.now().strftime("%Y%m%d_%H%M%S")
         # Set window size, title, icon.
         self.setGeometry(100, 100, 700, 800)  # x, y, width, height
         self.setWindowTitle(f"pyMultiVideo v{__version__}")  # default window title
@@ -70,11 +73,34 @@ class GUIMain(QMainWindow):
     def closeEvent(self, event):
         """Close the GUI"""
         event.accept()
-        # End profiling application
-        if profiling_config['profile_code']:
+        # End profiling application & Saving metadata to output folder
+        if profiling_config["profile_code"]:
+
+            import shutil
+            import json
+            from dataclasses import asdict
+            from .utility import ExperimentConfig
+
             self.profiler.stop()
-            with open(os.path.join(self.paths["data_dir"], f"{profiling_config['profile_name']}.html"), "w") as f:
+            profile_dir = os.path.join(self.paths["data_dir"], "profiling", profiling_config["save_dir_name"])
+            os.makedirs(profile_dir, exist_ok=True)
+            with open(os.path.join(profile_dir, f"{profiling_config['profile_name']}.html"), "w") as f:
                 f.write(self.profiler.output_html())
+            # Copy the config file
+            shutil.copy(os.path.join(self.paths["config_dir"], "config.py"), profile_dir)
+            # Copy the states of the GUI to a config file
+            experiment_config = ExperimentConfig(
+                data_dir=self.video_capture_tab.temp_data_dir,
+                n_cameras=self.video_capture_tab.n_cameras_spinbox.value(),
+                n_columns=self.video_capture_tab.n_columns_spinbox.value(),
+                cameras=[camera_widget.get_camera_config() for camera_widget in self.video_capture_tab.camera_widgets],
+            )
+            config_file_path = os.path.join(profile_dir, "gui-config.json")
+            with open(config_file_path, "w") as config_file:
+                config_file.write(json.dumps(asdict(experiment_config), indent=4))
+            # Copy the states of the cameras to the folder
+            shutil.copy(os.path.join(self.paths["config_dir"], "camera_configs.json"), profile_dir)
+
         sys.exit(0)
 
     # Exception handling

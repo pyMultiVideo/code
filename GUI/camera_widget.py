@@ -25,7 +25,7 @@ from .utility import (
     validate_ffmpeg_path,
 )
 from .message_dialogs import show_warning_message
-from config.config import ffmpeg_config, paths_config
+from config.config import ffmpeg_config, paths_config, profiling_config
 
 
 class CameraWidget(QGroupBox):
@@ -191,6 +191,12 @@ class CameraWidget(QGroupBox):
         self.subject_id = self.subject_id_text.toPlainText()
         self.record_start_time = datetime.now()
         save_dir = self.video_capture_tab.temp_data_dir
+        if profiling_config["profile_code"]:
+            save_dir = os.path.join(
+                self.video_capture_tab.temp_data_dir, "profiling", profiling_config["save_dir_name"], "video"
+            )
+            if not os.path.exists(save_dir):
+                os.makedirs(save_dir)
         filename_stem = f"{self.subject_id}_{self.record_start_time.strftime('%Y-%m-%d-%H%M%S')}"
         self.video_filepath = os.path.join(save_dir, filename_stem + ".mp4")
         self.GPIO_filepath = os.path.join(save_dir, filename_stem + "_GPIO_data.csv")
