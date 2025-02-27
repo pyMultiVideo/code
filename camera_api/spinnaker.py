@@ -3,6 +3,9 @@ from math import floor, ceil
 from . import GenericCamera
 
 
+PYSPINSYSTEM = PySpin.System.GetInstance()
+
+
 class SpinnakerCamera(GenericCamera):
     """Inherits from the camera class and adds the spinnaker specific functions from the PySpin library"""
 
@@ -12,10 +15,12 @@ class SpinnakerCamera(GenericCamera):
         self.unique_id = self.camera_config.unique_id
         # Initialise camera -------------------------------------------------
 
-        self.system = PySpin.System.GetInstance()
         self.serial_number, self.api = self.unique_id.split("-")
-        self.cam_list = self.system.GetCameras()
-        self.cam = next((cam for cam in self.cam_list if cam.TLDevice.DeviceSerialNumber.GetValue() == self.serial_number), None)
+        self.cam_list = PYSPINSYSTEM.GetCameras()
+        # self.cam = next(
+        #     (cam for cam in self.cam_list if cam.TLDevice.DeviceSerialNumber.GetValue() == self.serial_number), None
+        # )
+        self.cam = PYSPINSYSTEM.GetCameras().GetBySerial(self.serial_number)
         self.camera_model = self.cam.TLDevice.DeviceModelName.GetValue()[:10]
         self.cam.Init()
         self.nodemap = self.cam.GetNodeMap()
@@ -25,9 +30,9 @@ class SpinnakerCamera(GenericCamera):
 
         # Set Buffer handling mode to Oldest First Overwrite and buffer size to 100 frames.
         bh_node = PySpin.CEnumerationPtr(self.stream_nodemap.GetNode("StreamBufferHandlingMode"))
-        bh_node.SetIntValue(bh_node.GetEntryByName("OldestFirstOverwrite").GetValue())
+        bh_node.SetIntValue(bh_node.GetEntryByName("OldestFirst").GetValue())
         sbc_node = PySpin.CIntegerPtr(self.stream_nodemap.GetNode("StreamBufferCountManual"))
-        sbc_node.SetValue(100) # Set to maximum buffer size
+        sbc_node.SetValue(50)  # Set to maximum buffer size
         # Configure ChunkData to include frame count and timestamp.
         chunk_selector = PySpin.CEnumerationPtr(self.nodemap.GetNode("ChunkSelector"))
         if self.camera_model == "Chameleon3":
@@ -167,7 +172,6 @@ class SpinnakerCamera(GenericCamera):
         self.stop_capturing()
         self.cam = None
         self.cam_list.Clear()
-        self.system.ReleaseInstance()
 
     def get_available_images(self):
         """Gets all available images from the buffer and return images GPIO pinstate data and timestamps."""
@@ -232,6 +236,7 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
             else:
                 cam.DeInit()
     pyspin_cam_list.Clear()
+    pyspin_system.ReleaseInstance()
     return unique_id_list
 
 
