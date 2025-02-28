@@ -1,4 +1,6 @@
 import PySpin
+import cv2
+from collections import OrderedDict
 from math import floor, ceil
 from . import GenericCamera
 
@@ -16,14 +18,28 @@ class SpinnakerCamera(GenericCamera):
 
         self.serial_number, self.api = self.unique_id.split("-")
         self.cam_list = PYSPINSYSTEM.GetCameras()
-        # self.cam = next(
-        #     (cam for cam in self.cam_list if cam.TLDevice.DeviceSerialNumber.GetValue() == self.serial_number), None
-        # )
-        self.cam = PYSPINSYSTEM.GetCameras().GetBySerial(self.serial_number)
+        self.cam = next(
+            (cam for cam in self.cam_list if cam.TLDevice.DeviceSerialNumber.GetValue() == self.serial_number), None
+        )
+        # self.cam = PYSPINSYSTEM.GetCameras().GetBySerial(self.serial_number)
         self.camera_model = self.cam.TLDevice.DeviceModelName.GetValue()[:10]
         self.cam.Init()
         self.nodemap = self.cam.GetNodeMap()
         self.stream_nodemap = self.cam.GetTLStreamNodeMap()
+
+        # Minimum required pixel format support -----------------------------
+
+        # Ordered list of color formats pMV supports
+        self.supported_pixel_formats = OrderedDict(
+            [
+                ("BayerRG8", "bayer_rggb8"),
+                ("Mono8", "gray"),
+            ]
+        )
+        self.cv2_conversion = {"BayerRG8": cv2.COLOR_BayerRG2BGR, "Mono8": cv2.COLOR_GRAY2BGR}
+        self.pixel_format = self.get_supported_pixel_formats()
+        # Set the pixel format
+        self.set_pixel_format(self.pixel_format)
 
         # Configure camera --------------------------------------------------
 
@@ -112,26 +128,39 @@ class SpinnakerCamera(GenericCamera):
         node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("Gain"))
         return ceil(node.GetMin()), floor(node.GetMax())
 
-    def get_pixel_format(self) -> str:
+    def camera_pixel_format(self) -> str:
         """Get string specifying camera pixel format"""
         return PySpin.CEnumerationPtr(self.nodemap.GetNode("PixelFormat")).GetCurrentEntry().GetSymbolic()
 
-    def get_available_pixel_fmt(self) -> list[str]:
+    def get_supported_pixel_formats(self):
         """Gets a string of the pixel formats available to the camera"""
 
-        # Get available framerates
+        # Get available pixel formats
         node_map = self.cam.GetNodeMap()
         pixel_format_node = PySpin.CEnumerationPtr(node_map.GetNode("PixelFormat"))
         pixel_format_entries = pixel_format_node.GetEntries()
 
-        # Convert to string
+        # Convert to string and check if available
         available_pxl_fmts = []
         for entry in pixel_format_entries:
             entry = PySpin.CEnumEntryPtr(entry)
-            available_pxl_fmts.append(str(entry.GetSymbolic()))
+            if PySpin.IsAvailable(entry) and PySpin.IsReadable(entry):
+                available_pxl_fmts.append(str(entry.GetSymbolic()))
 
-        # Return list
-        return available_pxl_fmts
+        # Get the pixel format that we want the camera to use.
+        pixel_format = next(
+            (
+                fmt
+                for fmt in self.supported_pixel_formats.keys()
+                if fmt in available_pxl_fmts and fmt in self.supported_pixel_formats
+            ),
+            None,
+        )
+
+        if pixel_format is None:
+            raise ValueError("No supported pixel format available.")
+
+        return pixel_format
 
     # Functions to set camera paramteters.
 
@@ -154,15 +183,25 @@ class SpinnakerCamera(GenericCamera):
         """Set gain (dB)"""
         PySpin.CFloatPtr(self.nodemap.GetNode("Gain")).SetValue(float(gain))
 
+    def set_pixel_format(self, pixel_format: str):
+        if self.cam.IsStreaming():
+            print("Cannot change pixel format while camera is streaming.")
+            return
+        node = PySpin.CEnumerationPtr(self.nodemap.GetNode("PixelFormat"))
+        node.SetIntValue(node.GetEntryByName(pixel_format).GetValue())
+
     # Functions to control the camera streaming and check status.
 
     def begin_capturing(self, CameraConfig=None) -> None:
         """Start camera streaming images."""
+        # Pixel format can only be changed before streaming begins
+
         if not self.cam.IsInitialized():
             self.cam.Init()
         if not self.cam.IsStreaming():
             self.cam.BeginAcquisition()
         self.frame_timestamp = 0
+
         if CameraConfig:
             self.configure_settings(CameraConfig)
 
@@ -189,14 +228,14 @@ class SpinnakerCamera(GenericCamera):
         try:
             while True:
                 next_image = self.cam.GetNextImage(0)  # Raises exception if buffer empty.
-                img_buffer.append(next_image.GetNDArray())  # Image pixels as numpy array.
+                img_buffer.append(next_image.GetData())  # Image pixels as numpy array.
                 chunk_data = next_image.GetChunkData()  # Additional image data.
                 timestamps_buffer.append(chunk_data.GetTimestamp())  # Image timestamp (nanoseconds)
                 elapsed_frames = round((timestamps_buffer[-1] - self.frame_timestamp) / self.inter_frame_interval)
                 self.frame_timestamp = timestamps_buffer[-1]
                 dropped_frames += elapsed_frames - 1
                 if self.camera_model == "Chameleon3":
-                    img_data = next_image.GetData()
+                    img_data = img_buffer[-1]
                     gpio_buffer.append([(img_data[32] >> 4) & 1, (img_data[32] >> 5) & 1, (img_data[32] >> 7) & 1])
                 else:
                     gpio_binary = format(chunk_data.GetExposureEndLineStatusAll(), "04b")

@@ -3,6 +3,7 @@ import csv
 import json
 import subprocess
 import numpy as np
+import cv2
 from datetime import datetime
 from collections import deque
 
@@ -23,6 +24,7 @@ from .utility import (
     CameraWidgetConfig,
     init_camera_api_from_module,
     validate_ffmpeg_path,
+    ffmpeg_encoder_map,
 )
 from .message_dialogs import show_warning_message
 from config.config import ffmpeg_config, paths_config
@@ -52,6 +54,8 @@ class CameraWidget(QGroupBox):
         self.label = label
         self.settings = self.camera_setup_tab.get_camera_settings_from_label(label)
         self.camera_api = init_camera_api_from_module(settings=self.settings)
+        self.camera_image_height = self.camera_api.get_height()
+        self.camera_image_width = self.camera_api.get_width()
         self._image_data = None
         self.frame_timestamps = deque(maxlen=10)
         self.controls_visible = True
@@ -180,8 +184,9 @@ class CameraWidget(QGroupBox):
         # Record data to disk.
         if self.recording:
             self.recorded_frames += len(new_images["images"])
-            for frame in new_images["images"]:  # Send new images to FFMPEG for encoding.
-                self.ffmpeg_process.stdin.write(frame.tobytes())
+            # Concatenate the list of numpy buffers into one bytestream
+            frame = np.concatenate([img for img in new_images["images"]])
+            self.ffmpeg_process.stdin.write(frame)
             for gpio_pinstate in new_images["gpio_data"]:  # Write GPIO pinstate to file.
                 self.gpio_writer.writerow(gpio_pinstate)
 
@@ -205,10 +210,15 @@ class CameraWidget(QGroupBox):
         # Create metadata file.
         self.metadata = {
             "subject_ID": self.subject_id,
+            # Camera Config Settings
             "camera_unique_id": self.settings.unique_id,
             "camera_name": self.settings.name,
             "FPS": int(self.settings.fps),
+            "exposure_time": self.settings.exposure_time,
+            "gain": self.settings.gain,
+            "pixel_format": self.settings.pixel_format,
             "downsampling_factor": self.settings.downsampling_factor,
+            # Recording information
             "recorded_frames": 0,
             "dropped_frames": None,
             "start_time": self.record_start_time.isoformat(timespec="milliseconds"),
@@ -228,17 +238,19 @@ class CameraWidget(QGroupBox):
                 self.ffmpeg_path,  # Path to binary
                 "-f rawvideo",  # Input codec (raw video)
                 f"-s {self.camera_image_width}x{self.camera_image_height}",  # Input frame size
-                "-pix_fmt gray",  # Input Pixel Format: 8-bit grayscale input to ffmpeg process. Input array 1D
+                f"-pix_fmt {self.camera_api.supported_pixel_formats[self.settings.pixel_format]}",  # Input Pixel Format: 8-bit grayscale input to ffmpeg process. Input array 1D
                 f"-r {self.settings.fps}",  # Frame rate
                 "-i -",  # input comes from a pipe (stdin)
-                f"-c:v {self.video_capture_tab.ffmpeg_encoder_map[ffmpeg_config['compression_standard']]}",  # Output codec
+                f"-c:v {ffmpeg_encoder_map[ffmpeg_config['compression_standard']]}",  # Output codec
                 f"-s {self.downsampled_width}x{self.downsampled_height}",  # Output frame size after any downsampling.
                 "-pix_fmt yuv420p",  # Output pixel format
                 f"-preset {ffmpeg_config['encoding_speed']}",  # Encoding speed [fast, medium, slow]
-                f"-qp {ffmpeg_config['crf']}",  # Controls quality vs filesize
+                f"-b:v 0 "  # Encoder uses variable bit rate https://superuser.com/questions/1236275/how-can-i-use-crf-encoding-with-nvenc-in-ffmpeg
+                f"-cq {ffmpeg_config['crf']}",  # Controls quality vs filesize
                 f'"{self.video_filepath}"',  # Output file path
             ]
         )
+        print(ffmpeg_command)
         self.ffmpeg_process = subprocess.Popen(ffmpeg_command, stdin=subprocess.PIPE)
 
         # Set variables
@@ -287,7 +299,11 @@ class CameraWidget(QGroupBox):
         """Display most recent image and update information overlays."""
         if self._image_data is None:
             return
-        self.video_feed.setImage(self._image_data.T)
+        self._image_data = np.frombuffer(self._image_data, dtype=np.uint8).reshape(
+            self.camera_image_height, self.camera_image_width
+        )
+        self._image_data = cv2.cvtColor(self._image_data, self.camera_api.cv2_conversion[self.settings.pixel_format])
+        self.video_feed.setImage(np.transpose(self._image_data, (1, 0, 2)))
         # Compute average framerate and display over image.
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
         calculated_framerate = 1e9 / avg_time_diff
@@ -373,7 +389,9 @@ class CameraWidget(QGroupBox):
         self.settings = self.camera_setup_tab.get_camera_settings_from_label(self.label)
         self.camera_api = init_camera_api_from_module(self.settings)
         self.camera_api.begin_capturing()
-        # Rename graph element
+        self.camera_image_height = self.camera_api.get_height()
+        self.camera_image_width = self.camera_api.get_width()
+        # Rename pyqtgraph element
         self.camera_name_item.setText(
             f"{self.settings.name if self.settings.name is not None else self.settings.unique_id}", color="white"
         )

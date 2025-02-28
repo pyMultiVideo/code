@@ -39,7 +39,38 @@ class CameraSettingsConfig:
     fps: str
     exposure_time: float
     gain: float
+    pixel_format: str
     downsampling_factor: int
+
+
+# ffmpeg encoding maps ----------------------------------------------------------------------
+
+
+def gpu_available(VERBOSE=False) -> list:
+    """Return list of valid encoders given GPU availibility."""
+    # Check if GPU is available.
+    try:
+        subprocess.check_output("nvidia-smi")
+        if VERBOSE:
+            print("Nvidia GPU detected")
+        return True
+    except Exception:
+        if VERBOSE:
+            print("No Nvidia GPU available")
+        return False
+
+
+# Specify the FFMPEG encoders available
+if gpu_available():
+    ffmpeg_encoder_map = {
+        "h264": "h264_nvenc",
+        "h265": "hevc_nvenc",
+    }
+else:
+    ffmpeg_encoder_map = {
+        "h264": "libx264",
+        "h265": "libx265",
+    }
 
 
 # Utility functions -------------------------------------------------------------------
@@ -61,20 +92,6 @@ def cbox_update_options(cbox, options, used_cameras_labels, selected):
     cbox.addItems(available_options)
     cbox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)  # Adjust size to fit contents
     cbox.setCurrentIndex(i)
-
-
-def gpu_available(VERBOSE=False) -> list:
-    """Return list of valid encoders given GPU availibility."""
-    # Check if GPU is available.
-    try:
-        subprocess.check_output("nvidia-smi")
-        if VERBOSE:
-            print("Nvidia GPU detected")
-        return True
-    except Exception:
-        if VERBOSE:
-            print("No Nvidia GPU available")
-        return False
 
 
 def validate_ffmpeg_path(ffmpeg_path):
@@ -163,9 +180,10 @@ def load_saved_setups(camera_data) -> list[CameraSettingsConfig]:
                 name=cam.get("name", None),
                 unique_id=cam.get("unique_id"),
                 fps=cam.get("fps", default_camera_config["fps"]),
-                downsampling_factor=cam.get("downsampling_factor", default_camera_config["downsampling_factor"]),
                 exposure_time=cam.get("exposure_time", default_camera_config["exposure_time"]),
                 gain=cam.get("gain", default_camera_config["gain"]),
+                pixel_format=cam.get("pixel_format", default_camera_config["pixel_format"]),
+                downsampling_factor=cam.get("downsampling_factor", default_camera_config["downsampling_factor"]),
             )
         )
     return saved_camera_settings

@@ -35,18 +35,6 @@ class VideoCaptureTab(QWidget):
         self.paths = paths_config
         self.camera_layout = QGridLayout()
 
-        # Specify the FFMPEG encoders available
-        if gpu_available():
-            self.ffmpeg_encoder_map = {
-                "h264": "h264_nvenc",
-                "h265": "hevc_nvenc",
-            }
-        else:
-            self.ffmpeg_encoder_map = {
-                "h264": "libx264",
-                "h265": "libx265",
-            }
-
         self.config_groupbox = QGroupBox("Experiment Configuration")
 
         # Camera quantity select
@@ -184,7 +172,7 @@ class VideoCaptureTab(QWidget):
         """Fetches new images from all cameras, updates video displays every n calls."""
         for camera_widget in self.camera_widgets:
             camera_widget.fetch_image_data()
-        self.update_counter = (self.update_counter + 1) % gui_config["update_GUI_every_n_camera_updates"]
+        self.update_counter = (self.update_counter + 1) % gui_config["GUI_updates_per_camera_update"]
         if self.update_counter == 0:
             for camera_widget in self.camera_widgets:
                 camera_widget.update_video_display()
