@@ -7,14 +7,14 @@ __version__ = "1.0.0"
 
 gui_config = {
     "camera_update_rate": 30,  # Rate at which to get new images from camera buffer.
-    "update_GUI_every_n_camera_updates": 1,  # How often GUI is updated relative to camera.
+    "GUI_updates_per_camera_update": 1,  # How often GUI is updated relative to camera.
 }
 
 # Default FFMPEG config ----------------------------------------------------------------
 
 ffmpeg_config = {
     "crf": 23,  # Controls video quality vs file size, range [1 - 51], lower is higher quality and larger files.
-    "encoding_speed": "slow",  # Controls encoding speed vs file size, value values ["fast", "medium", "slow"]
+    "encoding_speed": "fast",  # Controls encoding speed vs file size, value values ["fast", "medium", "slow"]
     "compression_standard": "h264",  # ["h265" , "h264"]
 }
 
@@ -32,7 +32,7 @@ paths_config = {
     "assets_dir": os.path.join(ROOT, "GUI", "icons"),
 }
 
-# Default Camera Settings ------------------------------------------p-------------------
+# Default Camera Settings --------------------------------------------------------------
 
 default_camera_config = {
     "fps": "60",

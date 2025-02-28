@@ -394,3 +394,4 @@ class VideoCaptureTab(QWidget):
         self.save_dir_button.setEnabled(not disable_controls)
         self.load_experiment_config_button.setEnabled(not disable_controls)
         self.n_cameras_spinbox.setEnabled(not disable_controls)
+        self.n_columns_spinbox.setEnabled(not disable_controls)
