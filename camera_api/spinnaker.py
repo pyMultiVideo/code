@@ -11,8 +11,7 @@ class SpinnakerCamera(GenericCamera):
 
     def __init__(self, CameraConfig=None):
         super().__init__(self)
-        self.camera_config = CameraConfig
-        self.unique_id = self.camera_config.unique_id
+        self.unique_id = CameraConfig.unique_id
         # Initialise camera -------------------------------------------------
 
         self.serial_number, self.api = self.unique_id.split("-")
@@ -28,11 +27,12 @@ class SpinnakerCamera(GenericCamera):
 
         # Configure camera --------------------------------------------------
 
-        # Set Buffer handling mode to Oldest First Overwrite and buffer size to 100 frames.
+        # Set Buffer handling mode to OldestFirst and buffer size to 100 frames.
         bh_node = PySpin.CEnumerationPtr(self.stream_nodemap.GetNode("StreamBufferHandlingMode"))
         bh_node.SetIntValue(bh_node.GetEntryByName("OldestFirst").GetValue())
         sbc_node = PySpin.CIntegerPtr(self.stream_nodemap.GetNode("StreamBufferCountManual"))
-        sbc_node.SetValue(50)  # Set to maximum buffer size
+        sbc_node.SetValue(100)  # Set buffer size to 100 frames.
+
         # Configure ChunkData to include frame count and timestamp.
         chunk_selector = PySpin.CEnumerationPtr(self.nodemap.GetNode("ChunkSelector"))
         if self.camera_model == "Chameleon3":
@@ -73,10 +73,8 @@ class SpinnakerCamera(GenericCamera):
         gnc_node.SetIntValue(PySpin.GainAuto_Off)
 
         # Configure user settings.
-        if self.camera_config is not None:
-            self.set_frame_rate(self.camera_config.fps)
-            self.set_gain(self.camera_config.gain)
-            self.set_exposure_time(self.camera_config.exposure_time)
+        if CameraConfig is not None:
+            self.configure_settings(CameraConfig)
 
     # Functions to get the camera parameters ----------------------------------------------
 
@@ -137,9 +135,16 @@ class SpinnakerCamera(GenericCamera):
 
     # Functions to set camera paramteters.
 
-    def set_frame_rate(self, frame_rate: float) -> None:
+    def configure_settings(self, CameraConfig):
+        """Configure all settings from CameraConfig."""
+        self.set_frame_rate(CameraConfig.fps)
+        self.set_gain(CameraConfig.gain)
+        self.set_exposure_time(CameraConfig.exposure_time)
+
+    def set_frame_rate(self, frame_rate):
         """Set the frame rate of the camera in Hz."""
         PySpin.CFloatPtr(self.nodemap.GetNode("AcquisitionFrameRate")).SetValue(int(frame_rate))
+        self.inter_frame_interval = int(1e9 // int(frame_rate))  # (nanoseconds)
 
     def set_exposure_time(self, exposure_time: float) -> None:
         """Set the exposure time of the camera in microseconds."""
@@ -151,14 +156,15 @@ class SpinnakerCamera(GenericCamera):
 
     # Functions to control the camera streaming and check status.
 
-    def begin_capturing(self) -> None:
+    def begin_capturing(self, CameraConfig=None) -> None:
         """Start camera streaming images."""
-
         if not self.cam.IsInitialized():
             self.cam.Init()
         if not self.cam.IsStreaming():
             self.cam.BeginAcquisition()
-        self.last_frame_number = -1
+        self.frame_timestamp = 0
+        if CameraConfig:
+            self.configure_settings(CameraConfig)
 
     def stop_capturing(self) -> None:
         """Stop the camera from streaming"""
@@ -185,10 +191,10 @@ class SpinnakerCamera(GenericCamera):
                 next_image = self.cam.GetNextImage(0)  # Raises exception if buffer empty.
                 img_buffer.append(next_image.GetNDArray())  # Image pixels as numpy array.
                 chunk_data = next_image.GetChunkData()  # Additional image data.
-                timestamps_buffer.append(chunk_data.GetTimestamp())  # Image timestamp (ns?)
-                frame_number = chunk_data.GetFrameID()
-                dropped_frames += frame_number - self.last_frame_number - 1
-                self.last_frame_number = frame_number
+                timestamps_buffer.append(chunk_data.GetTimestamp())  # Image timestamp (nanoseconds)
+                elapsed_frames = round((timestamps_buffer[-1] - self.frame_timestamp) / self.inter_frame_interval)
+                self.frame_timestamp = timestamps_buffer[-1]
+                dropped_frames += elapsed_frames - 1
                 if self.camera_model == "Chameleon3":
                     img_data = next_image.GetData()
                     gpio_buffer.append([(img_data[32] >> 4) & 1, (img_data[32] >> 5) & 1, (img_data[32] >> 7) & 1])

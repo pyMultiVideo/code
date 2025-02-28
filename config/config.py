@@ -6,8 +6,8 @@ import shutil
 __version__ = "1.0.0"
 
 gui_config = {
-    "camera_update_rate": 5,  # Rate at which to get new images from camera buffer.
-    "gui_update_rate": 30,  # Rate at which the images are displayed to GUI.
+    "camera_update_rate": 30,  # Rate at which to get new images from camera buffer.
+    "update_GUI_every_n_camera_updates": 1,  # How often GUI is updated relative to camera.
 }
 
 # Default FFMPEG config ----------------------------------------------------------------

@@ -158,7 +158,7 @@ class CameraWidget(QGroupBox):
         self.recording = False
         self.dropped_frames = 0
         # Begin capturing using the camera API
-        self.camera_api.begin_capturing()
+        self.camera_api.begin_capturing(self.settings)
 
     def stop_capturing(self):
         """Stop streaming video from camera."""
@@ -206,11 +206,14 @@ class CameraWidget(QGroupBox):
         self.metadata = {
             "subject_ID": self.subject_id,
             "camera_unique_id": self.settings.unique_id,
-            "recorded_frames": 0,
+            "camera_name": self.settings.name,
+            "FPS": int(self.settings.fps),
             "downsampling_factor": self.settings.downsampling_factor,
-            "begin_time": self.record_start_time.isoformat(timespec="milliseconds"),
-            "end_time": None,
+            "recorded_frames": 0,
             "dropped_frames": None,
+            "start_time": self.record_start_time.isoformat(timespec="milliseconds"),
+            "end_time": None,
+            "duration": None,
         }
         with open(self.metadata_filepath, "w") as meta_data_file:
             json.dump(self.metadata, meta_data_file, indent=4)
@@ -254,11 +257,13 @@ class CameraWidget(QGroupBox):
     def stop_recording(self) -> None:
         """Close data files and FFMPEG process, update GUI elements."""
         self.recording = False
+        end_time = datetime.now()
         self.recording_status_item.setText("NOT RECORDING", color="r")
         self.recording_time_text.setText("")
         # Close files.
         self.gpio_file.close()
-        self.metadata["end_time"] = datetime.now().isoformat(timespec="milliseconds")
+        self.metadata["end_time"] = end_time.isoformat(timespec="milliseconds")
+        self.metadata["duration"] = str(end_time - self.record_start_time)[:-3]
         self.metadata["recorded_frames"] = self.recorded_frames
         self.metadata["dropped_frames"] = self.dropped_frames
         with open(self.metadata_filepath, "w") as self.meta_data_file:

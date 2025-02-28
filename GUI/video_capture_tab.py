@@ -175,21 +175,19 @@ class VideoCaptureTab(QWidget):
 
         # Timers
         self.camera_widget_update_timer = QTimer()
-        self.camera_widget_update_timer.timeout.connect(self.update_camera_gui)
-        self.camera_image_update_timer = QTimer()
-        self.camera_image_update_timer.timeout.connect(self.fetch_image_buffers)
+        self.camera_widget_update_timer.timeout.connect(self.update_camera_widgets)
+        self.update_counter = 0
 
     # Timer callbacks -----------------------------------------------------------------
 
-    def update_camera_gui(self):
-        """Display new image from to all camera widgets"""
-        for camera_widget in self.camera_widgets:
-            camera_widget.update_video_display()
-            
-    def fetch_image_buffers(self):
-        """Fetch new images from all cameras, save if recording"""
+    def update_camera_widgets(self):
+        """Fetches new images from all cameras, updates video displays every n calls."""
         for camera_widget in self.camera_widgets:
             camera_widget.fetch_image_data()
+        self.update_counter = (self.update_counter + 1) % gui_config["update_GUI_every_n_camera_updates"]
+        if self.update_counter == 0:
+            for camera_widget in self.camera_widgets:
+                camera_widget.update_video_display()
 
     def refresh(self):
         """Refresh tab"""
@@ -212,12 +210,16 @@ class VideoCaptureTab(QWidget):
 
     def start_recording(self):
         # Check whether all the files name will be the same
-        camera_labels = [camera_widget.subject_id_text.toPlainText() for camera_widget in self.camera_widgets if camera_widget.subject_id_text.toPlainText()]
+        camera_labels = [
+            camera_widget.subject_id_text.toPlainText()
+            for camera_widget in self.camera_widgets
+            if camera_widget.subject_id_text.toPlainText()
+        ]
         if len(camera_labels) != len(set(camera_labels)):
             self.start_recording_button.setEnabled(False)
             show_info_message("Duplicate Subject IDs detected. Please ensure all are unique.")
             return
-        
+
         for camera_widget in self.camera_widgets:
             camera_widget.start_recording()
 
@@ -231,8 +233,7 @@ class VideoCaptureTab(QWidget):
         """Called when tab deselected to start aqusition of the camera video streams."""
         for camera_widget in self.camera_widgets:
             camera_widget.begin_capturing()
-        self.camera_widget_update_timer.start(int(1000 / gui_config["gui_update_rate"]))
-        self.camera_image_update_timer.start(int(1000 / gui_config["camera_update_rate"]))
+        self.camera_widget_update_timer.start(int(1000 / gui_config["camera_update_rate"]))
         self.refresh()
 
     def tab_deselected(self):
@@ -240,7 +241,6 @@ class VideoCaptureTab(QWidget):
         for camera_widget in self.camera_widgets:
             camera_widget.stop_capturing()
         self.camera_widget_update_timer.stop()
-        self.camera_image_update_timer.stop()
 
     def update_save_directory_display(self):
         """Display the path in the textbox"""
