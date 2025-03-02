@@ -1,4 +1,6 @@
 import os
+import numpy as np
+import cv2
 from collections import deque
 from PyQt6.QtWidgets import QVBoxLayout, QPushButton, QWidget
 from PyQt6.QtCore import QTimer
@@ -76,6 +78,8 @@ class CameraPreviewWidget(QWidget):
         self.camera_api = init_camera_api_from_module(
             settings=self.settings,
         )
+        self.camera_width = self.camera_api.get_width()
+        self.camera_height = self.camera_api.get_height()
         self.camera_api.begin_capturing()
 
         self.start_timer()
@@ -86,6 +90,11 @@ class CameraPreviewWidget(QWidget):
         if type(self.buffered_data) is type(None):
             return  # exit the function and wait to be called by the viewfinder tab.
         self._image_data = self.buffered_data["images"][0]
+        self._image_data = np.frombuffer(self._image_data, dtype=np.uint8).reshape(
+            self.camera_height, self.camera_width
+        )
+        self._image_data = cv2.cvtColor(self._image_data, self.camera_api.cv2_conversion[self.settings.pixel_format])
+        self.video_feed.setImage(np.transpose(self._image_data, (1, 0, 2)))
         # Calculate frame_rate
         self.frame_timestamps.extend(self.buffered_data["timestamps"])
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
