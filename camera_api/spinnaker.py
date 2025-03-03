@@ -14,7 +14,7 @@ class SpinnakerCamera(GenericCamera):
     def __init__(self, CameraConfig=None):
         super().__init__(self)
         self.unique_id = CameraConfig.unique_id
-        # Initialise camera -------------------------------------------------
+        # Initialise camera -------------------------------------------------------------
 
         self.serial_number, self.api = self.unique_id.split("-")
         self.cam_list = PYSPINSYSTEM.GetCameras()
@@ -27,9 +27,9 @@ class SpinnakerCamera(GenericCamera):
         self.nodemap = self.cam.GetNodeMap()
         self.stream_nodemap = self.cam.GetTLStreamNodeMap()
 
-        # Minimum required pixel format support -----------------------------
+        # Dictionaries for supporting colored cameras -----------------------------------
 
-        # Ordered list of color formats pMV supports
+        # List of color formats pMV supports listed in order or priority. Prioritise Color.
         self.supported_pixel_formats = OrderedDict(
             [
                 ("BayerRG8", "bayer_rggb8"),
@@ -41,7 +41,7 @@ class SpinnakerCamera(GenericCamera):
         # Set the pixel format
         self.set_pixel_format(self.pixel_format)
 
-        # Configure camera --------------------------------------------------
+        # Configure camera settings -----------------------------------------------------
 
         # Set Buffer handling mode to OldestFirst and buffer size to 100 frames.
         bh_node = PySpin.CEnumerationPtr(self.stream_nodemap.GetNode("StreamBufferHandlingMode"))
@@ -106,18 +106,27 @@ class SpinnakerCamera(GenericCamera):
         """Get the camera frame rate in Hz."""
         return PySpin.CFloatPtr(self.nodemap.GetNode("AcquisitionFrameRate")).GetValue()
 
-    def get_frame_rate_range(self) -> tuple[int, int]:
-        """Get the min and max frame rate in Hz."""
-        node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("AcquisitionFrameRate"))
-        return ceil(node.GetMin()), floor(node.GetMax())
+    def get_frame_rate_range(self, exposure_time) -> tuple[int, int]:
+        """Get the min and max frame rate (Hz)."""
+        try:
+            node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("AcquisitionFrameRate"))
+            return ceil(node.GetMin()), floor(node.GetMax())
+        except PySpin.SpinnakerException:
+            max_frame_rate = 1e6 / exposure_time
+            return ceil(1), floor(max_frame_rate)
 
     def get_exposure_time(self) -> float:
         """Get exposure of camera"""
         return float(PySpin.CFloatPtr(self.nodemap.GetNode("ExposureTime")).GetValue())
 
-    def get_exposure_time_range(self) -> tuple[int, int]:
-        node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("ExposureTime"))
-        return ceil(node.GetMin()), floor(node.GetMax())
+    def get_exposure_time_range(self, fps) -> tuple[int, int]:
+        """Get the min and max exposure time (us)"""
+        try:
+            node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("ExposureTime"))
+            return ceil(node.GetMin()), floor(node.GetMax())
+        except PySpin.SpinnakerException:
+            max_exposure_time = 1e6 / fps + 8  # Systematically underestimate maximum since init will fail if too big
+            return ceil(7), floor(max_exposure_time)
 
     def get_gain(self) -> int:
         """Get camera gain setting in dB."""

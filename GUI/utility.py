@@ -36,7 +36,7 @@ class CameraSettingsConfig:
 
     name: str
     unique_id: str
-    fps: str
+    fps: int
     exposure_time: float
     gain: float
     pixel_format: str
