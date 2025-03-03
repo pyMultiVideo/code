@@ -212,7 +212,7 @@ class VideoCaptureTab(QWidget):
         for camera_widget in self.camera_widgets:
             if any(char in invalid_chars for char in camera_widget.subject_id_text.toPlainText()):
                 show_info_message("One or more Subject IDs contain invalid characters.")
-            return
+                return
 
         for camera_widget in self.camera_widgets:
             camera_widget.start_recording()
