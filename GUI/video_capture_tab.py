@@ -207,6 +207,12 @@ class VideoCaptureTab(QWidget):
             self.start_recording_button.setEnabled(False)
             show_info_message("Duplicate Subject IDs detected. Please ensure all are unique.")
             return
+        # Check for invalid characters in file paths
+        invalid_chars = set('<>:"/\\|?*')
+        for camera_widget in self.camera_widgets:
+            if any(char in invalid_chars for char in camera_widget.subject_id_text.toPlainText()):
+                show_info_message("One or more Subject IDs contain invalid characters.")
+                return
 
         for camera_widget in self.camera_widgets:
             camera_widget.start_recording()

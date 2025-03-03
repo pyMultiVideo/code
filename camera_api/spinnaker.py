@@ -14,22 +14,21 @@ class SpinnakerCamera(GenericCamera):
     def __init__(self, CameraConfig=None):
         super().__init__(self)
         self.unique_id = CameraConfig.unique_id
-        # Initialise camera -------------------------------------------------
+        # Initialise camera -------------------------------------------------------------
 
         self.serial_number, self.api = self.unique_id.split("-")
         self.cam_list = PYSPINSYSTEM.GetCameras()
         self.cam = next(
             (cam for cam in self.cam_list if cam.TLDevice.DeviceSerialNumber.GetValue() == self.serial_number), None
         )
-        # self.cam = PYSPINSYSTEM.GetCameras().GetBySerial(self.serial_number)
         self.camera_model = self.cam.TLDevice.DeviceModelName.GetValue()[:10]
         self.cam.Init()
         self.nodemap = self.cam.GetNodeMap()
         self.stream_nodemap = self.cam.GetTLStreamNodeMap()
 
-        # Minimum required pixel format support -----------------------------
+        # Dictionaries for supporting colored cameras -----------------------------------
 
-        # Ordered list of color formats pMV supports
+        # List of color formats pMV supports listed in order or priority. Prioritise Color.
         self.supported_pixel_formats = OrderedDict(
             [
                 ("BayerRG8", "bayer_rggb8"),
@@ -41,7 +40,7 @@ class SpinnakerCamera(GenericCamera):
         # Set the pixel format
         self.set_pixel_format(self.pixel_format)
 
-        # Configure camera --------------------------------------------------
+        # Configure camera settings -----------------------------------------------------
 
         # Set Buffer handling mode to OldestFirst and buffer size to 100 frames.
         bh_node = PySpin.CEnumerationPtr(self.stream_nodemap.GetNode("StreamBufferHandlingMode"))
@@ -106,18 +105,27 @@ class SpinnakerCamera(GenericCamera):
         """Get the camera frame rate in Hz."""
         return PySpin.CFloatPtr(self.nodemap.GetNode("AcquisitionFrameRate")).GetValue()
 
-    def get_frame_rate_range(self) -> tuple[int, int]:
-        """Get the min and max frame rate in Hz."""
-        node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("AcquisitionFrameRate"))
-        return ceil(node.GetMin()), floor(node.GetMax())
+    def get_frame_rate_range(self, exposure_time) -> tuple[int, int]:
+        """Get the min and max frame rate (Hz)."""
+        try:
+            node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("AcquisitionFrameRate"))
+            return ceil(node.GetMin()), floor(node.GetMax())
+        except PySpin.SpinnakerException:
+            max_frame_rate = 1e6 / exposure_time
+            return ceil(1), floor(max_frame_rate)
 
     def get_exposure_time(self) -> float:
         """Get exposure of camera"""
         return float(PySpin.CFloatPtr(self.nodemap.GetNode("ExposureTime")).GetValue())
 
-    def get_exposure_time_range(self) -> tuple[int, int]:
-        node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("ExposureTime"))
-        return ceil(node.GetMin()), floor(node.GetMax())
+    def get_exposure_time_range(self, fps) -> tuple[int, int]:
+        """Get the min and max exposure time (us)"""
+        try:
+            node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("ExposureTime"))
+            return ceil(node.GetMin()), floor(node.GetMax())
+        except PySpin.SpinnakerException:
+            max_exposure_time = 1e6 / fps + 8  # Systematically underestimate maximum since init will fail if too big
+            return ceil(7), floor(max_exposure_time)
 
     def get_gain(self) -> int:
         """Get camera gain setting in dB."""
@@ -184,11 +192,13 @@ class SpinnakerCamera(GenericCamera):
         PySpin.CFloatPtr(self.nodemap.GetNode("Gain")).SetValue(float(gain))
 
     def set_pixel_format(self, pixel_format: str):
-        if self.cam.IsStreaming():
-            print("Cannot change pixel format while camera is streaming.")
-            return
-        node = PySpin.CEnumerationPtr(self.nodemap.GetNode("PixelFormat"))
-        node.SetIntValue(node.GetEntryByName(pixel_format).GetValue())
+        """Set the pixel format. The extra lines of code for checking the availablility of the node is for the BlackFlyS camera
+        since  beta firmware is being used for this camera"""
+        pxf_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("PixelFormat"))
+        if PySpin.IsAvailable(pxf_node) and PySpin.IsWritable(pxf_node):
+            pxf_node.SetIntValue(pxf_node.GetEntryByName(pixel_format).GetValue())
+        else:
+            print(f"Current pixel format: {self.camera_pixel_format()}")
 
     # Functions to control the camera streaming and check status.
 

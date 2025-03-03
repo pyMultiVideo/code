@@ -1,5 +1,6 @@
 import json
 import os
+from math import floor
 from PyQt6.QtWidgets import (
     QWidget,
     QGroupBox,
@@ -252,23 +253,21 @@ class Camera_table_item:
         # FPS edit
         self.fps_edit = QSpinBox()
         # Set the min and max values of the spinbox
-        self.fps_edit.setRange(*self.camera_api.get_frame_rate_range())
+        self.fps_edit.setRange(*self.camera_api.get_frame_rate_range(self.settings.exposure_time))
         self.fps_edit.setMaximum(120)
         if self.settings.fps:
             self.settings.fps = str(self.settings.fps)
             self.fps_edit.setValue(int(self.settings.fps))
         self.fps_edit.valueChanged.connect(self.camera_fps_changed)
-        self.fps_edit.setEnabled(False)
 
         # Exposure time edit
         self.exposure_time_edit = QSpinBox()
         self.exposure_time_edit.setSingleStep(100)
-        self.exposure_time_edit.setRange(*self.camera_api.get_exposure_time_range())
+        self.exposure_time_edit.setRange(*self.camera_api.get_exposure_time_range(self.settings.fps))
         self.exposure_time_edit.setValue(self.settings.exposure_time)
         if self.settings.exposure_time:
             self.exposure_time_edit.setValue(int(self.settings.exposure_time))
         self.exposure_time_edit.valueChanged.connect(self.camera_exposure_time_changed)
-        self.exposure_time_edit.setEnabled(False)
 
         # Gain edit
         self.gain_edit = QSpinBox()
@@ -330,11 +329,11 @@ class Camera_table_item:
 
     def camera_fps_changed(self):
         """Called when fps text of setup is edited."""
-        self.settings.fps = str(self.fps_edit.text())
+        self.settings.fps = int(self.fps_edit.text())
         self.setups_tab.update_saved_setups(setup=self)
         if self.GUI.preview_showing is True:
             self.setups_tab.camera_preview.camera_api.set_frame_rate(self.settings.fps)
-        self.exposure_time_edit.setRange(*self.camera_api.get_exposure_time_range())
+        self.exposure_time_edit.setRange(*self.camera_api.get_exposure_time_range(self.settings.fps))
 
     def camera_exposure_time_changed(self):
         """"""
@@ -342,7 +341,7 @@ class Camera_table_item:
         self.setups_tab.update_saved_setups(setup=self)
         if self.GUI.preview_showing:
             self.setups_tab.camera_preview.camera_api.set_exposure_time(self.settings.exposure_time)
-        self.fps_edit.setRange(*self.camera_api.get_frame_rate_range())
+        self.fps_edit.setRange(*self.camera_api.get_frame_rate_range(self.settings.exposure_time))
 
     def camera_gain_changed(self):
         """"""
@@ -382,5 +381,3 @@ class Camera_table_item:
     def close_preview_camera(self):
         self.setups_tab.camera_preview.close()
         self.GUI.preview_showing = False
-        self.fps_edit.setEnabled(False)
-        self.exposure_time_edit.setEnabled(False)

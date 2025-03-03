@@ -2,6 +2,8 @@ import os
 import numpy as np
 import cv2
 from collections import deque
+import numpy as np
+import cv2
 from PyQt6.QtWidgets import QVBoxLayout, QPushButton, QWidget
 from PyQt6.QtCore import QTimer
 from PyQt6.QtGui import QIcon, QFont
@@ -84,16 +86,26 @@ class CameraPreviewWidget(QWidget):
 
         self.start_timer()
 
+    # Timers ---------------------------------------------------------------------------------
+
+    def start_timer(self):
+        """Start a timer to refresh the video feed at the config `display_update_rate`"""
+        self.display_update_timer.timeout.connect(self.display_data)
+        self.display_update_timer.start(int(1000 / gui_config["camera_update_rate"]))
+
+    # Video Display  --------------------------------------------------------------------------
+
     def display_data(self):
         # Get the buffered data
         self.buffered_data = self.camera_api.get_available_images()
-        if type(self.buffered_data) is type(None):
-            return  # exit the function and wait to be called by the viewfinder tab.
-        self._image_data = self.buffered_data["images"][0]
-        self._image_data = np.frombuffer(self._image_data, dtype=np.uint8).reshape(
+        if self.buffered_data is None:
+            return  # Exit function if no data
+        # Convert image data to np array
+        self._image_data = np.frombuffer(self.buffered_data["images"][0], dtype=np.uint8).reshape(
             self.camera_height, self.camera_width
         )
         self._image_data = cv2.cvtColor(self._image_data, self.camera_api.cv2_conversion[self.settings.pixel_format])
+        # Display the data
         self.video_feed.setImage(np.transpose(self._image_data, (1, 0, 2)))
         # Calculate frame_rate
         self.frame_timestamps.extend(self.buffered_data["timestamps"])
@@ -106,21 +118,14 @@ class CameraPreviewWidget(QWidget):
             color="magenta",
         )
         self.gain_text.setText(f"Gain (dB) :{self.camera_api.get_gain():.2f}")
-        # Display the data
-        self.video_feed.setImage(self._image_data.T)
 
-    def start_timer(self):
-        """Start a timer to refresh the video feed at the config `display_update_rate`"""
-        self.display_update_timer.timeout.connect(self.display_data)
-        self.display_update_timer.start(int(1000 / gui_config["camera_update_rate"]))
+    # GUI element udpates ------------------------------------------------------------------------
 
     def closeEvent(self, event):
         """Handle the close event to stop the timer and release resources"""
         self.camera_api.close_api()
         self.display_update_timer.stop()
         self.GUI.preview_showing = False
-        self.camera_table_item.exposure_time_edit.setEnabled(False)
-        self.camera_table_item.fps_edit.setEnabled(False)
         self.close()
         super().closeEvent(event)
         event.accept()
