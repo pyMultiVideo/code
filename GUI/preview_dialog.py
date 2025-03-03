@@ -124,8 +124,6 @@ class CameraPreviewWidget(QWidget):
         self.camera_api.close_api()
         self.display_update_timer.stop()
         self.GUI.preview_showing = False
-        self.camera_table_item.exposure_time_edit.setEnabled(False)
-        self.camera_table_item.fps_edit.setEnabled(False)
         self.close()
         super().closeEvent(event)
         event.accept()

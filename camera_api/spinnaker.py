@@ -21,7 +21,6 @@ class SpinnakerCamera(GenericCamera):
         self.cam = next(
             (cam for cam in self.cam_list if cam.TLDevice.DeviceSerialNumber.GetValue() == self.serial_number), None
         )
-        # self.cam = PYSPINSYSTEM.GetCameras().GetBySerial(self.serial_number)
         self.camera_model = self.cam.TLDevice.DeviceModelName.GetValue()[:10]
         self.cam.Init()
         self.nodemap = self.cam.GetNodeMap()
@@ -193,11 +192,13 @@ class SpinnakerCamera(GenericCamera):
         PySpin.CFloatPtr(self.nodemap.GetNode("Gain")).SetValue(float(gain))
 
     def set_pixel_format(self, pixel_format: str):
-        if self.cam.IsStreaming():
-            print("Cannot change pixel format while camera is streaming.")
-            return
-        node = PySpin.CEnumerationPtr(self.nodemap.GetNode("PixelFormat"))
-        node.SetIntValue(node.GetEntryByName(pixel_format).GetValue())
+        """Set the pixel format. The extra lines of code for checking the availablility of the node is for the BlackFlyS camera
+        since  beta firmware is being used for this camera"""
+        pxf_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("PixelFormat"))
+        if PySpin.IsAvailable(pxf_node) and PySpin.IsWritable(pxf_node):
+            pxf_node.SetIntValue(pxf_node.GetEntryByName(pixel_format).GetValue())
+        else:
+            print(f"Current pixel format: {self.camera_pixel_format()}")
 
     # Functions to control the camera streaming and check status.
 

@@ -263,7 +263,6 @@ class CameraWidget(QGroupBox):
         self.camera_dropdown.setEnabled(False)
         self.start_recording_button.setEnabled(False)
         self.subject_id_text.setEnabled(False)
-        self.video_capture_tab.GUI.tab_widget.tabBar().setEnabled(False)
         self.video_capture_tab.update_global_recording_button_states()
 
     def stop_recording(self) -> None:
