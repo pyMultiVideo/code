@@ -1,6 +1,5 @@
 import json
 import os
-from math import floor
 from PyQt6.QtWidgets import (
     QWidget,
     QGroupBox,

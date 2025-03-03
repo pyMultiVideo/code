@@ -57,7 +57,7 @@ class CameraWidget(QGroupBox):
         self.camera_height = self.camera_api.get_height()
         self.camera_width = self.camera_api.get_width()
         self._image_data = None
-        self.frame_timestamps = deque(maxlen=10)
+        self.frame_timestamps = deque([0], maxlen=10)
         self.controls_visible = True
 
         # Video display.
@@ -293,11 +293,9 @@ class CameraWidget(QGroupBox):
         """Display most recent image and update information overlays."""
         if self._image_data is None:
             return
-        self._image_data = np.frombuffer(self._image_data, dtype=np.uint8).reshape(
-            self.camera_height, self.camera_width
-        )
-        self._image_data = cv2.cvtColor(self._image_data, self.camera_api.cv2_conversion[self.settings.pixel_format])
-        self.video_image_item.setImage(np.transpose(self._image_data, (1, 0, 2)))
+        image = np.frombuffer(self._image_data, dtype=np.uint8).reshape(self.camera_height, self.camera_width)
+        image = cv2.cvtColor(image, self.camera_api.cv2_conversion[self.settings.pixel_format])
+        self.video_image_item.setImage(np.transpose(image, (1, 0, 2)))
         # Compute average framerate and display over image.
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
         calculated_framerate = 1e9 / avg_time_diff

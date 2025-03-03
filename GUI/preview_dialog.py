@@ -51,7 +51,7 @@ class CameraPreviewWidget(QWidget):
         self.frame_rate_text.setText("FPS:", color="r")
 
         # Exposure time overlay
-        self.frame_timestamps = deque(maxlen=10)
+        self.frame_timestamps = deque([0], maxlen=10)
         self.exposure_time_text = pg.TextItem()
         self.exposure_time_text.setPos(10, 50)
         self.video_view_box.addItem(self.exposure_time_text)
@@ -75,6 +75,7 @@ class CameraPreviewWidget(QWidget):
 
         # Timer
         self.display_update_timer = QTimer()
+        self.display_update_timer.timeout.connect(self.display_data)
 
         # Init camera
         self.camera_api = init_camera_api_from_module(settings=self.settings)
@@ -88,7 +89,6 @@ class CameraPreviewWidget(QWidget):
 
     def start_timer(self):
         """Start a timer to refresh the video feed at the config `display_update_rate`"""
-        self.display_update_timer.timeout.connect(self.display_data)
         self.display_update_timer.start(int(1000 / gui_config["camera_update_rate"]))
 
     # Video Display  --------------------------------------------------------------------------
@@ -99,12 +99,11 @@ class CameraPreviewWidget(QWidget):
         if self.buffered_data is None:
             return  # Exit function if no data
         # Convert image data to np array
-        self._image_data = np.frombuffer(self.buffered_data["images"][0], dtype=np.uint8).reshape(
-            self.camera_height, self.camera_width
-        )
-        self._image_data = cv2.cvtColor(self._image_data, self.camera_api.cv2_conversion[self.settings.pixel_format])
+        image_data = self.buffered_data["images"][-1]
+        image = np.frombuffer(image_data, dtype=np.uint8).reshape(self.camera_height, self.camera_width)
+        image = cv2.cvtColor(image, self.camera_api.cv2_conversion[self.settings.pixel_format])
         # Display the data
-        self.video_image_item.setImage(np.transpose(self._image_data, (1, 0, 2)))
+        self.video_image_item.setImage(np.transpose(image, (1, 0, 2)))
         # Calculate frame_rate
         self.frame_timestamps.extend(self.buffered_data["timestamps"])
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
