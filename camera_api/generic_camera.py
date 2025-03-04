@@ -2,8 +2,6 @@
 Generic API defining functionality needed for for camera system to interact with the GUI.
 """
 
-import numpy as np
-
 # GenericCamera class -------------------------------------------------------------------
 
 
@@ -77,9 +75,7 @@ class GenericCamera:
         """Stop acquiring images from the camera"""
         pass
 
-    def get_available_images(
-        self,
-    ) -> dict[list[np.ndarray], list[dict[str, bool]], list[int]]:
+    def get_available_images(self):
         """Return all the data from the camera buffer as a dictionary.
 
         Important notes:

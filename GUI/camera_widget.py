@@ -54,58 +54,54 @@ class CameraWidget(QGroupBox):
         self.label = label
         self.settings = self.camera_setup_tab.get_camera_settings_from_label(label)
         self.camera_api = init_camera_api_from_module(settings=self.settings)
-        self.camera_image_height = self.camera_api.get_height()
-        self.camera_image_width = self.camera_api.get_width()
+        self.camera_height = self.camera_api.get_height()
+        self.camera_width = self.camera_api.get_width()
         self._image_data = None
-        self.frame_timestamps = deque(maxlen=10)
+        self.frame_timestamps = deque([0], maxlen=10)
         self.controls_visible = True
 
-        # Video display
-        self.video_feed = pg.ImageView()
-        self.video_feed.ui.histogram.hide()
-        self.video_feed.ui.roiBtn.hide()
-        self.video_feed.ui.menuBtn.hide()
-        self.video_feed.view.setMouseEnabled(x=False, y=False)
+        # Video display.
+        self.graphics_view = pg.GraphicsView()
+        self.video_view_box = pg.ViewBox(defaultPadding=0, invertY=True)
+        self.video_view_box.setMouseEnabled(x=False, y=False)
+        self.graphics_view.setCentralItem(self.video_view_box)
+        self.video_image_item = pg.ImageItem()
+        self.video_view_box.addItem(self.video_image_item)
+        self.video_view_box.setAspectLocked()
 
         # Video Feed's Camera Name
         self.camera_name_item = pg.TextItem()
-        self.camera_name_item.setPos(10, -40)
-        self.camera_name_item.setText(
-            f"{self.settings.name if self.settings.name is not None else self.settings.unique_id}", color="white"
-        )
+        self.camera_name_item.setPos(10, 10)
+        self.video_view_box.addItem(self.camera_name_item)
+        self.camera_name_item.setText(f"{self.label}", color="white")
 
         # Recording Information overlay
         self.recording_status_item = pg.TextItem()
-        self.recording_status_item.setPos(10, 10)
-        self.video_feed.addItem(self.recording_status_item)
+        self.recording_status_item.setPos(10, 40)
+        self.video_view_box.addItem(self.recording_status_item)
         self.recording_status_item.setText("NOT RECORDING", color="r")
 
-        self.recording_time_text = pg.TextItem()
-        self.recording_time_text.setPos(200, 10)
-        self.video_feed.addItem(self.recording_time_text)
-        self.recording_time_text.setText("", color="r")
+        # Framerate overlay
+        self.frame_rate_text = pg.TextItem()
+        self.frame_rate_text.setPos(10, 70)
+        self.video_view_box.addItem(self.frame_rate_text)
+        self.frame_rate_text.setText("FPS:", color="r")
 
         # GPIO state overlay
         self.gpio_state_smoothed = np.zeros(3)
         self.gpio_status_item = pg.TextItem()
-        self.gpio_status_item.setPos(10, 70)
-        self.video_feed.addItem(self.gpio_status_item)
+        self.gpio_status_item.setPos(10, 100)
+        self.video_view_box.addItem(self.gpio_status_item)
         self.gpio_status_item.setText("GPIO state", color="blue")
         self.gpio_status_indicators = [pg.TextItem() for _ in range(3)]
         for i, gpio_indicator in enumerate(self.gpio_status_indicators):
-            gpio_indicator.setPos(150 + i * 30, 70)
-            self.video_feed.addItem(gpio_indicator)
-
-        # Framerate overlay
-        self.frame_rate_text = pg.TextItem()
-        self.frame_rate_text.setPos(10, 40)
-        self.video_feed.addItem(self.frame_rate_text)
-        self.frame_rate_text.setText("FPS:", color="r")
+            gpio_indicator.setPos(150 + i * 30, 100)
+            self.video_view_box.addItem(gpio_indicator)
 
         # Dropped frames overlay
         self.dropped_frames_text = pg.TextItem()
-        self.dropped_frames_text.setPos(10, 100)
-        self.video_feed.addItem(self.dropped_frames_text)
+        self.dropped_frames_text.setPos(10, 130)
+        self.video_view_box.addItem(self.dropped_frames_text)
         self.dropped_frames_text.setText("", color="r")
 
         # Subject ID text edit
@@ -149,7 +145,7 @@ class CameraWidget(QGroupBox):
 
         self.vlayout = QVBoxLayout()
         self.vlayout.addLayout(self.header_layout)
-        self.vlayout.addWidget(self.video_feed, stretch=100)
+        self.vlayout.addWidget(self.graphics_view, stretch=100)
 
         self.setLayout(self.vlayout)
 
@@ -229,15 +225,15 @@ class CameraWidget(QGroupBox):
             json.dump(self.metadata, meta_data_file, indent=4)
 
         # Initalise ffmpeg process
-        self.camera_image_width = int(self.camera_api.get_width())
-        self.camera_image_height = int(self.camera_api.get_height())
-        self.downsampled_width = self.camera_image_width // self.settings.downsampling_factor
-        self.downsampled_height = self.camera_image_height // self.settings.downsampling_factor
+        self.camera_width = int(self.camera_api.get_width())
+        self.camera_height = int(self.camera_api.get_height())
+        self.downsampled_width = self.camera_width // self.settings.downsampling_factor
+        self.downsampled_height = self.camera_height // self.settings.downsampling_factor
         ffmpeg_command = " ".join(
             [
                 self.ffmpeg_path,  # Path to binary
                 "-f rawvideo",  # Input codec (raw video)
-                f"-s {self.camera_image_width}x{self.camera_image_height}",  # Input frame size
+                f"-s {self.camera_width}x{self.camera_height}",  # Input frame size
                 f"-pix_fmt {self.camera_api.supported_pixel_formats[self.settings.pixel_format]}",  # Input Pixel Format: 8-bit grayscale input to ffmpeg process. Input array 1D
                 f"-r {self.settings.fps}",  # Frame rate
                 "-i -",  # input comes from a pipe (stdin)
@@ -256,7 +252,6 @@ class CameraWidget(QGroupBox):
         # Set variables
         self.recording = True
         self.recorded_frames = 0
-        self.recording_status_item.setText("RECORDING", color="g")
 
         # Update GUI
         self.stop_recording_button.setEnabled(True)
@@ -270,7 +265,6 @@ class CameraWidget(QGroupBox):
         self.recording = False
         end_time = datetime.now()
         self.recording_status_item.setText("NOT RECORDING", color="r")
-        self.recording_time_text.setText("")
         # Close files.
         self.gpio_file.close()
         self.metadata["end_time"] = end_time.isoformat(timespec="milliseconds")
@@ -298,11 +292,9 @@ class CameraWidget(QGroupBox):
         """Display most recent image and update information overlays."""
         if self._image_data is None:
             return
-        self._image_data = np.frombuffer(self._image_data, dtype=np.uint8).reshape(
-            self.camera_image_height, self.camera_image_width
-        )
-        self._image_data = cv2.cvtColor(self._image_data, self.camera_api.cv2_conversion[self.settings.pixel_format])
-        self.video_feed.setImage(np.transpose(self._image_data, (1, 0, 2)))
+        image = np.frombuffer(self._image_data, dtype=np.uint8).reshape(self.camera_height, self.camera_width)
+        image = cv2.cvtColor(image, self.camera_api.cv2_conversion[self.settings.pixel_format])
+        self.video_image_item.setImage(np.transpose(image, (1, 0, 2)))
         # Compute average framerate and display over image.
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
         calculated_framerate = 1e9 / avg_time_diff
@@ -316,7 +308,7 @@ class CameraWidget(QGroupBox):
         # Display the current recording duration over image.
         if self.recording:
             elapsed_time = datetime.now() - self.record_start_time
-            self.recording_time_text.setText(str(elapsed_time).split(".")[0], color="g")
+            self.recording_status_item.setText(f"RECORDING  {str(elapsed_time).split('.')[0]}", color="g")
         # Update dropped frames indicator.
         if self._newly_dropped_frames:
             self.dropped_frames_text.setText("DROPPED FRAMES", color="r")
@@ -343,10 +335,12 @@ class CameraWidget(QGroupBox):
     def subject_ID_edited(self):
         """Store new subject ID and update status of recording button."""
         self.subject_id = self.subject_id_text.toPlainText()
-        if self.subject_id_text.toPlainText() == "":
-            self.start_recording_button.setEnabled(False)
-        else:
+        if self.subject_id:
             self.start_recording_button.setEnabled(True)
+            self.camera_name_item.setText(f"{self.label} : {self.subject_id}", color="white")
+        else:
+            self.start_recording_button.setEnabled(False)
+            self.camera_name_item.setText(f"{self.label}", color="white")
         self.video_capture_tab.update_global_recording_button_states()
 
     def toggle_control_visibility(self) -> None:
@@ -357,9 +351,9 @@ class CameraWidget(QGroupBox):
             widget.setVisible(self.controls_visible)
         # Set the camera label onto the pygraph
         if self.controls_visible:
-            self.video_feed.removeItem(self.camera_name_item)
+            self.video_view_box.removeItem(self.camera_name_item)
         else:
-            self.video_feed.addItem(self.camera_name_item)
+            self.video_view_box.addItem(self.camera_name_item)
 
     def resizeEvent(self, event, scale_factor=0.015):
         """Update display element font sizes on resizeEvent."""
@@ -368,7 +362,6 @@ class CameraWidget(QGroupBox):
             gpio_indicator.setFont(QFont("Arial", font_size))
         self.gpio_status_item.setFont(QFont("Arial", font_size))
         self.recording_status_item.setFont(QFont("Arial", font_size))
-        self.recording_time_text.setFont(QFont("Arial", font_size))
         self.frame_rate_text.setFont(QFont("Arial", font_size))
         self.camera_name_item.setFont(QFont("Arial", font_size))
         super().resizeEvent(event)
@@ -388,8 +381,8 @@ class CameraWidget(QGroupBox):
         self.settings = self.camera_setup_tab.get_camera_settings_from_label(self.label)
         self.camera_api = init_camera_api_from_module(self.settings)
         self.camera_api.begin_capturing()
-        self.camera_image_height = self.camera_api.get_height()
-        self.camera_image_width = self.camera_api.get_width()
+        self.camera_height = self.camera_api.get_height()
+        self.camera_width = self.camera_api.get_width()
         # Rename pyqtgraph element
         self.camera_name_item.setText(
             f"{self.settings.name if self.settings.name is not None else self.settings.unique_id}", color="white"

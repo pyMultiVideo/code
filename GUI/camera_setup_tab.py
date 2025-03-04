@@ -196,7 +196,7 @@ class CameraOverviewTable(QTableWidget):
             "FPS",
             "Exposure (μs)",
             "Gain (dB)",
-            "Pixel Formats",
+            "Pixel Format",
             "Downsample Factor",
             "Camera Preview",
         ]
@@ -286,7 +286,7 @@ class Camera_table_item:
 
         # Downsampling factor edit
         self.downsampling_factor_edit = QComboBox()
-        self.downsampling_factor_edit.addItems(["1", "2", "4", "8"])
+        self.downsampling_factor_edit.addItems(["1", "2", "4"])
         if self.settings.downsampling_factor:
             self.downsampling_factor_edit.setCurrentText(str(self.settings.downsampling_factor))
         self.downsampling_factor_edit.activated.connect(self.camera_downsampling_factor_changed)
@@ -375,6 +375,8 @@ class Camera_table_item:
         self.setups_tab.camera_preview = CameraPreviewWidget(gui=self.GUI, camera_table_item=self)
         self.setups_tab.page_layout.addWidget(self.setups_tab.camera_preview)
         self.GUI.preview_showing = True
+        self.fps_edit.setEnabled(True)
+        self.exposure_time_edit.setEnabled(True)
 
     def close_preview_camera(self):
         self.setups_tab.camera_preview.close()

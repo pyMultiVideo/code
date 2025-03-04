@@ -1,4 +1,6 @@
 import os
+import numpy as np
+import cv2
 from collections import deque
 import numpy as np
 import cv2
@@ -35,30 +37,32 @@ class CameraPreviewWidget(QWidget):
             500,
         )
 
-        # Intialise Videofeed
-        self.video_feed = pg.ImageView()
-        self.video_feed.ui.histogram.hide()
-        self.video_feed.ui.roiBtn.hide()
-        self.video_feed.ui.menuBtn.hide()
-        self.video_feed.view.setMouseEnabled(x=False, y=False)
+        # Video display.
+        self.graphics_view = pg.GraphicsView()
+        self.video_view_box = pg.ViewBox(defaultPadding=0, invertY=True)
+        self.video_view_box.setMouseEnabled(x=False, y=False)
+        self.graphics_view.setCentralItem(self.video_view_box)
+        self.video_image_item = pg.ImageItem()
+        self.video_view_box.addItem(self.video_image_item)
+        self.video_view_box.setAspectLocked()
 
         # Framerate overlay
         self.frame_rate_text = pg.TextItem()
         self.frame_rate_text.setPos(10, 10)
-        self.video_feed.addItem(self.frame_rate_text)
+        self.video_view_box.addItem(self.frame_rate_text)
         self.frame_rate_text.setText("FPS:", color="r")
 
         # Exposure time overlay
-        self.frame_timestamps = deque(maxlen=10)
+        self.frame_timestamps = deque([0], maxlen=10)
         self.exposure_time_text = pg.TextItem()
         self.exposure_time_text.setPos(10, 50)
-        self.video_feed.addItem(self.exposure_time_text)
+        self.video_view_box.addItem(self.exposure_time_text)
         self.exposure_time_text.setText("Exposure Time:", color="magenta")
 
         # Gain overlay
         self.gain_text = pg.TextItem()
         self.gain_text.setPos(10, 90)
-        self.video_feed.addItem(self.gain_text)
+        self.video_view_box.addItem(self.gain_text)
         self.gain_text.setText("Gain:", color="magenta")
 
         # Close button
@@ -67,17 +71,18 @@ class CameraPreviewWidget(QWidget):
 
         # Layout
         self.hlayout = QVBoxLayout()
-        self.hlayout.addWidget(self.video_feed)
+        self.hlayout.addWidget(self.graphics_view)
         self.hlayout.addWidget(self.closeButton)
         self.setLayout(self.hlayout)
 
         # Timer
         self.display_update_timer = QTimer()
+        self.display_update_timer.timeout.connect(self.display_data)
 
         # Init camera
-        self.camera_api = init_camera_api_from_module(
-            settings=self.settings,
-        )
+        self.camera_api = init_camera_api_from_module(settings=self.settings)
+        self.camera_width = self.camera_api.get_width()
+        self.camera_height = self.camera_api.get_height()
         self.camera_api.begin_capturing()
         self.camera_image_height = self.camera_api.get_height()
         self.camera_image_width = self.camera_api.get_width()
@@ -88,7 +93,6 @@ class CameraPreviewWidget(QWidget):
 
     def start_timer(self):
         """Start a timer to refresh the video feed at the config `display_update_rate`"""
-        self.display_update_timer.timeout.connect(self.display_data)
         self.display_update_timer.start(int(1000 / gui_config["camera_update_rate"]))
 
     # Video Display  --------------------------------------------------------------------------
@@ -99,12 +103,11 @@ class CameraPreviewWidget(QWidget):
         if self.buffered_data is None:
             return  # Exit function if no data
         # Convert image data to np array
-        self._image_data = np.frombuffer(self.buffered_data["images"][0], dtype=np.uint8).reshape(
-            self.camera_image_height, self.camera_image_width
-        )
-        self._image_data = cv2.cvtColor(self._image_data, self.camera_api.cv2_conversion[self.settings.pixel_format])
+        image_data = self.buffered_data["images"][-1]
+        image = np.frombuffer(image_data, dtype=np.uint8).reshape(self.camera_height, self.camera_width)
+        image = cv2.cvtColor(image, self.camera_api.cv2_conversion[self.settings.pixel_format])
         # Display the data
-        self.video_feed.setImage(np.transpose(self._image_data, (1, 0, 2)))
+        self.video_image_item.setImage(np.transpose(image, (1, 0, 2)))
         # Calculate frame_rate
         self.frame_timestamps.extend(self.buffered_data["timestamps"])
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
