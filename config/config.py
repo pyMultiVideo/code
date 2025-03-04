@@ -35,7 +35,7 @@ paths_config = {
 # Default Camera Settings --------------------------------------------------------------
 
 default_camera_config = {
-    "fps": 30,
+    "fps": 60,
     "downsampling_factor": 1,
     "exposure_time": 15000,
     "gain": 0,
