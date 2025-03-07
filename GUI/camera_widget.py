@@ -8,7 +8,7 @@ from datetime import datetime
 from collections import deque
 
 import pyqtgraph as pg
-from PyQt6.QtGui import QIcon, QFont
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QComboBox,
     QGroupBox,
@@ -27,7 +27,7 @@ from .utility import (
     ffmpeg_encoder_map,
 )
 from .message_dialogs import show_warning_message
-from config.config import ffmpeg_config, paths_config
+from config.config import ffmpeg_config, paths_config, gui_config
 
 
 class CameraWidget(QGroupBox):
@@ -69,39 +69,41 @@ class CameraWidget(QGroupBox):
         self.video_view_box.addItem(self.video_image_item)
         self.video_view_box.setAspectLocked()
 
+        text_spacing = int(gui_config["font_size"] * 1.25)
+
         # Video Feed's Camera Name
         self.camera_name_item = pg.TextItem()
-        self.camera_name_item.setPos(10, 10)
-        self.video_view_box.addItem(self.camera_name_item)
+        self.camera_name_item.setPos(10, text_spacing)
+        self.graphics_view.addItem(self.camera_name_item)
         self.camera_name_item.setText(f"{self.label}", color="white")
 
         # Recording Information overlay
         self.recording_status_item = pg.TextItem()
-        self.recording_status_item.setPos(10, 40)
-        self.video_view_box.addItem(self.recording_status_item)
+        self.recording_status_item.setPos(10, 2 * text_spacing)
+        self.graphics_view.addItem(self.recording_status_item)
         self.recording_status_item.setText("NOT RECORDING", color="r")
 
         # Framerate overlay
         self.frame_rate_text = pg.TextItem()
-        self.frame_rate_text.setPos(10, 70)
-        self.video_view_box.addItem(self.frame_rate_text)
+        self.frame_rate_text.setPos(10, 3 * text_spacing)
+        self.graphics_view.addItem(self.frame_rate_text)
         self.frame_rate_text.setText("FPS:", color="r")
 
         # GPIO state overlay
         self.gpio_state_smoothed = np.zeros(3)
         self.gpio_status_item = pg.TextItem()
-        self.gpio_status_item.setPos(10, 100)
-        self.video_view_box.addItem(self.gpio_status_item)
+        self.gpio_status_item.setPos(10, 4 * text_spacing)
+        self.graphics_view.addItem(self.gpio_status_item)
         self.gpio_status_item.setText("GPIO state", color="blue")
         self.gpio_status_indicators = [pg.TextItem() for _ in range(3)]
         for i, gpio_indicator in enumerate(self.gpio_status_indicators):
-            gpio_indicator.setPos(150 + i * 30, 100)
-            self.video_view_box.addItem(gpio_indicator)
+            gpio_indicator.setPos((5 + i) * text_spacing, 4 * text_spacing)
+            self.graphics_view.addItem(gpio_indicator)
 
         # Dropped frames overlay
         self.dropped_frames_text = pg.TextItem()
-        self.dropped_frames_text.setPos(10, 130)
-        self.video_view_box.addItem(self.dropped_frames_text)
+        self.dropped_frames_text.setPos(10, 5 * text_spacing)
+        self.graphics_view.addItem(self.dropped_frames_text)
         self.dropped_frames_text.setText("", color="r")
 
         # Subject ID text edit
@@ -191,7 +193,7 @@ class CameraWidget(QGroupBox):
         # Create Filepaths.
         self.subject_id = self.subject_id_text.toPlainText()
         self.record_start_time = datetime.now()
-        save_dir = self.video_capture_tab.temp_data_dir
+        save_dir = self.video_capture_tab.data_dir
         filename_stem = f"{self.subject_id}_{self.record_start_time.strftime('%Y-%m-%d-%H%M%S')}"
         self.video_filepath = os.path.join(save_dir, filename_stem + ".mp4")
         self.GPIO_filepath = os.path.join(save_dir, filename_stem + "_GPIO_data.csv")
@@ -355,17 +357,6 @@ class CameraWidget(QGroupBox):
             self.video_view_box.removeItem(self.camera_name_item)
         else:
             self.video_view_box.addItem(self.camera_name_item)
-
-    def resizeEvent(self, event, scale_factor=0.015):
-        """Update display element font sizes on resizeEvent."""
-        font_size = int(min(self.width(), self.height()) * scale_factor)
-        for i, gpio_indicator in enumerate(self.gpio_status_indicators):
-            gpio_indicator.setFont(QFont("Arial", font_size))
-        self.gpio_status_item.setFont(QFont("Arial", font_size))
-        self.recording_status_item.setFont(QFont("Arial", font_size))
-        self.frame_rate_text.setFont(QFont("Arial", font_size))
-        self.camera_name_item.setFont(QFont("Arial", font_size))
-        super().resizeEvent(event)
 
     ### Config related functions ------------------------------------------------------
 

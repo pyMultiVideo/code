@@ -126,11 +126,3 @@ class CameraPreviewWidget(QWidget):
         self.close()
         super().closeEvent(event)
         event.accept()
-
-    def resizeEvent(self, event, scale_factor=0.02):
-        """Scale the font size to the widget"""
-        super().resizeEvent(event)
-        font_size = int(min(self.width(), self.height()) * scale_factor)
-        self.frame_rate_text.setFont(QFont("Arial", font_size))
-        self.exposure_time_text.setFont(QFont("Arial", font_size))
-        self.gain_text.setFont(QFont("Arial", font_size))

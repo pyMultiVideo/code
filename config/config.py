@@ -8,6 +8,7 @@ __version__ = "1.0.0"
 gui_config = {
     "camera_update_rate": 30,  # Rate at which to get new images from camera buffer.
     "camera_updates_per_display_update": 1,  # How often images are fetched from camera per update of video display.
+    "font_size": 12,  # Font size to use in GUI.
 }
 
 # Default FFMPEG config ----------------------------------------------------------------

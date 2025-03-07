@@ -5,7 +5,7 @@ from typing import List
 from PyQt6.QtWidgets import (
     QVBoxLayout,
     QGroupBox,
-    QPlainTextEdit,
+    QLineEdit,
     QHBoxLayout,
     QGridLayout,
     QWidget,
@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
     QSpinBox,
     QLabel,
 )
-from PyQt6.QtGui import QFontMetrics, QIcon
+from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import QTimer, Qt
 
 from dataclasses import asdict
@@ -85,14 +85,10 @@ class VideoCaptureTab(QWidget):
         self.save_dir_button.setToolTip("Change the directory to save data")
 
         # Display the save directory
-        self.save_dir_textbox = QPlainTextEdit(self.paths["data_dir"])
-        self.save_dir_textbox.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.save_dir_textbox.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.save_dir_textbox.setMaximumBlockCount(1)
+        self.save_dir_textbox = QLineEdit(self.paths["data_dir"])
+        self.save_dir_textbox.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.save_dir_textbox.setReadOnly(True)
-        self.temp_data_dir = self.paths["data_dir"]
-        self.save_dir_textbox.setPlainText(self.temp_data_dir)
-        self.update_save_directory_display()
+        self.data_dir = self.paths["data_dir"]
 
         self.save_dir_hlayout = QHBoxLayout()
         self.save_dir_hlayout.addWidget(self.save_dir_textbox)
@@ -189,11 +185,6 @@ class VideoCaptureTab(QWidget):
         # Update button states
         self.update_global_recording_button_states()
 
-    def resizeEvent(self, event):
-        """Called on resized widget"""
-        self.update_save_directory_display()
-        super().resizeEvent(event)
-
     # Camera acquisition and recording control ----------------------------------------
 
     def start_recording(self):
@@ -235,19 +226,6 @@ class VideoCaptureTab(QWidget):
         for camera_widget in self.camera_widgets:
             camera_widget.stop_capturing()
         self.camera_widget_update_timer.stop()
-
-    def update_save_directory_display(self):
-        """Display the path in the textbox"""
-        save_dir = self.temp_data_dir
-        # Calculate the width of the textbox
-        text_edit_width = self.save_dir_textbox.viewport().width()
-        font = self.save_dir_textbox.font()
-        char_width = QFontMetrics(font).horizontalAdvance("W")
-        n_char = text_edit_width // char_width
-
-        if len(save_dir) > n_char:
-            save_dir = ".." + save_dir[-(n_char):]
-        self.save_dir_textbox.setPlainText(save_dir)
 
     def add_or_remove_camera_widgets(self):
         """Add or remove the camera widgets from the"""
@@ -309,7 +287,7 @@ class VideoCaptureTab(QWidget):
         default_name = os.path.join("experiments", "experiment_config.json")
         file_path = QFileDialog.getSaveFileName(self, "Save File", default_name, "JSON Files (*.json)")
         experiment_config = ExperimentConfig(
-            data_dir=self.temp_data_dir,
+            data_dir=self.data_dir,
             n_cameras=self.n_cameras_spinbox.value(),
             n_columns=self.n_columns_spinbox.value(),
             cameras=[camera_widget.get_camera_config() for camera_widget in self.camera_widgets],
@@ -341,8 +319,7 @@ class VideoCaptureTab(QWidget):
         # Set the values of the spinbox and encoder selection based on config file
         self.n_cameras_spinbox.setValue(experiment_config.n_cameras)
         self.n_columns_spinbox.setValue(experiment_config.n_columns)
-        self.temp_data_dir = experiment_config.data_dir
-        self.update_save_directory_display()
+        self.data_dir = experiment_config.data_dir
 
     def handle_camera_setups_modified(self):
         """Handle the renamed cameras by renaming the relevent attributes of the camera groupboxes"""
@@ -365,10 +342,10 @@ class VideoCaptureTab(QWidget):
 
     def get_save_dir(self):
         """Return the save directory"""
-        save_directory = QFileDialog.getExistingDirectory(self, "Select Directory", paths_config["data_dir"])
+        save_directory = QFileDialog.getExistingDirectory(self, "Select Directory", self.data_dir)
         if save_directory:
-            self.save_dir_textbox.setPlainText(save_directory)
-            self.temp_data_dir = save_directory
+            self.save_dir_textbox.setText(save_directory)
+            self.data_dir = save_directory
 
     def get_camera_widget_labels(self) -> List[str]:
         """Return the camera labels for all camera widgets."""

@@ -55,11 +55,6 @@ class GUIMain(QMainWindow):
             self.video_capture_tab.tab_deselected()
             self.camera_setup_tab.tab_selected()
 
-    def resizeEvent(self, event):
-        """Resize the GUI"""
-        self.video_capture_tab.resize(event.size().width(), event.size().height())
-        event.accept()
-
     def closeEvent(self, event):
         """Close the GUI"""
         for c_w in self.video_capture_tab.camera_widgets:
