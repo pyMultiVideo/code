@@ -17,9 +17,7 @@ if os.name == "nt":  # Needed on windows to get taskbar icon to display correctl
 
 
 class GUIMain(QMainWindow):
-    """
-    Class to create the main GUI window
-    """
+    """Class implementing the main GUI window."""
 
     def __init__(self, parsed_args):
         super().__init__()

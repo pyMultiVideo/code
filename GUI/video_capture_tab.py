@@ -20,7 +20,7 @@ from PyQt6.QtCore import QTimer, Qt
 from dataclasses import asdict
 from .camera_widget import CameraWidget
 from .message_dialogs import show_info_message
-from .utility import ExperimentConfig, CameraWidgetConfig, gpu_available
+from .utility import ExperimentConfig, CameraWidgetConfig
 from config.config import gui_config, paths_config
 
 
@@ -172,7 +172,7 @@ class VideoCaptureTab(QWidget):
         """Fetches new images from all cameras, updates video displays every n calls."""
         for camera_widget in self.camera_widgets:
             camera_widget.fetch_image_data()
-        self.update_counter = (self.update_counter + 1) % gui_config["GUI_updates_per_camera_update"]
+        self.update_counter = (self.update_counter + 1) % gui_config["camera_updates_per_display_update"]
         if self.update_counter == 0:
             for camera_widget in self.camera_widgets:
                 camera_widget.update_video_display()
