@@ -53,7 +53,7 @@ class VideoCaptureTab(QWidget):
 
         # Save layout button
         self.save_camera_config_button = QPushButton("Save")
-        self.save_camera_config_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "save.svg")))
+        self.save_camera_config_button.setIcon(QIcon(os.path.join(self.paths["icons_dir"], "save.svg")))
         self.save_camera_config_button.setFixedHeight(30)
         self.save_camera_config_button.clicked.connect(self.save_experiment_config)
         self.save_camera_config_button.setToolTip("Save the current camera configuration")
@@ -78,7 +78,7 @@ class VideoCaptureTab(QWidget):
 
         # Buttons for saving and loading camera configurations
         self.save_dir_button = QPushButton("")
-        self.save_dir_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "folder.svg")))
+        self.save_dir_button.setIcon(QIcon(os.path.join(self.paths["icons_dir"], "folder.svg")))
         self.save_dir_button.setFixedWidth(30)
         self.save_dir_button.setFixedHeight(30)
         self.save_dir_button.clicked.connect(self.get_save_dir)
@@ -99,7 +99,7 @@ class VideoCaptureTab(QWidget):
 
         # Button for recording video
         self.start_recording_button = QPushButton("")
-        self.start_recording_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "record.svg")))
+        self.start_recording_button.setIcon(QIcon(os.path.join(self.paths["icons_dir"], "record.svg")))
         self.start_recording_button.setFixedWidth(30)
         self.start_recording_button.setFixedHeight(30)
         self.start_recording_button.clicked.connect(self.start_recording)
@@ -108,7 +108,7 @@ class VideoCaptureTab(QWidget):
 
         # Button for stopping recording
         self.stop_recording_button = QPushButton("")
-        self.stop_recording_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "stop.svg")))
+        self.stop_recording_button.setIcon(QIcon(os.path.join(self.paths["icons_dir"], "stop.svg")))
         self.stop_recording_button.setFixedWidth(30)
         self.stop_recording_button.setFixedHeight(30)
         self.stop_recording_button.clicked.connect(self.stop_recording)
@@ -140,10 +140,7 @@ class VideoCaptureTab(QWidget):
 
         # Check if the config file is present
         if self.GUI.startup_config is None:
-            available_cameras = sorted(
-                list(set(self.camera_setup_tab.get_camera_labels()) - set(self.get_camera_widget_labels())),
-                key=str.lower,
-            )
+            available_cameras = sorted(list(self.camera_setup_tab.get_camera_labels()), key=str.lower)
             for camera_label in available_cameras[:1]:  # One camera by default
                 self.initialize_camera_widget(
                     label=camera_label,
@@ -166,12 +163,10 @@ class VideoCaptureTab(QWidget):
 
     def update_camera_widgets(self):
         """Fetches new images from all cameras, updates video displays every n calls."""
-        for camera_widget in self.camera_widgets:
-            camera_widget.fetch_image_data()
         self.update_counter = (self.update_counter + 1) % gui_config["camera_updates_per_display_update"]
-        if self.update_counter == 0:
-            for camera_widget in self.camera_widgets:
-                camera_widget.update_video_display()
+        video_display_update = self.update_counter == 0
+        for camera_widget in self.camera_widgets:
+            camera_widget.update(video_display_update)
 
     def refresh(self):
         """Refresh tab"""

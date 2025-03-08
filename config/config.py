@@ -30,7 +30,7 @@ paths_config = {
     "encoder_dir": os.path.join(ROOT, "config"),
     "data_dir": os.path.join(ROOT, "data"),
     "config_dir": os.path.join(ROOT, "config"),
-    "assets_dir": os.path.join(ROOT, "GUI", "icons"),
+    "icons_dir": os.path.join(ROOT, "GUI", "icons"),
 }
 
 # Default Camera Settings --------------------------------------------------------------

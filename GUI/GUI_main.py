@@ -26,7 +26,7 @@ class GUIMain(QMainWindow):
         # Set window size, title, icon.
         self.setGeometry(100, 100, 700, 800)  # x, y, width, height
         self.setWindowTitle(f"pyMultiVideo v{__version__}")  # default window title
-        self.setWindowIcon(QIcon(os.path.join(self.paths["assets_dir"], "logo.svg")))
+        self.setWindowIcon(QIcon(os.path.join(self.paths["icons_dir"], "logo.svg")))
         # Initialise the tabs and tab widget.
         self.camera_setup_tab = CamerasTab(parent=self)
         self.video_capture_tab = VideoCaptureTab(parent=self)

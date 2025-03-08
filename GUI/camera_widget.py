@@ -8,6 +8,7 @@ from datetime import datetime
 from collections import deque
 
 import pyqtgraph as pg
+from PyQt6.QtCore import QTimer
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -33,17 +34,17 @@ from config.config import ffmpeg_config, paths_config, gui_config
 class CameraWidget(QGroupBox):
     """Widget for displaying camera video and camera controls."""
 
-    def __init__(self, parent, label, subject_id):
+    def __init__(self, parent, label, subject_id="", preview_mode=False):
         super(CameraWidget, self).__init__(parent)
-        self.video_capture_tab = parent
-        self.GUI = self.video_capture_tab.GUI
-        self.camera_setup_tab = self.video_capture_tab.GUI.camera_setup_tab
-        self.paths = paths_config
+        self.parent = parent
+        self.GUI = self.parent.GUI
+        self.preview_mode = preview_mode  # True if widget is being used in camera setup tab.
+
         self.ffmpeg_path = (
-            self.paths["FFMPEG"]
-            if validate_ffmpeg_path(self.paths["FFMPEG"])
+            paths_config["FFMPEG"]
+            if validate_ffmpeg_path(paths_config["FFMPEG"])
             else show_warning_message(
-                f"FFMPEG path {self.paths['FFMPEG']} not valid",
+                f"FFMPEG path {paths_config['FFMPEG']} not valid",
                 okayButtonPresent=False,
                 ignoreButtonPresent=True,
             )
@@ -52,7 +53,7 @@ class CameraWidget(QGroupBox):
         # Camera attributes
         self.subject_id = subject_id
         self.label = label
-        self.settings = self.camera_setup_tab.get_camera_settings_from_label(label)
+        self.settings = self.GUI.camera_setup_tab.get_camera_settings_from_label(label)
         self.camera_api = init_camera_api_from_module(settings=self.settings)
         self.camera_height = self.camera_api.get_height()
         self.camera_width = self.camera_api.get_width()
@@ -60,7 +61,8 @@ class CameraWidget(QGroupBox):
         self.frame_timestamps = deque([0], maxlen=10)
         self.controls_visible = True
 
-        # Video display.
+        # Video display ---------------------------------------------------------------
+
         self.graphics_view = pg.GraphicsView()
         self.video_view_box = pg.ViewBox(defaultPadding=0, invertY=True)
         self.video_view_box.setMouseEnabled(x=False, y=False)
@@ -71,7 +73,7 @@ class CameraWidget(QGroupBox):
 
         text_spacing = int(gui_config["font_size"] * 1.25)
 
-        # Video Feed's Camera Name
+        # Camera name overlay
         self.camera_name_item = pg.TextItem()
         self.camera_name_item.setPos(10, text_spacing)
         self.graphics_view.addItem(self.camera_name_item)
@@ -106,6 +108,22 @@ class CameraWidget(QGroupBox):
         self.graphics_view.addItem(self.dropped_frames_text)
         self.dropped_frames_text.setText("", color="r")
 
+        if self.preview_mode:
+            # Exposure time overlay
+            self.frame_timestamps = deque([0], maxlen=10)
+            self.exposure_time_text = pg.TextItem()
+            self.exposure_time_text.setPos(10, 6 * text_spacing)
+            self.graphics_view.addItem(self.exposure_time_text)
+            self.exposure_time_text.setText("Exposure Time:", color="magenta")
+
+            # Gain overlay
+            self.gain_text = pg.TextItem()
+            self.gain_text.setPos(10, 7 * text_spacing)
+            self.graphics_view.addItem(self.gain_text)
+            self.gain_text.setText("Gain:", color="magenta")
+
+        # Controls -----------------------------------------------------------------
+
         # Subject ID text edit
         self.subject_id_label = QLabel("Subject ID:")
         self.subject_id_text = QTextEdit()
@@ -115,7 +133,7 @@ class CameraWidget(QGroupBox):
 
         # Record button.
         self.start_recording_button = QPushButton("")
-        self.start_recording_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "record.svg")))
+        self.start_recording_button.setIcon(QIcon(os.path.join(paths_config["icons_dir"], "record.svg")))
         self.start_recording_button.setFixedWidth(30)
         self.start_recording_button.setEnabled(bool(self.subject_id))
         self.start_recording_button.clicked.connect(self.start_recording)
@@ -123,7 +141,7 @@ class CameraWidget(QGroupBox):
 
         # Stop button.
         self.stop_recording_button = QPushButton("")
-        self.stop_recording_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "stop.svg")))
+        self.stop_recording_button.setIcon(QIcon(os.path.join(paths_config["icons_dir"], "stop.svg")))
         self.stop_recording_button.setFixedWidth(30)
         self.stop_recording_button.setEnabled(False)
         self.stop_recording_button.clicked.connect(self.stop_recording)
@@ -133,7 +151,7 @@ class CameraWidget(QGroupBox):
         self.camera_id_label = QLabel("Camera:")
         self.camera_dropdown = QComboBox()
         self.camera_dropdown.currentTextChanged.connect(self.change_camera)
-        self.update_camera_dropdown()
+        self.camera_dropdown.addItems([self.label])
         self.camera_dropdown.setCurrentText(self.label)
 
         # Layout
@@ -151,14 +169,20 @@ class CameraWidget(QGroupBox):
 
         self.setLayout(self.vlayout)
 
+        if self.preview_mode:
+            self.toggle_control_visibility()
+            self.update_timer = QTimer()
+            self.update_timer.timeout.connect(self.update)
+            self.update_timer.start(int(1000 / gui_config["camera_update_rate"]))
+
         self.begin_capturing()
 
-    # Camera and recording control ----------------------------------------------------
+    # Camera control ----------------------------------------------------
 
     def begin_capturing(self):
         """Start streaming video from camera."""
-        self.recording = False
         self.dropped_frames = 0
+        self.recording = False
         # Begin capturing using the camera API
         self.camera_api.begin_capturing(self.settings)
 
@@ -168,7 +192,7 @@ class CameraWidget(QGroupBox):
             self.stop_recording()
         self.camera_api.stop_capturing()
 
-    def fetch_image_data(self) -> None:
+    def fetch_image_data(self):
         """Get images and associated data from camera and save to disk if recording."""
         new_images = self.camera_api.get_available_images()
         if new_images == None:
@@ -188,12 +212,20 @@ class CameraWidget(QGroupBox):
             for gpio_pinstate in new_images["gpio_data"]:  # Write GPIO pinstate to file.
                 self.gpio_writer.writerow(gpio_pinstate)
 
-    def start_recording(self) -> None:
+    def update(self, update_video_display=True):
+        """Called regularly by timer to fetch new images and optionally update video display."""
+        self.fetch_image_data()
+        if update_video_display:
+            self.update_video_display()
+
+    # Recordings control --------------------------------------------------------------
+
+    def start_recording(self):
         """Open data files and FFMPEG process, update GUI elements for recording."""
         # Create Filepaths.
         self.subject_id = self.subject_id_text.toPlainText()
         self.record_start_time = datetime.now()
-        save_dir = self.video_capture_tab.data_dir
+        save_dir = self.GUI.video_capture_tab.data_dir
         filename_stem = f"{self.subject_id}_{self.record_start_time.strftime('%Y-%m-%d-%H%M%S')}"
         self.video_filepath = os.path.join(save_dir, filename_stem + ".mp4")
         self.GPIO_filepath = os.path.join(save_dir, filename_stem + "_GPIO_data.csv")
@@ -248,7 +280,6 @@ class CameraWidget(QGroupBox):
                 f'"{self.video_filepath}"',  # Output file path
             ]
         )
-        print(ffmpeg_command)
         self.ffmpeg_process = subprocess.Popen(ffmpeg_command, stdin=subprocess.PIPE)
 
         # Set variables
@@ -260,8 +291,8 @@ class CameraWidget(QGroupBox):
         self.camera_dropdown.setEnabled(False)
         self.start_recording_button.setEnabled(False)
         self.subject_id_text.setEnabled(False)
-        self.video_capture_tab.GUI.tab_widget.tabBar().setEnabled(False)
-        self.video_capture_tab.update_global_recording_button_states()
+        self.GUI.tab_widget.tabBar().setEnabled(False)
+        self.GUI.video_capture_tab.update_global_recording_button_states()
 
     def stop_recording(self) -> None:
         """Close data files and FFMPEG process, update GUI elements."""
@@ -285,9 +316,8 @@ class CameraWidget(QGroupBox):
         self.start_recording_button.setEnabled(True)
         self.subject_id_text.setEnabled(True)
         self.camera_dropdown.setEnabled(True)
-        self.video_capture_tab.update_global_recording_button_states()
-        # Tabs can be changed
-        self.video_capture_tab.GUI.tab_widget.tabBar().setEnabled(True)
+        self.GUI.video_capture_tab.update_global_recording_button_states()
+        self.GUI.tab_widget.tabBar().setEnabled(True)
 
     # Video display -------------------------------------------------------------------
 
@@ -317,6 +347,13 @@ class CameraWidget(QGroupBox):
             self.dropped_frames_text.setText("DROPPED FRAMES", color="r")
         else:
             self.dropped_frames_text.setText("")
+        # Show additional camera settings if in preview mode.
+        if self.preview_mode:
+            self.exposure_time_text.setText(
+                f"Exposure Time (us) : {self.camera_api.get_exposure_time():.2f}",
+                color="magenta",
+            )
+            self.gain_text.setText(f"Gain (dB) :{self.camera_api.get_gain():.2f}")
 
     # GUI element updates -------------------------------------------------------------
 
@@ -329,8 +366,8 @@ class CameraWidget(QGroupBox):
         self.camera_dropdown.currentTextChanged.disconnect(self.change_camera)
         cbox_update_options(
             cbox=self.camera_dropdown,
-            options=self.camera_setup_tab.get_camera_labels(),
-            used_cameras_labels=list([cam.label for cam in self.video_capture_tab.camera_widgets]),
+            options=self.GUI.camera_setup_tab.get_camera_labels(),
+            used_cameras_labels=list([cam.label for cam in self.GUI.video_capture_tab.camera_widgets]),
             selected=self.label,
         )
         self.camera_dropdown.currentTextChanged.connect(self.change_camera)
@@ -344,7 +381,7 @@ class CameraWidget(QGroupBox):
         else:
             self.start_recording_button.setEnabled(False)
             self.camera_name_item.setText(f"{self.label}", color="white")
-        self.video_capture_tab.update_global_recording_button_states()
+        self.GUI.video_capture_tab.update_global_recording_button_states()
 
     def toggle_control_visibility(self) -> None:
         """Toggle the visibility of the camera controls."""
@@ -352,11 +389,6 @@ class CameraWidget(QGroupBox):
         for i in range(self.header_layout.count()):
             widget = self.header_layout.itemAt(i).widget()
             widget.setVisible(self.controls_visible)
-        # Set the camera label onto the pygraph
-        if self.controls_visible:
-            self.video_view_box.removeItem(self.camera_name_item)
-        else:
-            self.video_view_box.addItem(self.camera_name_item)
 
     ### Config related functions ------------------------------------------------------
 
@@ -370,7 +402,7 @@ class CameraWidget(QGroupBox):
             self.camera_api.close_api()
         # Initialise the new camera
         self.label = str(self.camera_dropdown.currentText())
-        self.settings = self.camera_setup_tab.get_camera_settings_from_label(self.label)
+        self.settings = self.GUI.camera_setup_tab.get_camera_settings_from_label(self.label)
         self.camera_api = init_camera_api_from_module(self.settings)
         self.camera_api.begin_capturing()
         self.camera_height = self.camera_api.get_height()
@@ -379,6 +411,15 @@ class CameraWidget(QGroupBox):
         self.camera_name_item.setText(
             f"{self.settings.name if self.settings.name is not None else self.settings.unique_id}", color="white"
         )
+
+    def closeEvent(self, event):
+        """Handle the close event to stop the timer and release resources"""
+        self.camera_api.close_api()
+        if self.preview_mode:
+            self.update_timer.stop()
+        self.close()
+        super().closeEvent(event)
+        event.accept()
 
     ### Functions for changing camera settings ----------------------------------------
 
