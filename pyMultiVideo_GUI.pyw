@@ -2,6 +2,8 @@ import logging
 import sys
 import argparse
 
+from config.config import gui_config
+
 # Dependancy Mangement
 import importlib.util
 
@@ -28,12 +30,16 @@ check_module("PySpin")
 
 # Import GUI now that dependancies are verified.
 import PyQt6.QtWidgets as QtWidgets
+from PyQt6 import QtGui
 from GUI.GUI_main import GUIMain
 
 
 def main(parsed_args, unparsed_args):
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle("Fusion")
+    font = QtGui.QFont()
+    font.setPixelSize(gui_config["font_size"])
+    app.setFont(font)
     # Parse the arguments to main window
     gui = GUIMain(parsed_args)
     gui.show()

@@ -17,9 +17,7 @@ if os.name == "nt":  # Needed on windows to get taskbar icon to display correctl
 
 
 class GUIMain(QMainWindow):
-    """
-    Class to create the main GUI window
-    """
+    """Class implementing the main GUI window."""
 
     def __init__(self, parsed_args):
         super().__init__()
@@ -28,7 +26,7 @@ class GUIMain(QMainWindow):
         # Set window size, title, icon.
         self.setGeometry(100, 100, 700, 800)  # x, y, width, height
         self.setWindowTitle(f"pyMultiVideo v{__version__}")  # default window title
-        self.setWindowIcon(QIcon(os.path.join(self.paths["assets_dir"], "logo.svg")))
+        self.setWindowIcon(QIcon(os.path.join(self.paths["icons_dir"], "logo.svg")))
         # Initialise the tabs and tab widget.
         self.camera_setup_tab = CamerasTab(parent=self)
         self.video_capture_tab = VideoCaptureTab(parent=self)
@@ -56,11 +54,6 @@ class GUIMain(QMainWindow):
         else:
             self.video_capture_tab.tab_deselected()
             self.camera_setup_tab.tab_selected()
-
-    def resizeEvent(self, event):
-        """Resize the GUI"""
-        self.video_capture_tab.resize(event.size().width(), event.size().height())
-        event.accept()
 
     def closeEvent(self, event):
         """Close the GUI"""

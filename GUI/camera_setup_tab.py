@@ -26,7 +26,7 @@ from .utility import (
     load_camera_dict,
     init_camera_api_from_module,
 )
-from .preview_dialog import CameraPreviewWidget
+from .camera_widget import CameraWidget
 
 
 class CamerasTab(QWidget):
@@ -38,6 +38,7 @@ class CamerasTab(QWidget):
         self.paths = paths_config
         self.saved_setups_file = os.path.join(self.paths["camera_dir"], "camera_configs.json")
         self.setups = {}  # Dict of setups: {Unique_id: Camera_table_item}
+        self.preview_showing = False
 
         # Initialize_camera_groupbox
         self.camera_table_groupbox = QGroupBox("Camera Table")
@@ -48,7 +49,7 @@ class CamerasTab(QWidget):
         # Initialise Refresh button
         self.refresh_layout = QHBoxLayout()
         self.refresh_cameras_button = QPushButton("Refresh camera list")
-        self.refresh_cameras_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "refresh.svg")))
+        self.refresh_cameras_button.setIcon(QIcon(os.path.join(self.paths["icons_dir"], "refresh.svg")))
         self.refresh_cameras_button.clicked.connect(self.refresh)
         self.refresh_cameras_button.setToolTip("Refresh the list of connected cameras")
         self.refresh_layout.addStretch()
@@ -78,7 +79,7 @@ class CamerasTab(QWidget):
         """Called when tab deselected."""
         # Deinitialise all camera APIs on tab being deselected
         for unique_id in self.setups:
-            if self.GUI.preview_showing:
+            if self.preview_showing:
                 self.setups[unique_id].close_preview_camera()
             self.setups[unique_id].camera_api.stop_capturing()
 
@@ -155,9 +156,7 @@ class CamerasTab(QWidget):
 
     def get_camera_labels(self) -> list[str]:
         """Get the labels of the available cameras. The label is the camera's user set name if available, else unique ID."""
-        return [
-            setup.settings.name if setup.settings.name else setup.settings.unique_id for setup in self.setups.values()
-        ]
+        return [setup.get_label() for setup in self.setups.values()]
 
     def get_camera_unique_id_from_label(self, camera_label: str) -> str:
         """Get the unique_id of the camera from the label"""
@@ -232,17 +231,16 @@ class Camera_table_item:
 
         self.setups_table = setups_table
         self.setups_tab = setups_table.setups_tab
-        self.GUI = self.setups_tab.GUI
-        self.GUI.preview_showing = False
+        self.setups_tab.preview_showing = False
         self.camera_api = init_camera_api_from_module(settings=self.settings)
 
-        # Label edit
+        # Name edit
         self.name_edit = QLineEdit()
         if self.settings.name:
             self.name_edit.setText(self.settings.name)
         else:
             self.name_edit.setPlaceholderText("Set a name")
-        self.name_edit.editingFinished.connect(self.camera_label_changed)
+        self.name_edit.editingFinished.connect(self.camera_name_changed)
 
         # ID edit
         self.unique_id_edit = QLineEdit()
@@ -309,15 +307,15 @@ class Camera_table_item:
         self.setups_table.setCellWidget(0, 6, self.downsampling_factor_edit)
         self.setups_table.setCellWidget(0, 7, self.preview_camera_button)
 
-    def camera_label_changed(self):
-        """Called when label text of setup is edited."""
-        label = str(self.name_edit.text())
-        if label and label not in [
+    def camera_name_changed(self):
+        """Called when name text of setup is edited."""
+        name = str(self.name_edit.text())
+        if name and name not in [
             setup.settings.name
             for setup in self.setups_tab.setups.values()
             if setup.settings.unique_id != self.settings.unique_id
         ]:
-            self.settings.name = label
+            self.settings.name = name
         else:
             self.settings.name = None
             self.name_edit.setText("")
@@ -325,13 +323,17 @@ class Camera_table_item:
         self.setups_tab.update_saved_setups(setup=self)
         self.setups_tab.setups_changed = True
 
+    def get_label(self):
+        """Return name if defined else unique ID."""
+        return self.settings.name if self.settings.name else self.settings.unique_id
+
     # Camera Parameters --------------------------------------------------------------------------
 
     def camera_fps_changed(self):
         """Called when fps text of setup is edited."""
         self.settings.fps = int(self.fps_edit.text())
         self.setups_tab.update_saved_setups(setup=self)
-        if self.GUI.preview_showing is True:
+        if self.setups_tab.preview_showing:
             self.setups_tab.camera_preview.camera_api.set_frame_rate(self.settings.fps)
         self.exposure_time_edit.setRange(*self.camera_api.get_exposure_time_range(self.settings.fps))
 
@@ -339,7 +341,7 @@ class Camera_table_item:
         """"""
         self.settings.exposure_time = int(self.exposure_time_edit.text())
         self.setups_tab.update_saved_setups(setup=self)
-        if self.GUI.preview_showing:
+        if self.setups_tab.preview_showing:
             self.setups_tab.camera_preview.camera_api.set_exposure_time(self.settings.exposure_time)
         self.fps_edit.setRange(*self.camera_api.get_frame_rate_range(self.settings.exposure_time))
 
@@ -347,15 +349,14 @@ class Camera_table_item:
         """"""
         self.settings.gain = float(self.gain_edit.text())
         self.setups_tab.update_saved_setups(setup=self)
-
-        if self.GUI.preview_showing:
+        if self.setups_tab.preview_showing:
             self.setups_tab.camera_preview.camera_api.set_gain(self.settings.gain)
 
     def camera_pixel_format_changed(self):
         """Change the pixel format"""
         self.settings.pixel_format = self.pixel_format_edit.currentText()
         self.setups_tab.update_saved_setups(setup=self)
-        if self.GUI.preview_showing:
+        if self.setups_tab.preview_showing:
             self.setups_tab.camera_preview.camera_api.set_pixel_format(self.settings.pixel_format)
 
     # FFMPEG Parameters -----------------------------------------------------------------------
@@ -370,14 +371,13 @@ class Camera_table_item:
     def open_preview_camera(self):
         """Button to preview the camera in the row"""
         self.setups_tab.refresh()
-        if self.GUI.preview_showing:
+        if self.setups_tab.preview_showing:
             self.close_preview_camera()
-        self.setups_tab.camera_preview = CameraPreviewWidget(gui=self.GUI, camera_table_item=self)
+        self.setups_tab.camera_preview = CameraWidget(self.setups_tab, self.get_label(), preview_mode=True)
+        self.setups_tab.camera_preview.begin_capturing()
         self.setups_tab.page_layout.addWidget(self.setups_tab.camera_preview)
-        self.GUI.preview_showing = True
-        self.fps_edit.setEnabled(True)
-        self.exposure_time_edit.setEnabled(True)
+        self.setups_tab.preview_showing = True
 
     def close_preview_camera(self):
         self.setups_tab.camera_preview.close()
-        self.GUI.preview_showing = False
+        self.setups_tab.preview_showing = False
