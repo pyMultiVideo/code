@@ -21,7 +21,6 @@ from PyQt6.QtWidgets import (
 )
 
 from .utility import (
-    cbox_update_options,
     CameraWidgetConfig,
     init_camera_api_from_module,
     validate_ffmpeg_path,
@@ -363,13 +362,26 @@ class CameraWidget(QGroupBox):
 
     def update_camera_dropdown(self):
         """Update the cameras available in the camera select dropdown menu."""
+        # Disconnect function whilst updating text
         self.camera_dropdown.currentTextChanged.disconnect(self.change_camera)
-        cbox_update_options(
-            cbox=self.camera_dropdown,
-            options=self.GUI.camera_setup_tab.get_camera_labels(),
-            used_cameras_labels=list([cam.label for cam in self.GUI.video_capture_tab.camera_widgets]),
-            selected=self.label,
+        # Available cameras
+        available_cameras = sorted(
+            set(self.GUI.camera_setup_tab.get_camera_labels())
+            - {cam.label for cam in self.GUI.video_capture_tab.camera_widgets},
+            key=str.lower,
         )
+        selected_camera_label = self.camera_dropdown.currentText()
+        if selected_camera_label:  # cbox contains something
+            available_cameras = sorted(list(set([selected_camera_label] + available_cameras)), key=str.lower)
+        self.camera_dropdown.clear()
+        self.camera_dropdown.addItems(available_cameras)
+        self.camera_dropdown.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToContents
+        )  # Adjust size to fit contents
+        self.camera_dropdown.setCurrentIndex(
+            available_cameras.index(selected_camera_label) if selected_camera_label else 0
+        )
+        # Re-enable function whilst updating text
         self.camera_dropdown.currentTextChanged.connect(self.change_camera)
 
     def subject_ID_edited(self):
