@@ -22,12 +22,12 @@ from PyQt6.QtWidgets import (
 
 from .utility import (
     CameraWidgetConfig,
-    init_camera_api_from_module,
     validate_ffmpeg_path,
     ffmpeg_encoder_map,
 )
 from .message_dialogs import show_warning_message
 from config.config import ffmpeg_config, paths_config, gui_config
+from camera_api import init_camera_api_from_module
 
 
 class CameraWidget(QGroupBox):

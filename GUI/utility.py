@@ -73,9 +73,6 @@ else:
     }
 
 
-# Utility functions -------------------------------------------------------------------
-
-
 def validate_ffmpeg_path(ffmpeg_path):
     """Validate the provided ffmpeg path."""
     if type(ffmpeg_path) is type(None):
@@ -93,21 +90,7 @@ def validate_ffmpeg_path(ffmpeg_path):
     return True
 
 
-def get_modules_in_package(package_name):
-    """
-    Returns a list of all modules in a given package.
-
-    :param package_name: The name of the package.
-    :return: List of module names.
-    """
-    package = importlib.import_module(package_name)
-    package_path = package.__path__  # Get the package's path
-
-    modules = []
-    for _, module_name, _ in pkgutil.iter_modules(package_path):
-        modules.append(module_name)
-
-    return modules
+# Utility functions -------------------------------------------------------------------
 
 
 def load_camera_dict(camera_config_path: str) -> Dict[str, Any]:
@@ -128,26 +111,3 @@ def load_camera_dict(camera_config_path: str) -> Dict[str, Any]:
         raise ValueError(f"Invalid JSON format in file: {camera_config_path}")
 
     return camera_dict
-
-
-def find_all_cameras() -> list[str]:
-    """Get a list of unique camera IDs for all the different types of cameras connected to the machine."""
-    # for each module in the camera class, run the get unique ids function
-
-    modules = get_modules_in_package("camera_api")
-
-    camera_list = []
-    for module in modules:
-        # Get the module
-        camera_module = importlib.import_module(f"camera_api.{module}")
-        # Get the list of cameras as a string.
-        camera_list.extend(camera_module.list_available_cameras())
-
-    return camera_list
-
-
-def init_camera_api_from_module(settings: CameraSettingsConfig):
-    """Initialise a camera API object given the camera ID and any camera settings."""
-    _, module_name = settings.unique_id.split("-")
-    camera_module = importlib.import_module(f"camera_api.{module_name}")
-    return camera_module.initialise_camera_api(CameraSettingsConfig=settings)

@@ -21,12 +21,10 @@ from dataclasses import asdict
 from config.config import paths_config, default_camera_config
 from .utility import (
     CameraSettingsConfig,
-    find_all_cameras,
     load_camera_dict,
-    init_camera_api_from_module,
 )
 from .camera_widget import CameraWidget
-
+from camera_api import get_camera_ids, init_camera_api_from_module
 
 class CamerasTab(QWidget):
     """Tab for naming cameras and editing camera-level settings."""
@@ -129,7 +127,7 @@ class CamerasTab(QWidget):
 
     def refresh(self):
         """Check for new and removed cameras and updates the setups table."""
-        connected_cameras = find_all_cameras()
+        connected_cameras = get_camera_ids()
         if not connected_cameras == self.setups.keys():
             # Add any new cameras setups to the setups (comparing unique_ids)
             for unique_id in set(connected_cameras) - set(self.setups.keys()):
