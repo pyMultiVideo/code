@@ -1,6 +1,7 @@
 import os
 import json
 from typing import List
+from dataclasses import dataclass
 
 from PyQt6.QtWidgets import (
     QVBoxLayout,
@@ -13,15 +14,24 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QSpinBox,
     QLabel,
+    QMessageBox,
 )
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import QTimer, Qt
 
 from dataclasses import asdict
-from .camera_widget import CameraWidget
-from .message_dialogs import show_info_message
-from .utility import ExperimentConfig, CameraWidgetConfig
+from .camera_widget import CameraWidget, CameraWidgetConfig
 from config.config import gui_config, paths_config
+
+
+@dataclass
+class ExperimentConfig:
+    """Represents the configuration of the VideoCaptureTab."""
+
+    data_dir: str
+    n_cameras: int
+    n_columns: int
+    cameras: list[CameraWidgetConfig]
 
 
 class VideoCaptureTab(QWidget):
@@ -183,22 +193,13 @@ class VideoCaptureTab(QWidget):
     # Camera acquisition and recording control ----------------------------------------
 
     def start_recording(self):
+        """Start recording video from all camera widgets."""
         # Check whether all the files name will be the same
-        camera_labels = [
-            camera_widget.subject_id_text.toPlainText()
-            for camera_widget in self.camera_widgets
-            if camera_widget.subject_id_text.toPlainText()
-        ]
-        if len(camera_labels) != len(set(camera_labels)):
+        subject_IDs = [camera_widget.subject_id for camera_widget in self.camera_widgets if camera_widget.subject_id]
+        if len(subject_IDs) != len(set(subject_IDs)):
             self.start_recording_button.setEnabled(False)
-            show_info_message("Duplicate Subject IDs detected. Please ensure all are unique.")
+            QMessageBox.information(None, "Duplicate Subject IDs", "Duplicate Subject IDs detected.")
             return
-        # Check for invalid characters in file paths
-        invalid_chars = set('<>:"/\\|?*')
-        for camera_widget in self.camera_widgets:
-            if any(char in invalid_chars for char in camera_widget.subject_id_text.toPlainText()):
-                show_info_message("One or more Subject IDs contain invalid characters.")
-                return
 
         for camera_widget in self.camera_widgets:
             camera_widget.start_recording()
@@ -300,7 +301,7 @@ class VideoCaptureTab(QWidget):
         # Check if the config file is valid.
         for camera in experiment_config.cameras:
             if camera.label not in self.camera_setup_tab.get_camera_labels():
-                show_info_message(f"Camera {camera.label} is not connected")
+                QMessageBox.information(None, "Camera not connected", f"Camera {camera.label} is not connected")
                 return
         # Configure tab.
         self.configure_tab_from_config(experiment_config)

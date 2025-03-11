@@ -1,33 +1,26 @@
 import os
-import csv
-import json
-import subprocess
-import numpy as np
 import cv2
+import numpy as np
 from datetime import datetime
+from dataclasses import dataclass
 from collections import deque
 
 import pyqtgraph as pg
 from PyQt6.QtCore import QTimer
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import (
-    QComboBox,
-    QGroupBox,
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
-    QTextEdit,
-    QVBoxLayout,
-)
+from PyQt6.QtWidgets import QComboBox, QGroupBox, QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLayout, QMessageBox
 
-from .utility import (
-    CameraWidgetConfig,
-    validate_ffmpeg_path,
-    ffmpeg_encoder_map,
-)
-from .message_dialogs import show_warning_message
-from config.config import ffmpeg_config, paths_config, gui_config
+from config.config import paths_config, gui_config
+from .data_recorder import Data_recorder
 from camera_api import init_camera_api_from_module
+
+
+@dataclass
+class CameraWidgetConfig:
+    """Represents the configuration of a Camera_widget."""
+
+    label: str
+    subject_id: str
 
 
 class CameraWidget(QGroupBox):
@@ -38,17 +31,6 @@ class CameraWidget(QGroupBox):
         self.parent = parent
         self.GUI = self.parent.GUI
         self.preview_mode = preview_mode  # True if widget is being used in camera setup tab.
-
-        self.ffmpeg_path = (
-            paths_config["FFMPEG"]
-            if validate_ffmpeg_path(paths_config["FFMPEG"])
-            else show_warning_message(
-                f"FFMPEG path {paths_config['FFMPEG']} not valid",
-                okayButtonPresent=False,
-                ignoreButtonPresent=True,
-            )
-        )
-
         # Camera attributes
         self.subject_id = subject_id
         self.label = label
@@ -56,7 +38,7 @@ class CameraWidget(QGroupBox):
         self.camera_api = init_camera_api_from_module(settings=self.settings)
         self.camera_height = self.camera_api.get_height()
         self.camera_width = self.camera_api.get_width()
-        self._image_data = None
+        self.latest_image = None
         self.frame_timestamps = deque([0], maxlen=10)
         self.controls_visible = True
 
@@ -109,7 +91,6 @@ class CameraWidget(QGroupBox):
 
         if self.preview_mode:
             # Exposure time overlay
-            self.frame_timestamps = deque([0], maxlen=10)
             self.exposure_time_text = pg.TextItem()
             self.exposure_time_text.setPos(10, 6 * text_spacing)
             self.graphics_view.addItem(self.exposure_time_text)
@@ -173,6 +154,8 @@ class CameraWidget(QGroupBox):
             self.update_timer = QTimer()
             self.update_timer.timeout.connect(self.update)
             self.update_timer.start(int(1000 / gui_config["camera_update_rate"]))
+        else:
+            self.data_recorder = Data_recorder(self)
 
         self.begin_capturing()
 
@@ -197,19 +180,14 @@ class CameraWidget(QGroupBox):
         if new_images == None:
             return
         # Store most recent image and GPIO state for the next display update.
-        self._image_data = new_images["images"][-1]
-        self._GPIO_data = new_images["gpio_data"][-1]
+        self.latest_image = new_images["images"][-1]
+        self.latest_GPIO = new_images["gpio_data"][-1]
         self._newly_dropped_frames = new_images["dropped_frames"]
         self.frame_timestamps.extend(new_images["timestamps"])
         self.dropped_frames += new_images["dropped_frames"]
         # Record data to disk.
         if self.recording:
-            self.recorded_frames += len(new_images["images"])
-            # Concatenate the list of numpy buffers into one bytestream
-            frame = np.concatenate([img for img in new_images["images"]])
-            self.ffmpeg_process.stdin.write(frame)
-            for gpio_pinstate in new_images["gpio_data"]:  # Write GPIO pinstate to file.
-                self.gpio_writer.writerow(gpio_pinstate)
+            self.data_recorder.record_new_images(new_images)
 
     def update(self, update_video_display=True):
         """Called regularly by timer to fetch new images and optionally update video display."""
@@ -217,74 +195,19 @@ class CameraWidget(QGroupBox):
         if update_video_display:
             self.update_video_display()
 
-    # Recordings control --------------------------------------------------------------
+    # Recording controls --------------------------------------------------------------
 
     def start_recording(self):
-        """Open data files and FFMPEG process, update GUI elements for recording."""
-        # Create Filepaths.
-        self.subject_id = self.subject_id_text.toPlainText()
-        self.record_start_time = datetime.now()
+        """Start recording vidoe data to disk"""
+        subject_id = self.subject_id_text.toPlainText()
+        # Check subject ID is valid.
+        if any(char in set('<>:"/\\|?*') for char in subject_id):
+            QMessageBox.information(self, "Invalid subject ID", f"Subject ID contains invalid characters: {subject_id}")
+            return
+        # Start data recording.
         save_dir = self.GUI.video_capture_tab.data_dir
-        filename_stem = f"{self.subject_id}_{self.record_start_time.strftime('%Y-%m-%d-%H%M%S')}"
-        self.video_filepath = os.path.join(save_dir, filename_stem + ".mp4")
-        self.GPIO_filepath = os.path.join(save_dir, filename_stem + "_GPIO_data.csv")
-        self.metadata_filepath = os.path.join(save_dir, filename_stem + "_metadata.json")
-        self.dropped_frames = 0
-
-        # Open GPIO file and write header data.
-        self.gpio_file = open(self.GPIO_filepath, mode="w", newline="")
-        self.gpio_writer = csv.writer(self.gpio_file)
-        self.gpio_writer.writerow(["GPIO1", "GPIO2", "GPIO3"])
-
-        # Create metadata file.
-        self.metadata = {
-            "subject_ID": self.subject_id,
-            # Camera Config Settings
-            "camera_unique_id": self.settings.unique_id,
-            "camera_name": self.settings.name,
-            "FPS": int(self.settings.fps),
-            "exposure_time": self.settings.exposure_time,
-            "gain": self.settings.gain,
-            "pixel_format": self.settings.pixel_format,
-            "downsampling_factor": self.settings.downsampling_factor,
-            # Recording information
-            "recorded_frames": 0,
-            "dropped_frames": None,
-            "start_time": self.record_start_time.isoformat(timespec="milliseconds"),
-            "end_time": None,
-            "duration": None,
-        }
-        with open(self.metadata_filepath, "w") as meta_data_file:
-            json.dump(self.metadata, meta_data_file, indent=4)
-
-        # Initalise ffmpeg process
-        self.camera_width = int(self.camera_api.get_width())
-        self.camera_height = int(self.camera_api.get_height())
-        self.downsampled_width = self.camera_width // self.settings.downsampling_factor
-        self.downsampled_height = self.camera_height // self.settings.downsampling_factor
-        ffmpeg_command = " ".join(
-            [
-                self.ffmpeg_path,  # Path to binary
-                "-f rawvideo",  # Input codec (raw video)
-                f"-s {self.camera_width}x{self.camera_height}",  # Input frame size
-                f"-pix_fmt {self.camera_api.supported_pixel_formats[self.settings.pixel_format]}",  # Input Pixel Format: 8-bit grayscale input to ffmpeg process. Input array 1D
-                f"-r {self.settings.fps}",  # Frame rate
-                "-i -",  # input comes from a pipe (stdin)
-                f"-c:v {ffmpeg_encoder_map[ffmpeg_config['compression_standard']]}",  # Output codec
-                f"-s {self.downsampled_width}x{self.downsampled_height}",  # Output frame size after any downsampling.
-                "-pix_fmt yuv420p",  # Output pixel format
-                f"-preset {ffmpeg_config['encoding_speed']}",  # Encoding speed [fast, medium, slow]
-                f"-b:v 0 "  # Encoder uses variable bit rate https://superuser.com/questions/1236275/how-can-i-use-crf-encoding-with-nvenc-in-ffmpeg
-                f"-cq {ffmpeg_config['crf']}",  # Controls quality vs filesize
-                f'"{self.video_filepath}"',  # Output file path
-            ]
-        )
-        self.ffmpeg_process = subprocess.Popen(ffmpeg_command, stdin=subprocess.PIPE)
-
-        # Set variables
+        self.data_recorder.start_recording(subject_id, save_dir, self.settings)
         self.recording = True
-        self.recorded_frames = 0
-
         # Update GUI
         self.stop_recording_button.setEnabled(True)
         self.camera_dropdown.setEnabled(False)
@@ -293,24 +216,12 @@ class CameraWidget(QGroupBox):
         self.GUI.tab_widget.tabBar().setEnabled(False)
         self.GUI.video_capture_tab.update_global_recording_button_states()
 
-    def stop_recording(self) -> None:
-        """Close data files and FFMPEG process, update GUI elements."""
+    def stop_recording(self):
+        """Stop recording video data to disk."""
+        self.data_recorder.stop_recording()
         self.recording = False
-        end_time = datetime.now()
-        self.recording_status_item.setText("NOT RECORDING", color="r")
-        # Close files.
-        self.gpio_file.close()
-        self.metadata["end_time"] = end_time.isoformat(timespec="milliseconds")
-        self.metadata["duration"] = str(end_time - self.record_start_time)[:-3]
-        self.metadata["recorded_frames"] = self.recorded_frames
-        self.metadata["dropped_frames"] = self.dropped_frames
-        with open(self.metadata_filepath, "w") as self.meta_data_file:
-            json.dump(self.metadata, self.meta_data_file, indent=4)
-        # Close FFMPEG process
-        self.ffmpeg_process.stdin.close()
-        self.ffmpeg_process.wait()
-
         # Update GUI
+        self.recording_status_item.setText("NOT RECORDING", color="r")
         self.stop_recording_button.setEnabled(False)
         self.start_recording_button.setEnabled(True)
         self.subject_id_text.setEnabled(True)
@@ -322,9 +233,9 @@ class CameraWidget(QGroupBox):
 
     def update_video_display(self, gpio_smoothing_decay=0.5):
         """Display most recent image and update information overlays."""
-        if self._image_data is None:
+        if self.latest_image is None:
             return
-        image = np.frombuffer(self._image_data, dtype=np.uint8).reshape(self.camera_height, self.camera_width)
+        image = np.frombuffer(self.latest_image, dtype=np.uint8).reshape(self.camera_height, self.camera_width)
         image = cv2.cvtColor(image, self.camera_api.cv2_conversion[self.settings.pixel_format])
         self.video_image_item.setImage(np.transpose(image, (1, 0, 2)))
         # Compute average framerate and display over image.
@@ -334,12 +245,12 @@ class CameraWidget(QGroupBox):
         self.frame_rate_text.setText(f"FPS: {calculated_framerate:.2f}", color=color)
         # Update GPIO status indicators.
         self.gpio_state_smoothed = gpio_smoothing_decay * self.gpio_state_smoothed
-        self.gpio_state_smoothed[np.array(self._GPIO_data) > 0] = 1
+        self.gpio_state_smoothed[np.array(self.latest_GPIO) > 0] = 1
         for i, gpio_indicator in enumerate(self.gpio_status_indicators):
             gpio_indicator.setText("\u2b24", color=[0, 0, self.gpio_state_smoothed[i] * 255])
         # Display the current recording duration over image.
         if self.recording:
-            elapsed_time = datetime.now() - self.record_start_time
+            elapsed_time = datetime.now() - self.data_recorder.record_start_time
             self.recording_status_item.setText(f"RECORDING  {str(elapsed_time).split('.')[0]}", color="g")
         # Update dropped frames indicator.
         if self._newly_dropped_frames:
