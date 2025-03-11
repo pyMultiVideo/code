@@ -22,7 +22,6 @@ from config.config import paths_config, default_camera_config
 from .utility import (
     CameraSettingsConfig,
     find_all_cameras,
-    load_saved_setups,
     load_camera_dict,
     init_camera_api_from_module,
 )
@@ -65,7 +64,20 @@ class CamerasTab(QWidget):
         self.setLayout(self.page_layout)
 
         # Get a list of the saved setups from the database
-        self.saved_setups = load_saved_setups(load_camera_dict(camera_config_path=self.saved_setups_file))
+        self.saved_setups = []
+        for cam in load_camera_dict(camera_config_path=self.saved_setups_file):
+            self.saved_setups.append(
+                CameraSettingsConfig(
+                    name=cam.get("name", None),
+                    unique_id=cam.get("unique_id"),
+                    fps=cam.get("fps", default_camera_config["fps"]),
+                    exposure_time=cam.get("exposure_time", default_camera_config["exposure_time"]),
+                    gain=cam.get("gain", default_camera_config["gain"]),
+                    pixel_format=cam.get("pixel_format", default_camera_config["pixel_format"]),
+                    downsampling_factor=cam.get("downsampling_factor", default_camera_config["downsampling_factor"]),
+                )
+            )
+
         self.refresh()
         self.setups_changed = False
 

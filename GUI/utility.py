@@ -151,21 +151,3 @@ def init_camera_api_from_module(settings: CameraSettingsConfig):
     _, module_name = settings.unique_id.split("-")
     camera_module = importlib.import_module(f"camera_api.{module_name}")
     return camera_module.initialise_camera_api(CameraSettingsConfig=settings)
-
-
-def load_saved_setups(camera_data) -> list[CameraSettingsConfig]:
-    """Load camera settings. If there are none, replace them with default values."""
-    saved_camera_settings = []
-    for cam in camera_data:
-        saved_camera_settings.append(
-            CameraSettingsConfig(
-                name=cam.get("name", None),
-                unique_id=cam.get("unique_id"),
-                fps=cam.get("fps", default_camera_config["fps"]),
-                exposure_time=cam.get("exposure_time", default_camera_config["exposure_time"]),
-                gain=cam.get("gain", default_camera_config["gain"]),
-                pixel_format=cam.get("pixel_format", default_camera_config["pixel_format"]),
-                downsampling_factor=cam.get("downsampling_factor", default_camera_config["downsampling_factor"]),
-            )
-        )
-    return saved_camera_settings
