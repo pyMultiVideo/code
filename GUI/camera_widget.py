@@ -63,7 +63,7 @@ class CameraWidget(QGroupBox):
         # Video display ---------------------------------------------------------------
 
         self.graphics_view = ScrollableGraphicsView()
-        # self.graphics_view.wheelScrolled.connect(self.handle_wheel_event)
+        self.graphics_view.wheelScrolled.connect(self.handle_wheel_event)
         self.video_view_box = pg.ViewBox(defaultPadding=0, invertY=True)
         self.video_view_box.setMouseEnabled(x=False, y=False)
         self.graphics_view.setCentralItem(self.video_view_box)
