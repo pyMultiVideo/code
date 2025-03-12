@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from collections import deque
 
 import pyqtgraph as pg
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, pyqtSignal
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QComboBox, QGroupBox, QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLayout, QMessageBox
 
@@ -21,6 +21,24 @@ class CameraWidgetConfig:
 
     label: str
     subject_id: str
+
+
+class ScrollableGraphicsView(pg.GraphicsView):
+    """Custom Graphics View to detect wheel events"""
+
+    wheelScrolled = pyqtSignal(str)
+
+    def __init__(self):
+        super().__init__()
+
+    def wheelEvent(self, event):
+        """Emit Signals from wheel events"""
+        delta = event.angleDelta()
+        if delta.y() > 0:
+            self.wheelScrolled.emit("Wheel scrolled up")
+        elif delta.y() < 0:
+            self.wheelScrolled.emit("Wheel scrolled down")
+        super().wheelEvent(event)
 
 
 class CameraWidget(QGroupBox):
@@ -44,7 +62,8 @@ class CameraWidget(QGroupBox):
 
         # Video display ---------------------------------------------------------------
 
-        self.graphics_view = pg.GraphicsView()
+        self.graphics_view = ScrollableGraphicsView()
+        # self.graphics_view.wheelScrolled.connect(self.handle_wheel_event)
         self.video_view_box = pg.ViewBox(defaultPadding=0, invertY=True)
         self.video_view_box.setMouseEnabled(x=False, y=False)
         self.graphics_view.setCentralItem(self.video_view_box)
@@ -312,6 +331,12 @@ class CameraWidget(QGroupBox):
         for i in range(self.header_layout.count()):
             widget = self.header_layout.itemAt(i).widget()
             widget.setVisible(self.controls_visible)
+
+    def handle_wheel_event(self, direction):
+        """Zoom in / out of the video data"""
+        if self.preview_mode:
+            scale_factor = 1.1 if direction == "Wheel scrolled up" else 1 / 1.1
+            self.video_view_box.scaleBy((scale_factor, scale_factor))
 
     ### Config related functions ------------------------------------------------------
 
