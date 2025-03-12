@@ -1,5 +1,4 @@
 import os
-import shutil
 
 # GUI settings ------------------------------------------------------------------------
 
@@ -25,7 +24,6 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # pyMV code 
 
 paths_config = {
     "ROOT": ROOT,
-    "FFMPEG": shutil.which("ffmpeg"),
     "camera_dir": os.path.join(ROOT, "config"),
     "encoder_dir": os.path.join(ROOT, "config"),
     "data_dir": os.path.join(ROOT, "data"),
@@ -36,6 +34,7 @@ paths_config = {
 # Default Camera Settings --------------------------------------------------------------
 
 default_camera_config = {
+    "name": None,
     "fps": 60,
     "downsampling_factor": 1,
     "exposure_time": 15000,

@@ -1,6 +1,8 @@
-import json
 import os
-from math import floor
+import json
+from dataclasses import dataclass, asdict
+
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QWidget,
     QGroupBox,
@@ -14,17 +16,24 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
     QHeaderView,
 )
-from PyQt6.QtGui import QIcon
-
-from dataclasses import asdict
 
 from config.config import paths_config, default_camera_config
-from .utility import (
-    CameraSettingsConfig,
-    load_camera_dict,
-)
 from .camera_widget import CameraWidget
 from camera_api import get_camera_ids, init_camera_api_from_module
+
+
+@dataclass
+class CameraSettingsConfig:
+    """Represents the CamerasTab settings for one camera"""
+
+    name: str
+    unique_id: str
+    fps: int
+    exposure_time: float
+    gain: float
+    pixel_format: str
+    downsampling_factor: int
+
 
 class CamerasTab(QWidget):
     """Tab for naming cameras and editing camera-level settings."""
@@ -32,8 +41,7 @@ class CamerasTab(QWidget):
     def __init__(self, parent=None):
         super(CamerasTab, self).__init__(parent)
         self.GUI = parent
-        self.paths = paths_config
-        self.saved_setups_file = os.path.join(self.paths["camera_dir"], "camera_configs.json")
+        self.saved_setups_filepath = os.path.join(paths_config["camera_dir"], "camera_configs.json")
         self.setups = {}  # Dict of setups: {Unique_id: Camera_table_item}
         self.preview_showing = False
 
@@ -46,7 +54,7 @@ class CamerasTab(QWidget):
         # Initialise Refresh button
         self.refresh_layout = QHBoxLayout()
         self.refresh_cameras_button = QPushButton("Refresh camera list")
-        self.refresh_cameras_button.setIcon(QIcon(os.path.join(self.paths["icons_dir"], "refresh.svg")))
+        self.refresh_cameras_button.setIcon(QIcon(os.path.join(paths_config["icons_dir"], "refresh.svg")))
         self.refresh_cameras_button.clicked.connect(self.refresh)
         self.refresh_cameras_button.setToolTip("Refresh the list of connected cameras")
         self.refresh_layout.addStretch()
@@ -61,20 +69,13 @@ class CamerasTab(QWidget):
         self.page_layout.addWidget(self.camera_table_groupbox)
         self.setLayout(self.page_layout)
 
-        # Get a list of the saved setups from the database
-        self.saved_setups = []
-        for cam in load_camera_dict(camera_config_path=self.saved_setups_file):
-            self.saved_setups.append(
-                CameraSettingsConfig(
-                    name=cam.get("name", None),
-                    unique_id=cam.get("unique_id"),
-                    fps=cam.get("fps", default_camera_config["fps"]),
-                    exposure_time=cam.get("exposure_time", default_camera_config["exposure_time"]),
-                    gain=cam.get("gain", default_camera_config["gain"]),
-                    pixel_format=cam.get("pixel_format", default_camera_config["pixel_format"]),
-                    downsampling_factor=cam.get("downsampling_factor", default_camera_config["downsampling_factor"]),
-                )
-            )
+        # Load saved setup info.
+        if not os.path.exists(self.saved_setups_filepath):
+            self.saved_setups = []
+        else:
+            with open(self.saved_setups_filepath, "r") as file:
+                cams_list = json.load(file)
+            self.saved_setups = [CameraSettingsConfig(**cam_dict) for cam_dict in cams_list]
 
         self.refresh()
         self.setups_changed = False
@@ -95,7 +96,7 @@ class CamerasTab(QWidget):
 
     # Reading / Writing the Camera setups saved function --------------------------------------------------------
 
-    def get_saved_setups(self, unique_id: str = None, name: str = None) -> CameraSettingsConfig:
+    def get_saved_setup(self, unique_id: str = None, name: str = None) -> CameraSettingsConfig:
         """Get a saved CameraSettingsConfig object from a name or unique_id from self.saved_setups."""
         if unique_id:
             try:
@@ -111,7 +112,7 @@ class CamerasTab(QWidget):
 
     def update_saved_setups(self, setup):
         """Updates the saved setups"""
-        saved_setup = self.get_saved_setups(unique_id=setup.settings.unique_id)
+        saved_setup = self.get_saved_setup(unique_id=setup.settings.unique_id)
         # if saved_setup == setup.settings:
         #     return
         if saved_setup:
@@ -122,7 +123,7 @@ class CamerasTab(QWidget):
         self.saved_setups.append(setup.settings)
         # Save any setups in the list of setups
         if self.saved_setups:
-            with open(self.saved_setups_file, "w") as f:
+            with open(self.saved_setups_filepath, "w") as f:
                 json.dump([asdict(setup) for setup in self.saved_setups], f, indent=4)
 
     def refresh(self):
@@ -132,29 +133,13 @@ class CamerasTab(QWidget):
             # Add any new cameras setups to the setups (comparing unique_ids)
             for unique_id in set(connected_cameras) - set(self.setups.keys()):
                 # Check if this unique_id has been seen before by looking in the saved setups database
-                camera_settings_config: CameraSettingsConfig = self.get_saved_setups(unique_id=unique_id)
+                camera_settings_config: CameraSettingsConfig = self.get_saved_setup(unique_id=unique_id)
                 if camera_settings_config:
                     # Instantiate the setup and add it to the setups dict
-                    self.setups[unique_id] = Camera_table_item(
-                        setups_table=self.camera_table,
-                        name=camera_settings_config.name,
-                        unique_id=camera_settings_config.unique_id,
-                        fps=camera_settings_config.fps,
-                        downsampling_factor=camera_settings_config.downsampling_factor,
-                        exposure_time=camera_settings_config.exposure_time,
-                        gain=camera_settings_config.gain,
-                        pixel_format=camera_settings_config.pixel_format,
-                    )
+                    self.setups[unique_id] = Camera_table_item(self.camera_table, **asdict(camera_settings_config))
                 else:  # unique_id has not been seen before, create a new setup
                     self.setups[unique_id] = Camera_table_item(
-                        setups_table=self.camera_table,
-                        name=None,
-                        unique_id=unique_id,
-                        fps=default_camera_config["fps"],
-                        downsampling_factor=default_camera_config["downsampling_factor"],
-                        exposure_time=default_camera_config["exposure_time"],
-                        gain=default_camera_config["gain"],
-                        pixel_format=default_camera_config["pixel_format"],
+                        self.camera_table, **default_camera_config, unique_id=unique_id
                     )
                 self.update_saved_setups(self.setups[unique_id])
             # Remove any setups that are no longer connected
@@ -195,10 +180,6 @@ class CameraOverviewTable(QTableWidget):
     def __init__(self, parent=None):
         super(CameraOverviewTable, self).__init__(parent)
         self.setups_tab = parent
-        self.paths = paths_config
-        # Set the camera table to the camera_table in the database
-        self.camera_dict = load_camera_dict(os.path.join(self.paths["config_dir"], "camera_configs.json"))
-        # Configure the camera table
         self.header_names = [
             "Name",
             "Unique ID",
@@ -210,7 +191,7 @@ class CameraOverviewTable(QTableWidget):
             "Camera Preview",
         ]
         self.setColumnCount(len(self.header_names))
-        self.setRowCount(len(self.camera_dict))
+        self.setRowCount(0)
         self.verticalHeader().setVisible(False)
 
         self.setHorizontalHeaderLabels(self.header_names)
