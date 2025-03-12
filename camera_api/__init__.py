@@ -2,7 +2,6 @@ import os
 import importlib
 import pkgutil
 
-# from camera.generic_camera import GenericCamera
 from .generic_camera import GenericCamera
 
 # Get the directory of this __init__.py file
@@ -38,6 +37,8 @@ for file_name in os.listdir(current_directory):
                 f"Error: {module} does not have a class inheriting from 'GenericCamera'. \
                     This is a requirment of all modules in the camera package."
             )
+
+### Functions for initialising camera API -----------------------------------------------------------------------------
 
 
 def get_camera_ids() -> list[str]:

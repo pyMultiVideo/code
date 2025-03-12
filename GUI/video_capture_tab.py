@@ -1,7 +1,7 @@
 import os
 import json
 from typing import List
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 from PyQt6.QtWidgets import (
     QVBoxLayout,
@@ -19,7 +19,6 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import QTimer, Qt
 
-from dataclasses import asdict
 from .camera_widget import CameraWidget, CameraWidgetConfig
 from config.config import gui_config, paths_config
 
