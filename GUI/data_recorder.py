@@ -23,12 +23,14 @@ try:
         "h264": "h264_nvenc",
         "h265": "hevc_nvenc",
     }
+    GPU_AVAILABLE = True
 except Exception:
     print("No Nvidia GPU detected")
     ffmpeg_encoder_map = {
         "h264": "libx264",
         "h265": "libx265",
     }
+    GPU_AVAILABLE = False
 
 # -------------------------------------------------------------------------------------
 # Data recorder
@@ -95,8 +97,10 @@ class Data_recorder:
                 f"-s {self.downsampled_width}x{self.downsampled_height}",  # Output frame size after any downsampling.
                 "-pix_fmt yuv420p",  # Output pixel format
                 f"-preset {ffmpeg_config['encoding_speed']}",  # Encoding speed [fast, medium, slow]
-                f"-b:v 0 "  # Encoder uses variable bit rate https://superuser.com/questions/1236275/how-can-i-use-crf-encoding-with-nvenc-in-ffmpeg
-                f"-cq {ffmpeg_config['crf']}",  # Controls quality vs filesize
+                f"-b:v 0 ",  # Encoder uses variable bit rate https://superuser.com/questions/1236275/how-can-i-use-crf-encoding-with-nvenc-in-ffmpeg
+                (
+                    f"-cq {ffmpeg_config['crf']}" if GPU_AVAILABLE else f"-crf {ffmpeg_config['crf']}"
+                ),  # Controls quality vs filesize
                 f'"{self.video_filepath}"',  # Output file path
             ]
         )
