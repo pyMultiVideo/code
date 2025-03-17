@@ -8,12 +8,6 @@ from datetime import datetime
 
 from config.config import ffmpeg_config
 
-# Check FFMPEG is available.
-
-ffmpeg_path = shutil.which("ffmpeg")
-if not ffmpeg_path:
-    raise FileNotFoundError("ffmpeg executable not found on system path.")
-
 # Check GPU availibility for video encode and set which encoders to use.
 
 try:
@@ -44,7 +38,7 @@ class Data_recorder:
         self.camera_widget = camera_widget
 
     def start_recording(self, subject_id, save_dir, settings):
-        """Open data files and FFMPEG process, update GUI elements for recording."""
+        """Open data files and FFMPEG process"""
         self.settings = settings
         self.recorded_frames = 0
         self.dropped_frames = 0
@@ -107,7 +101,7 @@ class Data_recorder:
         self.ffmpeg_process = subprocess.Popen(ffmpeg_command, stdin=subprocess.PIPE)
 
     def stop_recording(self) -> None:
-        """Close data files and FFMPEG process, update GUI elements."""
+        """Close data files and FFMPEG process."""
         end_time = datetime.now()
         # Close files.
         self.gpio_file.close()

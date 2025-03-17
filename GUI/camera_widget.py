@@ -323,6 +323,8 @@ class CameraWidget(QGroupBox):
         else:
             self.start_recording_button.setEnabled(False)
             self.camera_name_item.setText(f"{self.label}", color="white")
+        # Overwrite start_recording button if FFMPEG not available
+        self.start_recording_button.setEnabled(self.GUI.FFMPEG)
         self.GUI.video_capture_tab.update_global_recording_button_states()
 
     def toggle_control_visibility(self) -> None:

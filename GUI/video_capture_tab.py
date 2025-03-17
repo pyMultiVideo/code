@@ -351,7 +351,7 @@ class VideoCaptureTab(QWidget):
 
     def update_global_recording_button_states(self):
         """Update the states of global recording buttons based on the readiness and recording status of cameras."""
-        all_ready = all(camera_widget.start_recording_button.isEnabled() for camera_widget in self.camera_widgets)
+        all_ready = all(c_w.start_recording_button.isEnabled() for c_w in self.camera_widgets)
         any_recording = any(camera_widget.recording for camera_widget in self.camera_widgets)
         self.start_recording_button.setEnabled(all_ready)
         self.stop_recording_button.setEnabled(any_recording)

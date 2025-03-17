@@ -1,10 +1,11 @@
 from PyQt6.QtGui import QIcon, QAction
-from PyQt6.QtWidgets import QMainWindow, QTabWidget
+from PyQt6.QtWidgets import QMainWindow, QTabWidget, QMessageBox
 
 import ctypes
 import logging
 import sys
 import os
+import shutil
 
 # import tab classes
 from .video_capture_tab import VideoCaptureTab
@@ -42,6 +43,14 @@ class GUIMain(QMainWindow):
         full_screen_controls_action.setShortcut("Ctrl+F")
         full_screen_controls_action.triggered.connect(self.video_capture_tab.toggle_full_screen_mode)
         view_menu.addAction(full_screen_controls_action)
+        # Check if FFMPEG is available
+        self.FFMPEG = True if shutil.which("ffmpeg") else False
+        if not self.FFMPEG:
+            QMessageBox.warning(
+                self,
+                "Recording unavaialable",
+                "FFMPEG path not found. \nPlease install FFMPEG and add to environment variables",
+            )
         # Display main window.
         self.show()
         self.video_capture_tab.tab_selected()
