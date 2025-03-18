@@ -324,7 +324,7 @@ class CameraWidget(QGroupBox):
             self.start_recording_button.setEnabled(False)
             self.camera_name_item.setText(f"{self.label}", color="white")
         # Overwrite start_recording button if FFMPEG not available
-        self.start_recording_button.setEnabled(self.GUI.FFMPEG)
+        self.start_recording_button.setEnabled(self.GUI.ffmpeg_path_available)
         self.GUI.video_capture_tab.update_global_recording_button_states()
 
     def toggle_control_visibility(self) -> None:
@@ -350,6 +350,7 @@ class CameraWidget(QGroupBox):
         # shut down old camera
         if self.camera_api is not None:
             self.camera_api.close_api()
+            del self.camera_api
         # Initialise the new camera
         self.label = str(self.camera_dropdown.currentText())
         self.settings = self.GUI.camera_setup_tab.get_camera_settings_from_label(self.label)

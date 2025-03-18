@@ -44,8 +44,9 @@ class GUIMain(QMainWindow):
         full_screen_controls_action.triggered.connect(self.video_capture_tab.toggle_full_screen_mode)
         view_menu.addAction(full_screen_controls_action)
         # Check if FFMPEG is available
-        self.FFMPEG = True if shutil.which("ffmpeg") else False
-        if not self.FFMPEG:
+        self.ffmpeg_path = shutil.which("ffmpeg")
+        self.ffmpeg_path_available = bool(self.ffmpeg_path)
+        if not self.ffmpeg_path_available:
             QMessageBox.warning(
                 self,
                 "Recording unavaialable",

@@ -81,7 +81,7 @@ class Data_recorder:
         self.downsampled_height = self.camera_widget.camera_height // self.settings.downsampling_factor
         ffmpeg_command = " ".join(
             [
-                ffmpeg_path,  # Path to binary
+                self.camera_widget.GUI.ffmpeg_path,  # Path to binary
                 "-f rawvideo",  # Input codec (raw video)
                 f"-s {self.camera_widget.camera_width}x{self.camera_widget.camera_height}",  # Input frame size
                 f"-pix_fmt {self.camera_widget.camera_api.supported_pixel_formats[self.settings.pixel_format]}",  # Input Pixel Format: 8-bit grayscale input to ffmpeg process. Input array 1D
