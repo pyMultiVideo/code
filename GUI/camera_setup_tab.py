@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QSizePolicy,
     QHeaderView,
+    QMessageBox,
 )
 
 from config.config import paths_config, default_camera_config
@@ -44,7 +45,15 @@ class CamerasTab(QWidget):
         self.saved_setups_filepath = os.path.join(paths_config["camera_dir"], "camera_configs.json")
         self.setups = {}  # Dict of setups: {Unique_id: Camera_table_item}
         self.preview_showing = False
-
+        # Check if any cameras are connected
+        _, NO_CAMERAS_CONNECTED = get_camera_ids()
+        if NO_CAMERAS_CONNECTED:
+            warning_box = QMessageBox()
+            warning_box.setIcon(QMessageBox.Icon.Warning)
+            warning_box.setText("No cameras connected.")
+            warning_box.setWindowTitle("Warning")
+            warning_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+            warning_box.exec()
         # Initialize_camera_groupbox
         self.camera_table_groupbox = QGroupBox("Camera Table")
         self.camera_table = CameraOverviewTable(parent=self)
@@ -128,7 +137,7 @@ class CamerasTab(QWidget):
 
     def refresh(self):
         """Check for new and removed cameras and updates the setups table."""
-        connected_cameras = get_camera_ids()
+        connected_cameras, _ = get_camera_ids()
         if not connected_cameras == self.setups.keys():
             # Add any new cameras setups to the setups (comparing unique_ids)
             for unique_id in set(connected_cameras) - set(self.setups.keys()):

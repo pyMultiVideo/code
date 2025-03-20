@@ -26,7 +26,6 @@ def check_module(module_name):
 
 check_module("PyQt6")
 check_module("pyqtgraph")
-check_module("PySpin")
 
 # Import GUI now that dependancies are verified.
 import PyQt6.QtWidgets as QtWidgets

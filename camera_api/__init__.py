@@ -12,8 +12,13 @@ for file_name in os.listdir(current_directory):
     if file_name.endswith(".py") and file_name != "__init__.py" and file_name != "generic_camera.py":
         # Remove the '.py' extension to get the module name
         module_name = file_name[:-3]
-        # Import the module
-        module = importlib.import_module(f".{module_name}", package=__name__)
+        installed_modules = []
+        try:
+            # Import the module
+            module = importlib.import_module(f".{module_name}", package=__name__)
+            installed_modules.append(module)
+        except ModuleNotFoundError:
+            continue
 
         # Check if the expected functions and classes exist in every python module in the camera package
         if hasattr(module, "list_available_cameras") is False:
@@ -41,7 +46,7 @@ for file_name in os.listdir(current_directory):
 ### Functions for initialising camera API -----------------------------------------------------------------------------
 
 
-def get_camera_ids() -> list[str]:
+def get_camera_ids():
     """Get a list of unique camera IDs for all the different types of cameras connected to the machine."""
     # for each module in the camera class, run the get unique ids function
 
@@ -55,11 +60,13 @@ def get_camera_ids() -> list[str]:
     camera_list = []
     for module in modules:
         # Get the module
-        camera_module = importlib.import_module(f"camera_api.{module}")
-        # Get the list of cameras as a string.
-        camera_list.extend(camera_module.list_available_cameras())
-
-    return camera_list
+        try:
+            camera_module = importlib.import_module(f"camera_api.{module}")
+            # Get the list of cameras as a string.
+            camera_list.extend(camera_module.list_available_cameras())
+        except ModuleNotFoundError:
+            continue
+    return camera_list, len(camera_list) == 0
 
 
 def init_camera_api_from_module(settings):
