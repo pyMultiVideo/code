@@ -21,7 +21,7 @@ class SpinnakerCamera(GenericCamera):
         self.cam = next(
             (cam for cam in self.cam_list if cam.TLDevice.DeviceSerialNumber.GetValue() == self.serial_number), None
         )
-        self.camera_model = self.cam.TLDevice.DeviceModelName.GetValue()[:10]
+        self.device_model = self.cam.TLDevice.DeviceModelName.GetValue()[:10]
         self.cam.Init()
         self.nodemap = self.cam.GetNodeMap()
         self.stream_nodemap = self.cam.GetTLStreamNodeMap()
@@ -50,7 +50,7 @@ class SpinnakerCamera(GenericCamera):
 
         # Configure ChunkData to include frame count and timestamp.
         chunk_selector = PySpin.CEnumerationPtr(self.nodemap.GetNode("ChunkSelector"))
-        if self.camera_model == "Chameleon3":
+        if self.device_model == "Chameleon3":
             chunk_selector.SetIntValue(chunk_selector.GetEntryByName("FrameCounter").GetValue())
             self.cam.ChunkEnable.SetValue(True)
             # Configure camera to embed GPIO pinstate in image data.
@@ -71,7 +71,7 @@ class SpinnakerCamera(GenericCamera):
         self.cam.ChunkModeActive.SetValue(True)
 
         # Set frame rate control to manual.
-        if self.camera_model == "Chameleon3":
+        if self.device_model == "Chameleon3":
             frc_node = PySpin.CBooleanPtr(self.nodemap.GetNode("AcquisitionFrameRateEnabled"))
             frc_node.SetValue(True)
             fra_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("AcquisitionFrameRateAuto"))
@@ -244,7 +244,7 @@ class SpinnakerCamera(GenericCamera):
                 elapsed_frames = round((timestamps_buffer[-1] - self.frame_timestamp) / self.inter_frame_interval)
                 self.frame_timestamp = timestamps_buffer[-1]
                 dropped_frames += elapsed_frames - 1
-                if self.camera_model == "Chameleon3":
+                if self.device_model == "Chameleon3":
                     img_data = img_buffer[-1]
                     gpio_buffer.append([(img_data[32] >> 4) & 1, (img_data[32] >> 5) & 1, (img_data[32] >> 7) & 1])
                 else:

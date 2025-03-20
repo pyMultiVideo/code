@@ -66,6 +66,8 @@ class Data_recorder:
             "gain": self.settings.gain,
             "pixel_format": self.settings.pixel_format,
             "downsampling_factor": self.settings.downsampling_factor,
+            "device_model": self.camera_widget.camera_api.device_model,
+            "device_serial_number": self.camera_widget.camera_api.serial_number,
             # Recording information
             "recorded_frames": 0,
             "dropped_frames": None,
