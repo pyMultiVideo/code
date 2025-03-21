@@ -2,6 +2,8 @@ import cv2
 
 from collections import OrderedDict
 import multiprocessing
+from signal import signal, SIGTERM
+import os
 import time
 from math import floor, ceil
 
@@ -15,80 +17,74 @@ class OpenCVCamera(GenericCamera):
         # Initialise camera -------------------------------------------------------------
         # pMV Information
         self.serial_number, self.api = self.unique_id.split("-")
-        self.framerate = CameraConfig.fps
-        self.N_GPIO = 3  # Number of GPIO pins
-        self.pixel_format = "Mono8"
+        self.framerate = int(CameraConfig.fps)
+        self.N_GPIO = 0  # Number of GPIO pins
+        self.pixel_format = "RGB"
+        self.cv2_conversion = {"RGB": cv2.COLOR_RGB2BGR, "Mono8": cv2.COLOR_GRAY2BGR}
+        self.device_model = "Webcam"
+        # Capture one frame to get the height and width
+        cap = cv2.VideoCapture(int(self.serial_number))
+        if cap.isOpened():
+            ret, frame = cap.read()
+            if ret:
+                self.height, self.width = frame.shape[:2]
+            cap.release()
+        else:
+            self.height, self.width = None, None
 
         # Buffers running the camera on a different python process
 
         self.buffer_size = 10  # Buffer size for Camera process
         self.buffer = multiprocessing.Queue(maxsize=self.buffer_size)
-
-        self.process = None  # Attribute for WebCam Process
-        self.running = multiprocessing.Value("b", False)
+        self.running = multiprocessing.Value("b", False)  # Initialize running flag
 
     # Camera Buffer process functions -------------------------------------------------------
 
     def begin_capturing(self, CameraConfig):
         """Start the webcam capture process"""
-        print('begin capturing')
+        print("begin capturing")
         self.running.value = True
-        self.process = multiprocessing.Process(target=self.video_acquisition_process, args=(CameraConfig,))
+        self.process = multiprocessing.Process(target=self.video_acquisition_process)
+        self.frame_number = 0
         self.process.start()
-        self.previous_frame_number = 0
 
     def video_acquisition_process(self, CameraConfig=None):
         """The method that captures frames in a separate process"""
+        signal(SIGTERM, self.end_video_acquisition_process)
         # Open the webcam
-        cap = cv2.VideoCapture(int(self.serial_number))
-        cap.set(cv2.CAP_PROP_FPS, self.framerate)
+        self.cap = cv2.VideoCapture(int(self.serial_number))
 
-        # Set the gain of the camera
-        cap.set(cv2.CAP_PROP_GAIN, CameraConfig.gain)
-        # Set the exposure time of the camera
-        cap.set(cv2.CAP_PROP_EXPOSURE, CameraConfig.exposure_time)
-
-        if not cap.isOpened():
+        if not self.cap.isOpened():
             print("Error: Could not open webcam.")
             return
 
         while self.running.value:
-            ret, frame = cap.read()
+            ret, frame = self.cap.read()
             if ret:
                 # Add frame to the queue (circular buffer behavior)
                 if self.buffer.full():
                     self.buffer.get()  # Discard oldest frame
-                self.buffer.put(frame)
+                image = {}  # Create a dictionary to put thing into the queue
+                gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # Convert frame to monochrome
+                image["frame"] = gray_frame.tobytes()  # Frame information as byte array
+                image["timestamp"] = int(time.time_ns())  # Computer time stamp in nanoseconds
+                self.frame_number = self.frame_number + 1  # Increment frame number
+                image["frame_number"] = self.frame_number
+                self.buffer.put(image)  # Put image dictionary into queue
+
             time.sleep(1 / self.framerate)  # Ensure we are acquiring at the specified framerate
 
-            # Add timestamp to the queue
-            if self.timestamp_queue.full():
-                self.timestamp_queue.get()  # Discard oldest timestamp
-            self.timestamp_queue.put(time.time())
-
-            # Add GPIO data to the queue
-            gpio_data = self.read_gpio_data()  # Assuming you have a method to read GPIO data
-            if self.gpio_queue.full():
-                self.gpio_queue.get()  # Discard oldest GPIO data
-            self.gpio_queue.put(gpio_data)
-
-            # Increment frame number and add to the queue
-            frame_number = self.frame_number_queue.get() + 1 if not self.frame_number_queue.empty() else 0
-            if self.frame_number_queue.full():
-                self.frame_number_queue.get()  # Discard oldest frame number
-            self.frame_number_queue.put(frame_number)
-
-        cap.release()
+    def end_video_acquisition_process(self, *args):
+        """End the video acquisition process gracefully."""
+        print("running end process")
+        self.cap.release()
 
     def stop_capturing(self):
         """Stop capturing frames"""
         self.running.value = False
         if self.process is not None:
-            self.process.join()
-
-    def get_gpio_data(self):
-        """"""
-        return [0, 0, 0]
+            print("terminating process")
+            self.process.terminate()
 
     def get_frame(self):
         """Get the most recent frame from the queue"""
@@ -121,21 +117,11 @@ class OpenCVCamera(GenericCamera):
 
     def get_height(self):
         """Get the height of the frames captured by the camera."""
-        if not self.buffer.empty():
-            frame = self.buffer.get()
-            self.buffer.put(frame)  # Put it back after getting the height
-            return frame.shape[0]
-        else:
-            return None
+        return self.height
 
     def get_width(self):
         """Get the width of the frames captured by the camera."""
-        if not self.buffer.empty():
-            frame = self.buffer.get()
-            self.buffer.put(frame)  # Put it back after getting the width
-            return frame.shape[1]
-        else:
-            return None
+        return self.width
 
     def is_streaming(self):
         """Check if the camera is currently streaming."""
@@ -150,29 +136,28 @@ class OpenCVCamera(GenericCamera):
         """Gets all available images from the buffer and return images GPIO pinstate data and timestamps."""
         img_buffer = []
         timestamps_buffer = []
-        gpio_data = []
+        gpio_buffer = []
         dropped_frames = 0
-
         # Get all available images from camera buffer.
         while not self.buffer.empty():
-            img_buffer.append(self.buffer.get())
-            timestamps_buffer.append(self.timestamps_queue.get())
-            gpio_data.append(self.gpio_queue.get())
-            frame_number = self.frame_number_queue.get()
-            if self.previous_frame_number != (frame_number - 1):
-                dropped_frames += frame_number - self.previous_frame_number - 1
-            self.previous_frame_number = frame_number
-            dropped_frames += 1
-
-        return {
-            "images": img_buffer,
-            "gpio_data": gpio_data,
-            "timestamps": timestamps_buffer,
-            "dropped_frames": dropped_frames,
-        }
+            image = self.buffer.get()  # Get next image from buffer
+            img_buffer.append(image["frame"])  # Get frame
+            timestamps_buffer.append(image["timestamp"])  # Get image timestamp
+            gpio_buffer.append([])
+        if len(img_buffer) == 0:  # Buffer is empty
+            return
+        else:
+            return {
+                "images": img_buffer,
+                "gpio_data": gpio_buffer,
+                "timestamps": timestamps_buffer,
+                "dropped_frames": dropped_frames,
+            }
 
 
 # Camera system functions -------------------------------------------------------------------------------
+
+
 def list_available_cameras(VERBOSE=True) -> list[str]:
     """List available webcams using OpenCV."""
     index = 0
@@ -193,21 +178,3 @@ def list_available_cameras(VERBOSE=True) -> list[str]:
 def initialise_camera_api(CameraSettingsConfig):
     """Instantiate the OpenCVCamera object based on the CameraSettingsConfig."""
     return OpenCVCamera(CameraConfig=CameraSettingsConfig)
-
-
-if __name__ == "__main__":
-    import time
-    from pyinstrument import Profiler
-
-    # Create a profiler object
-    profiler = Profiler()
-
-    # Start profiling
-    profiler.start()
-    available_cameras = list_available_cameras()
-    print("Available cameras:", available_cameras)
-    profiler.stop()
-    profiler.print()
-
-    with open("profile_output.html", "w") as f:
-        f.write(profiler.output_html())
