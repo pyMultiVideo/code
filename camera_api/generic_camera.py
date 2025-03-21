@@ -9,7 +9,7 @@ class GenericCamera:
     def __init__(self, CameraConfig=None):
         """Template class for representing a camera. Defines functionallity that must be implemented for interaction with the GUI."""
         self.serial_number = None # To be replaced with device serial number.
-        self.devic_model = 'GenericCameraModel' # Replace with the camera model name to be recorded in metadata.
+        self.device_model = 'GenericCameraModel' # Replace with the camera model name to be recorded in metadata.
         self.N_GPIO = 3 # Number of pins that the camera records each frame. 
         pass
 
