@@ -159,7 +159,7 @@ class XimeaCamera(GenericCamera):
                     np.frombuffer(next_image.get_image_data_raw(), dtype=np.uint8)
                 )  # Add the data as numpy buffer arrays
                 timestamps_buffer.append(
-                    int(str(next_image.tsSec) + str(next_image.tsUSec) + "000")  # Padded to nanosecond resolution
+                    next_image.tsSec * 1000000000 + next_image.tsUSec * 1000  # Padded to nanosecond resolution
                 )  # Create timestamp for the image
                 if self.previous_frame_number != (next_image.acq_nframe - 1):
                     dropped_frames += next_image.acq_nframe - self.previous_frame_number - 1
