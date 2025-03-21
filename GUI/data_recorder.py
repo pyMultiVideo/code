@@ -53,7 +53,7 @@ class Data_recorder:
         # Open GPIO file and write header data.
         self.gpio_file = open(self.GPIO_filepath, mode="w", newline="")
         self.gpio_writer = csv.writer(self.gpio_file)
-        self.gpio_writer.writerow(["GPIO1", "GPIO2", "GPIO3"])
+        self.gpio_writer.writerow([f"GPIO{pin}" for pin in range(1, self.camera_widget.camera_api.N_GPIO + 1)])
 
         # Create metadata file.
         self.metadata = {

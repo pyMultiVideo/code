@@ -92,12 +92,12 @@ class CameraWidget(QGroupBox):
         self.frame_rate_text.setText("FPS:", color="r")
 
         # GPIO state overlay
-        self.gpio_state_smoothed = np.zeros(3)
+        self.gpio_state_smoothed = np.zeros(self.camera_api.N_GPIO)
         self.gpio_status_item = pg.TextItem()
         self.gpio_status_item.setPos(10, 4 * text_spacing)
         self.graphics_view.addItem(self.gpio_status_item)
         self.gpio_status_item.setText("GPIO state", color="blue")
-        self.gpio_status_indicators = [pg.TextItem() for _ in range(3)]
+        self.gpio_status_indicators = [pg.TextItem() for _ in range(self.camera_api.N_GPIO)]
         for i, gpio_indicator in enumerate(self.gpio_status_indicators):
             gpio_indicator.setPos((5 + i) * text_spacing, 4 * text_spacing)
             self.graphics_view.addItem(gpio_indicator)
@@ -327,6 +327,7 @@ class CameraWidget(QGroupBox):
         self.start_recording_button.setEnabled(self.GUI.ffmpeg_path_available)
         self.GUI.video_capture_tab.update_global_recording_button_states()
 
+
     def toggle_control_visibility(self) -> None:
         """Toggle the visibility of the camera controls."""
         self.controls_visible = not self.controls_visible
@@ -362,6 +363,16 @@ class CameraWidget(QGroupBox):
         self.camera_name_item.setText(
             f"{self.settings.name if self.settings.name is not None else self.settings.unique_id}", color="white"
         )
+        # Update GPIO elements
+        self.gpio_state_smoothed = np.zeros(self.camera_api.N_GPIO)
+        for gpio_indicator in self.gpio_status_indicators:
+            self.graphics_view.removeItem(gpio_indicator)
+        self.gpio_status_indicators = [pg.TextItem() for _ in range(self.camera_api.N_GPIO)]
+        for i, gpio_indicator in enumerate(self.gpio_status_indicators):
+            gpio_indicator.setPos(
+                (5 + i) * int(gui_config["font_size"] * 1.25), 4 * int(gui_config["font_size"] * 1.25)
+            )
+            self.graphics_view.addItem(gpio_indicator)
 
     def closeEvent(self, event):
         """Handle the close event to stop the timer and release resources"""
