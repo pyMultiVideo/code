@@ -1,10 +1,19 @@
+"""
+TODO:
+1. Closing the processes which the frames are aquired by properly using the multiprocessing
+2. Understanding and fixing why the queue is mostly 2 frames even though it should be lonter sometimes
+3. Low resolution output from the cameras (color conversion using cv2?)
+4. Opening the camera is slow on the windows computer...
+5. Settings and getting camera parameters
+"""
+
 import cv2
 
-from collections import OrderedDict
 import multiprocessing
 from signal import signal, SIGTERM
 import os
 import time
+from collections import OrderedDict
 from math import floor, ceil
 
 from . import GenericCamera
@@ -18,8 +27,15 @@ class OpenCVCamera(GenericCamera):
         # pMV Information
         self.serial_number, self.api = self.unique_id.split("-")
         self.framerate = int(CameraConfig.fps)
+        self.framerate = 60
         self.N_GPIO = 0  # Number of GPIO pins
         self.pixel_format = "RGB"
+        self.supported_pixel_formats = OrderedDict(
+            [
+                ("BayerRG8", "bayer_rggb8"),
+                ("Mono8", "gray"),
+            ]
+        )
         self.cv2_conversion = {"RGB": cv2.COLOR_RGB2BGR, "Mono8": cv2.COLOR_GRAY2BGR}
         self.device_model = "Webcam"
         # Capture one frame to get the height and width
@@ -32,9 +48,8 @@ class OpenCVCamera(GenericCamera):
         else:
             self.height, self.width = None, None
 
-        # Buffers running the camera on a different python process
-
-        self.buffer_size = 10  # Buffer size for Camera process
+        self.buffer_size = 100  # Buffer size for Camera process
+        self.process = None
         self.buffer = multiprocessing.Queue(maxsize=self.buffer_size)
         self.running = multiprocessing.Value("b", False)  # Initialize running flag
 
@@ -44,7 +59,7 @@ class OpenCVCamera(GenericCamera):
         """Start the webcam capture process"""
         print("begin capturing")
         self.running.value = True
-        self.process = multiprocessing.Process(target=self.video_acquisition_process)
+        self.process = multiprocessing.Process(target=self.video_acquisition_process, args=(CameraConfig,))
         self.frame_number = 0
         self.process.start()
 
@@ -59,9 +74,10 @@ class OpenCVCamera(GenericCamera):
             return
 
         while self.running.value:
-            ret, frame = self.cap.read()
+            start_time = time.time()
+            ret, frame = self.cap.read()  # The read function could be too slow to keep up with the high framerate
             if ret:
-                # Add frame to the queue (circular buffer behavior)
+                # Add frame to the queue (circular buffer behaviour)
                 if self.buffer.full():
                     self.buffer.get()  # Discard oldest frame
                 image = {}  # Create a dictionary to put thing into the queue
@@ -70,9 +86,11 @@ class OpenCVCamera(GenericCamera):
                 image["timestamp"] = int(time.time_ns())  # Computer time stamp in nanoseconds
                 self.frame_number = self.frame_number + 1  # Increment frame number
                 image["frame_number"] = self.frame_number
-                self.buffer.put(image)  # Put image dictionary into queue
+                self.buffer.put(image)  # Put image in queue
 
-            time.sleep(1 / self.framerate)  # Ensure we are acquiring at the specified framerate
+            elapsed_time = time.time() - start_time
+            sleep_time = max(0, (1 / self.framerate) - elapsed_time)
+            time.sleep(sleep_time)
 
     def end_video_acquisition_process(self, *args):
         """End the video acquisition process gracefully."""
@@ -84,14 +102,10 @@ class OpenCVCamera(GenericCamera):
         self.running.value = False
         if self.process is not None:
             print("terminating process")
+            self.process.join()  # Ensure the process ends correctly
             self.process.terminate()
 
-    def get_frame(self):
-        """Get the most recent frame from the queue"""
-        if not self.buffer.empty():
-            return self.buffer.get()
-        else:
-            return None
+    # Camera Settings ------------------------------------------------------------
 
     def get_frame_rate_range(self, exposure_time):
         return 0, 70
@@ -104,13 +118,7 @@ class OpenCVCamera(GenericCamera):
 
     def get_exposure_time(self):
         """Get the current exposure time of the camera."""
-        if self.process is not None and self.process.is_alive():
-            cap = cv2.VideoCapture(self.serial_number)
-            exposure_time = cap.get(cv2.CAP_PROP_EXPOSURE)
-            cap.release()
-            return exposure_time
-        else:
-            return None
+        return None
 
     def get_frame_rate(self):
         return 0
@@ -138,15 +146,21 @@ class OpenCVCamera(GenericCamera):
         timestamps_buffer = []
         gpio_buffer = []
         dropped_frames = 0
+
         # Get all available images from camera buffer.
         while not self.buffer.empty():
             image = self.buffer.get()  # Get next image from buffer
             img_buffer.append(image["frame"])  # Get frame
             timestamps_buffer.append(image["timestamp"])  # Get image timestamp
             gpio_buffer.append([])
-        if len(img_buffer) == 0:  # Buffer is empty
+            # dropped_frames += 1 # Calculate dropped frames
+
+        # Return images
+        if len(img_buffer) == 0:
+            print("buffer empty")
             return
         else:
+            print("Images returned", len(img_buffer))
             return {
                 "images": img_buffer,
                 "gpio_data": gpio_buffer,
