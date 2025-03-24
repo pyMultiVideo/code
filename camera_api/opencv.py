@@ -55,11 +55,10 @@ class OpenCVCamera(GenericCamera):
 
     # Camera Buffer process functions -------------------------------------------------------
 
-    def begin_capturing(self, CameraConfig):
+    def begin_capturing(self, CameraConfig=None):
         """Start the webcam capture process"""
-        print("begin capturing")
         self.running.value = True
-        self.process = multiprocessing.Process(target=self.video_acquisition_process, args=(CameraConfig,))
+        self.process = multiprocessing.Process(target=self.video_acquisition_process, name="OpenCVCameraProcess")
         self.frame_number = 0
         self.process.start()
 
@@ -92,17 +91,14 @@ class OpenCVCamera(GenericCamera):
             sleep_time = max(0, (1 / self.framerate) - elapsed_time)
             time.sleep(sleep_time)
 
-    def end_video_acquisition_process(self, *args):
+    def end_video_acquisition_process(self, signum, frame):
         """End the video acquisition process gracefully."""
-        print("running end process")
         self.cap.release()
+        self.running.value = False
 
     def stop_capturing(self):
         """Stop capturing frames"""
-        self.running.value = False
         if self.process is not None:
-            print("terminating process")
-            self.process.join()  # Ensure the process ends correctly
             self.process.terminate()
 
     # Camera Settings ------------------------------------------------------------
