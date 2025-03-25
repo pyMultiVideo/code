@@ -10,6 +10,7 @@ TODO:
 import cv2
 
 import multiprocessing
+import queue
 from signal import signal, SIGTERM
 import os
 import time
@@ -58,8 +59,9 @@ class OpenCVCamera(GenericCamera):
 
     def begin_capturing(self, CameraConfig=None):
         """Start the webcam capture process"""
+        self.RUNNING = True
         if self.running.value:
-            pass 
+            pass
         else:
             # Only begin capturing if that hasn't already happened
             self.running.value = True
@@ -83,6 +85,7 @@ class OpenCVCamera(GenericCamera):
             if ret:
                 # Add frame to the queue (circular buffer behaviour)
                 if self.buffer.full():
+                    print("FRAME DISCARDED")
                     self.buffer.get()  # Discard oldest frame
                 image = {}  # Create a dictionary to put thing into the queue
                 gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # Convert frame to monochrome
@@ -95,19 +98,26 @@ class OpenCVCamera(GenericCamera):
             elapsed_time = time.time() - start_time
             sleep_time = max(0, (1 / self.framerate) - elapsed_time)
             time.sleep(sleep_time)
+            if self.RUNNING == False:
+                self.process.terminate()
 
     def end_video_acquisition_process(self, signum, frame):
         """End the video acquisition process gracefully."""
         self.cap.release()
-        self.running.value = False
+        self.RUNNING = False
 
     def stop_capturing(self):
         """Stop capturing frames"""
+
+        self.RUNNING = False
         try:
             self.process.terminate()
-            self.process.join()
+            self.process.join(1)
+            self.buffer.close()
+            self.buffer.join_thread()
         except:
-            print('Fail to terminate process')
+            print("Fail to terminate process")
+
     # Camera Settings ------------------------------------------------------------
 
     def get_frame_rate_range(self, exposure_time):
@@ -151,13 +161,16 @@ class OpenCVCamera(GenericCamera):
         dropped_frames = 0
 
         # Get all available images from camera buffer.
-        while not self.buffer.empty():
-            image = self.buffer.get()  # Get next image from buffer
-            img_buffer.append(image["frame"])  # Get frame
-            timestamps_buffer.append(image["timestamp"])  # Get image timestamp
-            gpio_buffer.append([])
+        try:
+            while True:
+                image = self.buffer.get(block=False, timeout=0)  # Get next image from buffer
+                img_buffer.append(image["frame"])  # Get frame
+                timestamps_buffer.append(image["timestamp"])  # Get image timestamp
+                gpio_buffer.append([])
             # dropped_frames += 1 # Calculate dropped frames
-
+        except:  # Buffer is empty
+            print("error raised")
+            pass
         # Return images
         if len(img_buffer) == 0:
             print("buffer empty")
