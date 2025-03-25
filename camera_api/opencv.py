@@ -58,10 +58,14 @@ class OpenCVCamera(GenericCamera):
 
     def begin_capturing(self, CameraConfig=None):
         """Start the webcam capture process"""
-        self.running.value = True
-        self.process = multiprocessing.Process(target=self.video_acquisition_process, name="OpenCVCameraProcess")
-        self.frame_number = 0
-        self.process.start()
+        if self.running.value:
+            pass 
+        else:
+            # Only begin capturing if that hasn't already happened
+            self.running.value = True
+            self.process = multiprocessing.Process(target=self.video_acquisition_process, name="OpenCVCameraProcess")
+            self.frame_number = 0
+            self.process.start()
 
     def video_acquisition_process(self, CameraConfig=None):
         """The method that captures frames in a separate process"""
@@ -99,9 +103,11 @@ class OpenCVCamera(GenericCamera):
 
     def stop_capturing(self):
         """Stop capturing frames"""
-        if self.process is not None:
+        try:
             self.process.terminate()
-
+            self.process.join()
+        except:
+            print('Fail to terminate process')
     # Camera Settings ------------------------------------------------------------
 
     def get_frame_rate_range(self, exposure_time):
