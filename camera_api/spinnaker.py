@@ -5,7 +5,7 @@ from math import floor, ceil
 from . import GenericCamera
 
 
-PYSPINSYSTEM = PySpin.System.GetInstance() # One PySpin system instance per pMV 
+PYSPINSYSTEM = PySpin.System.GetInstance()  # One PySpin system instance per pMV
 
 
 class SpinnakerCamera(GenericCamera):
@@ -15,9 +15,9 @@ class SpinnakerCamera(GenericCamera):
         super().__init__(self)
         self.unique_id = CameraConfig.unique_id
         # Initialise camera -------------------------------------------------------------
-
         self.serial_number, self.api = self.unique_id.split("-")
-        self.N_GPIO = 3 # Number of GPIO pins
+        self.N_GPIO = 3  # Number of GPIO pins
+        self.manual_control_enabled = True
         self.cam_list = PYSPINSYSTEM.GetCameras()
         self.cam = next(
             (cam for cam in self.cam_list if cam.TLDevice.DeviceSerialNumber.GetValue() == self.serial_number), None

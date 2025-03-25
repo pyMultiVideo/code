@@ -20,7 +20,7 @@ class XimeaCamera(GenericCamera):
         # pMV Information
         self.serial_number, self.api = self.unique_id.split("-")
         self.N_GPIO = 1  # Number of GPIO pins
-
+        self.manual_control_enabled = True
         # Open camera by serial number
         self.cam = xiapi.Camera()
         self.cam.open_device_by_SN(self.serial_number)
@@ -28,7 +28,6 @@ class XimeaCamera(GenericCamera):
         self.device_model = self.cam.get_device_model_id()
 
         # Dictionaries for supporting colored cameras -----------------------------------
-
         # List of color formats Ximea supports
         self.supported_pixel_formats = OrderedDict(
             [

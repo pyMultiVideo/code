@@ -373,6 +373,8 @@ class CameraWidget(QGroupBox):
                 (5 + i) * int(gui_config["font_size"] * 1.25), 4 * int(gui_config["font_size"] * 1.25)
             )
             self.graphics_view.addItem(gpio_indicator)
+        # Update record button to only be available if manual control is enabled 
+        self.start_recording_button.setEnabled(self.camera_api.manual_control_enabled)
 
     def closeEvent(self, event):
         """Handle the close event to stop the timer and release resources"""

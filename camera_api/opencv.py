@@ -29,6 +29,7 @@ class OpenCVCamera(GenericCamera):
         self.framerate = int(CameraConfig.fps)
         self.framerate = 60
         self.N_GPIO = 0  # Number of GPIO pins
+        self.manual_control_enabled = False
         self.pixel_format = "RGB"
         self.supported_pixel_formats = OrderedDict(
             [

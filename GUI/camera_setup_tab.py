@@ -261,26 +261,37 @@ class Camera_table_item:
         # Exposure time edit
         self.exposure_time_edit = QSpinBox()
         self.exposure_time_edit.setSingleStep(100)
-        self.exposure_time_edit.setRange(*self.camera_api.get_exposure_time_range(self.settings.fps))
         self.exposure_time_edit.setValue(self.settings.exposure_time)
+        self.exposure_time_edit.setEnabled(self.camera_api.manual_control_enabled)
         if self.settings.exposure_time:
             self.exposure_time_edit.setValue(int(self.settings.exposure_time))
-        self.exposure_time_edit.valueChanged.connect(self.camera_exposure_time_changed)
 
         # Gain edit
         self.gain_edit = QSpinBox()
-        self.gain_edit.setRange(*self.camera_api.get_gain_range())
         self.gain_edit.setValue(int(self.settings.gain))
         if self.settings.gain:
             self.gain_edit.setValue(int(self.settings.gain))
-        self.gain_edit.valueChanged.connect(self.camera_gain_changed)
 
+        self.gain_edit.setEnabled(self.camera_api.manual_control_enabled)
         # Pixel format edit
         self.pixel_format_edit = QComboBox()
         self.pixel_format_edit.addItem(self.camera_api.pixel_format)
         if self.settings.pixel_format:
             self.pixel_format_edit.setCurrentText(self.settings.pixel_format)
-        self.pixel_format_edit.activated.connect(self.camera_pixel_format_changed)
+
+        # Configure what settings are available manual camera control is not enabled
+        if self.camera_api.manual_control_enabled:
+            # Connect functions is camera control enabled
+            self.pixel_format_edit.activated.connect(self.camera_pixel_format_changed)
+            self.exposure_time_edit.valueChanged.connect(self.camera_exposure_time_changed)
+            self.gain_edit.valueChanged.connect(self.camera_gain_changed)
+            # Connect the Set range functions
+            self.exposure_time_edit.setRange(*self.camera_api.get_exposure_time_range(self.settings.fps))
+            self.gain_edit.setRange(*self.camera_api.get_gain_range())
+        else:  # The edit boxes are not enabled if no function is connected
+            self.pixel_format_edit.setEnabled(False)
+            self.exposure_time_edit.setEnabled(False)
+            self.gain_edit.setEnabled(False)
 
         # Downsampling factor edit
         self.downsampling_factor_edit = QComboBox()

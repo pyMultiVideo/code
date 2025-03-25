@@ -8,10 +8,12 @@ Generic API defining functionality needed for for camera system to interact with
 class GenericCamera:
     def __init__(self, CameraConfig=None):
         """Template class for representing a camera. Defines functionallity that must be implemented for interaction with the GUI."""
-        self.serial_number = None # To be replaced with device serial number.
-        self.device_model = 'GenericCameraModel' # Replace with the camera model name to be recorded in metadata.
-        self.N_GPIO = 3 # Number of pins that the camera records each frame. 
-        pass
+        self.serial_number = None  # To be replaced with device serial number.
+        self.device_model = "GenericCameraModel"  # Replace with the camera model name to be recorded in metadata.
+        self.N_GPIO = 3  # Number of pins that the camera records each frame.
+        self.manual_control_enabled = (
+            False  # If true, there is manual control available for the camera (gain / exposure time)
+        )
 
     # Functions to get the camera parameters -----------------------------------------------------------------
 
@@ -87,9 +89,10 @@ class GenericCamera:
 
         Returns:
             {
-            'images' : img_buffer - a list of images (as numpy arrays)
+            'images' : img_buffer - a list of images (as numpy byte arrays)
             'gpio_data' : gpio_buffer - a corresponding list of gpio data for each of the frames
             'timestamps : timestamps_buffer - a corresponding list of timestampes for each frame
+            'dropped_frames': the number of dropped frames found (can be calculayted or a camera attributed)
             }:
         """
         return {
