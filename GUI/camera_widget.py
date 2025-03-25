@@ -149,8 +149,8 @@ class CameraWidget(QGroupBox):
         # Camera select dropdown
         self.camera_id_label = QLabel("Camera:")
         self.camera_dropdown = QComboBox()
-        self.camera_dropdown.currentTextChanged.connect(self.change_camera)
         self.camera_dropdown.addItems([self.label])
+        self.camera_dropdown.currentTextChanged.connect(self.change_camera)
         self.camera_dropdown.setCurrentText(self.label)
 
         # Layout
