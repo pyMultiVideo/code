@@ -1,11 +1,3 @@
-"""
-TODO:
-1. Closing the processes which the frames are aquired by properly using the multiprocessing
-2. Understanding and fixing why the queue is mostly 2 frames even though it should be lonter sometimes
-3. Low resolution output from the cameras (color conversion using cv2?)
-4. Opening the camera is slow on the windows computer...
-5. Settings and getting camera parameters
-"""
 
 import cv2
 
