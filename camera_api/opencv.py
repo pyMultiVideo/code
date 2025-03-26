@@ -133,7 +133,7 @@ class OpenCVCamera(GenericCamera):
     # Camera Settings ------------------------------------------------------------
 
     def get_frame_rate_range(self, exposure_time):
-        return 0, 70
+        return 0, 30
 
     def get_exposure_time_range(self, frame_rate):
         return 0, 20000
@@ -155,10 +155,6 @@ class OpenCVCamera(GenericCamera):
     def get_width(self):
         """Get the width of the frames captured by the camera."""
         return self.width
-
-    def is_streaming(self):
-        """Check if the camera is currently streaming."""
-        return self.running.value
 
     def close_api(self):
         self.stop_capturing()
@@ -184,14 +180,11 @@ class OpenCVCamera(GenericCamera):
                 gpio_buffer.append([])
             # dropped_frames += 1 # Calculate dropped frames
         except:  # Buffer is empty
-            print("error raised")
+            # Return images
             pass
-        # Return images
         if len(img_buffer) == 0:
-            print("buffer empty")
             return
         else:
-            print("Images returned", len(img_buffer))
             return {
                 "images": img_buffer,
                 "gpio_data": gpio_buffer,
