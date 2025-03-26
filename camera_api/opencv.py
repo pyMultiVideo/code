@@ -59,7 +59,6 @@ class OpenCVCamera(GenericCamera):
 
     def begin_capturing(self, CameraConfig=None):
         """Start the webcam capture process"""
-        self.RUNNING = True
         if self.running.value:
             pass
         else:
@@ -98,25 +97,39 @@ class OpenCVCamera(GenericCamera):
             elapsed_time = time.time() - start_time
             sleep_time = max(0, (1 / self.framerate) - elapsed_time)
             time.sleep(sleep_time)
-            if self.RUNNING == False:
-                self.process.terminate()
 
     def end_video_acquisition_process(self, signum, frame):
         """End the video acquisition process gracefully."""
         self.cap.release()
-        self.RUNNING = False
 
     def stop_capturing(self):
         """Stop capturing frames"""
+        self.running.value = False
 
-        self.RUNNING = False
+        # Attempt to empty the queue
         try:
-            self.process.terminate()
-            self.process.join(1)
+            while not self.buffer.empty():
+                self.buffer.get_nowait()  # Avoid blocking
+        except Exception as e:
+            print(f"Error emptying buffer: {e}")
+
+        try:
+            # Properly close and join the queue
             self.buffer.close()
             self.buffer.join_thread()
-        except:
-            print("Fail to terminate process")
+        except Exception as e:
+            print(f"Error closing buffer: {e}")
+
+        try:
+            if self.process.is_alive():  # Check if process is still running
+                self.process.terminate()  # Kill the process
+                self.process.join(timeout=2)  # Give it time to close
+
+                if self.process.is_alive():  # If it's still alive, force kill
+                    print("Process did not terminate, forcing kill.")
+                    self.process.kill()
+        except Exception as e:
+            print(f"Error terminating process: {e}")
 
     # Camera Settings ------------------------------------------------------------
 
