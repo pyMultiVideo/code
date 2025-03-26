@@ -52,7 +52,6 @@ class OpenCVCamera(GenericCamera):
 
         self.buffer_size = 100  # Buffer size for Camera process
         self.process = None
-        self.buffer = multiprocessing.Queue(maxsize=self.buffer_size)
         self.running = multiprocessing.Value("b", False)  # Initialize running flag
 
     # Camera Buffer process functions -------------------------------------------------------
@@ -64,6 +63,7 @@ class OpenCVCamera(GenericCamera):
         else:
             # Only begin capturing if that hasn't already happened
             self.running.value = True
+            self.buffer = multiprocessing.Queue(maxsize=self.buffer_size)
             self.process = multiprocessing.Process(target=self.video_acquisition_process, name="OpenCVCameraProcess")
             self.frame_number = 0
             self.process.start()
