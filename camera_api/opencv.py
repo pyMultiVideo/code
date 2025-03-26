@@ -1,10 +1,8 @@
-
 import cv2
 
 import multiprocessing
-import queue
+import numpy as np
 from signal import signal, SIGTERM
-import os
 import time
 from collections import OrderedDict
 from math import floor, ceil
@@ -42,7 +40,6 @@ class OpenCVCamera(GenericCamera):
             self.height, self.width = None, None
 
         self.buffer_size = 100  # Buffer size for Camera process
-        self.process = None
         self.running = multiprocessing.Value("b", False)  # Initialize running flag
 
     # Camera Buffer process functions -------------------------------------------------------
@@ -164,10 +161,10 @@ class OpenCVCamera(GenericCamera):
         try:
             while True:
                 image = self.buffer.get(block=False, timeout=0)  # Get next image from buffer
-                if "signal" in image and image["signal"] == "SIGTERM":
+                if "signal" in image and image["signal"] == "SIGTERM":  # Check for Termination signal
                     self.end_video_acquisition_process(None, None)
                     break
-                img_buffer.append(image["frame"])  # Get frame
+                img_buffer.append(np.frombuffer(image["frame"], dtype=np.uint8).reshape(self.height, self.width))  # Convert frame bytes to numpy array
                 timestamps_buffer.append(image["timestamp"])  # Get image timestamp
                 gpio_buffer.append([])
             # dropped_frames += 1 # Calculate dropped frames

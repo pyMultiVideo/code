@@ -327,7 +327,6 @@ class CameraWidget(QGroupBox):
         self.start_recording_button.setEnabled(self.GUI.ffmpeg_path_available)
         self.GUI.video_capture_tab.update_global_recording_button_states()
 
-
     def toggle_control_visibility(self) -> None:
         """Toggle the visibility of the camera controls."""
         self.controls_visible = not self.controls_visible
@@ -373,8 +372,6 @@ class CameraWidget(QGroupBox):
                 (5 + i) * int(gui_config["font_size"] * 1.25), 4 * int(gui_config["font_size"] * 1.25)
             )
             self.graphics_view.addItem(gpio_indicator)
-        # Update record button to only be available if manual control is enabled 
-        self.start_recording_button.setEnabled(self.camera_api.manual_control_enabled)
 
     def closeEvent(self, event):
         """Handle the close event to stop the timer and release resources"""
