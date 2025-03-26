@@ -28,7 +28,6 @@ class OpenCVCamera(GenericCamera):
         # pMV Information
         self.serial_number, self.api = self.unique_id.split("-")
         self.framerate = int(CameraConfig.fps)
-        self.framerate = 60
         self.N_GPIO = 0  # Number of GPIO pins
         self.manual_control_enabled = False
         self.pixel_format = "RGB"
@@ -70,7 +69,6 @@ class OpenCVCamera(GenericCamera):
 
     def video_acquisition_process(self, CameraConfig=None):
         """The method that captures frames in a separate process"""
-        signal(SIGTERM, self.end_video_acquisition_process)
         # Open the webcam
         self.cap = cv2.VideoCapture(int(self.serial_number))
 
@@ -101,6 +99,7 @@ class OpenCVCamera(GenericCamera):
     def end_video_acquisition_process(self, signum, frame):
         """End the video acquisition process gracefully."""
         self.cap.release()
+        self.buffer.put({"signal": "SIGTERM"})  # Send a termination signal into the queue
 
     def stop_capturing(self):
         """Stop capturing frames"""
@@ -177,6 +176,9 @@ class OpenCVCamera(GenericCamera):
         try:
             while True:
                 image = self.buffer.get(block=False, timeout=0)  # Get next image from buffer
+                if "signal" in image and image["signal"] == "SIGTERM":
+                    self.end_video_acquisition_process(None, None)
+                    break
                 img_buffer.append(image["frame"])  # Get frame
                 timestamps_buffer.append(image["timestamp"])  # Get image timestamp
                 gpio_buffer.append([])
