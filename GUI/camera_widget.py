@@ -279,10 +279,16 @@ class CameraWidget(QGroupBox):
         # Show additional camera settings if in preview mode.
         if self.preview_mode:
             self.exposure_time_text.setText(
-                f"Exposure Time (us) : {self.camera_api.get_exposure_time():.2f}",
+                (
+                    f"Exposure Time (us) : {self.camera_api.get_exposure_time():.2f}"
+                    if self.camera_api.get_exposure_time()
+                    else "Exposure Time (us) : N/A"
+                ),
                 color="magenta",
             )
-            self.gain_text.setText(f"Gain (dB) :{self.camera_api.get_gain():.2f}")
+            self.gain_text.setText(
+                f"Gain (dB) :{self.camera_api.get_gain():.2f}" if self.camera_api.get_gain() else "Gain (dB) : N/A"
+            )
 
     # GUI element updates -------------------------------------------------------------
 

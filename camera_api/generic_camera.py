@@ -25,16 +25,13 @@ class GenericCamera:
         """Get the height of the camera image in pixels."""
         pass
 
-    def get_frame_rate(self) -> int:
-        """Get the camera frame rate in Hz."""
-        pass
-
     def get_frame_rate_range(self) -> tuple[int, int]:
         """Get the min and max frame rate in Hz."""
         pass
 
     def get_exposure_time(self) -> float:
         """Get exposure of camera"""
+        return None
 
     def get_exposure_time_range(self) -> tuple[int, int]:
         """Get exposure time range of camera"""
@@ -42,7 +39,7 @@ class GenericCamera:
 
     def get_gain(self) -> int:
         """Get camera gain setting in dB."""
-        pass
+        return None
 
     def get_gain_range(self) -> tuple[int, int]:
         """Get range of gain"""

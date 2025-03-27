@@ -102,10 +102,6 @@ class SpinnakerCamera(GenericCamera):
         """Get the height of the camera image in pixels."""
         return PySpin.CIntegerPtr(self.nodemap.GetNode("Height")).GetValue()
 
-    def get_frame_rate(self) -> int:
-        """Get the camera frame rate in Hz."""
-        return PySpin.CFloatPtr(self.nodemap.GetNode("AcquisitionFrameRate")).GetValue()
-
     def get_frame_rate_range(self, exposure_time) -> tuple[int, int]:
         """Get the min and max frame rate (Hz)."""
         try:

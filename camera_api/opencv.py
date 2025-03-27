@@ -130,13 +130,6 @@ class OpenCVCamera(GenericCamera):
     def get_gain_range(self):
         return 0, 10
 
-    def get_exposure_time(self):
-        """Get the current exposure time of the camera."""
-        return None
-
-    def get_frame_rate(self):
-        return 0
-
     def get_height(self):
         """Get the height of the frames captured by the camera."""
         return self.height

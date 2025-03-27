@@ -60,10 +60,6 @@ class XimeaCamera(GenericCamera):
         """Get the height of the camera image in pixels."""
         return self.cam.get_height()
 
-    def get_frame_rate(self) -> int:
-        """Get the camera frame rate in Hz."""
-        return self.cam.get_framerate()
-
     def get_frame_rate_range(self, exposure_time) -> tuple[int, int]:
         """Get the min and max frame rate (Hz)."""
         return ceil(self.cam.get_framerate_minimum()), floor(self.cam.get_framerate_maximum())
