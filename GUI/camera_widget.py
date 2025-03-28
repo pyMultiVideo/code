@@ -56,7 +56,7 @@ class CameraWidget(QGroupBox):
         self.camera_api = init_camera_api_from_module(settings=self.settings)
         self.camera_height = self.camera_api.get_height()
         self.camera_width = self.camera_api.get_width()
-        self._image_data = None
+        self.latest_image = None
         self.frame_timestamps = deque([0], maxlen=10)
         self.controls_visible = True
 
@@ -173,7 +173,7 @@ class CameraWidget(QGroupBox):
         if new_images == None:
             return
         # Store most recent image and GPIO state for the next display update.
-        self._image_data = new_images["images"][-1]
+        self.latest_image = new_images["images"][-1]
         self._GPIO_data = new_images["gpio_data"][-1]
         self._newly_dropped_frames = new_images["dropped_frames"]
         self.frame_timestamps.extend(new_images["timestamps"])
@@ -292,7 +292,7 @@ class CameraWidget(QGroupBox):
 
     def update_video_display(self, gpio_smoothing_decay=0.5):
         """Display most recent image and update information overlays."""
-        if self._image_data is None:
+        if self.latest_image is None:
             return
         image = np.frombuffer(self.latest_image, dtype=np.uint8).reshape(self.camera_height, self.camera_width)
         if self.settings.pixel_format != "Mono8":
