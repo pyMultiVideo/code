@@ -30,6 +30,8 @@ except Exception:
 # Data recorder
 # -------------------------------------------------------------------------------------
 
+SAVE_CONFIG = True
+
 
 class Data_recorder:
     """Class for recording video data, GPIO pinstates and metadata."""
@@ -49,6 +51,13 @@ class Data_recorder:
         self.video_filepath = os.path.join(save_dir, filename_stem + ".mp4")
         self.GPIO_filepath = os.path.join(save_dir, filename_stem + "_GPIO_data.csv")
         self.metadata_filepath = os.path.join(save_dir, filename_stem + "_metadata.json")
+
+        # Create a copy of the config file
+        if SAVE_CONFIG:
+            with open("config\config.py", "r") as src:
+                config_path = os.path.join(save_dir, filename_stem + "_config.txt")
+                with open(config_path, "w") as dest:
+                    dest.write(src.read())
 
         # Open GPIO file and write header data.
         self.gpio_file = open(self.GPIO_filepath, mode="w", newline="")
