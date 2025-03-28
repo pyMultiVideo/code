@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
     QMessageBox,
 )
 
-from config.config import paths_config, default_camera_config
+from config.config import default_camera_config
 from .camera_widget import CameraWidget
 from camera_api import get_camera_ids, init_camera_api_from_module
 
@@ -42,7 +42,7 @@ class CamerasTab(QWidget):
     def __init__(self, parent=None):
         super(CamerasTab, self).__init__(parent)
         self.GUI = parent
-        self.saved_setups_filepath = os.path.join(paths_config["camera_dir"], "camera_configs.json")
+        self.saved_setups_filepath = os.path.join(self.GUI.paths_config["camera_dir"], "camera_configs.json")
         self.setups = {}  # Dict of setups: {Unique_id: Camera_table_item}
         self.preview_showing = False
         # Check if any cameras are connected
@@ -63,7 +63,7 @@ class CamerasTab(QWidget):
         # Initialise Refresh button
         self.refresh_layout = QHBoxLayout()
         self.refresh_cameras_button = QPushButton("Refresh camera list")
-        self.refresh_cameras_button.setIcon(QIcon(os.path.join(paths_config["icons_dir"], "refresh.svg")))
+        self.refresh_cameras_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "refresh.svg")))
         self.refresh_cameras_button.clicked.connect(self.refresh)
         self.refresh_cameras_button.setToolTip("Refresh the list of connected cameras")
         self.refresh_layout.addStretch()

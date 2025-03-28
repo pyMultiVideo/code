@@ -10,7 +10,6 @@ from PyQt6.QtCore import QTimer, pyqtSignal
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QComboBox, QGroupBox, QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLayout, QMessageBox
 
-from config.config import paths_config, gui_config
 from .data_recorder import Data_recorder
 from camera_api import init_camera_api_from_module
 
@@ -67,12 +66,12 @@ class CameraWidget(QGroupBox):
         self.video_view_box = pg.ViewBox(defaultPadding=0, invertY=True)
         self.video_view_box.setMouseEnabled(x=False, y=False)
         self.graphics_view.setCentralItem(self.video_view_box)
-        pg.setConfigOption('imageAxisOrder', 'row-major')
+        pg.setConfigOption("imageAxisOrder", "row-major")
         self.video_image_item = pg.ImageItem()
         self.video_view_box.addItem(self.video_image_item)
         self.video_view_box.setAspectLocked()
 
-        text_spacing = int(gui_config["font_size"] * 1.25)
+        text_spacing = int(self.GUI.gui_config["font_size"] * 1.25)
 
         # Camera name overlay
         self.camera_name_item = pg.TextItem()
@@ -133,7 +132,7 @@ class CameraWidget(QGroupBox):
 
         # Record button.
         self.start_recording_button = QPushButton("")
-        self.start_recording_button.setIcon(QIcon(os.path.join(paths_config["icons_dir"], "record.svg")))
+        self.start_recording_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "record.svg")))
         self.start_recording_button.setFixedWidth(30)
         self.start_recording_button.setEnabled(bool(self.subject_id))
         self.start_recording_button.clicked.connect(self.start_recording)
@@ -141,7 +140,7 @@ class CameraWidget(QGroupBox):
 
         # Stop button.
         self.stop_recording_button = QPushButton("")
-        self.stop_recording_button.setIcon(QIcon(os.path.join(paths_config["icons_dir"], "stop.svg")))
+        self.stop_recording_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "stop.svg")))
         self.stop_recording_button.setFixedWidth(30)
         self.stop_recording_button.setEnabled(False)
         self.stop_recording_button.clicked.connect(self.stop_recording)
@@ -173,7 +172,7 @@ class CameraWidget(QGroupBox):
             self.toggle_control_visibility()
             self.update_timer = QTimer()
             self.update_timer.timeout.connect(self.update)
-            self.update_timer.start(int(1000 / gui_config["camera_update_rate"]))
+            self.update_timer.start(int(1000 / self.GUI.config["camera_update_rate"]))
         else:
             self.data_recorder = Data_recorder(self)
 
@@ -377,7 +376,7 @@ class CameraWidget(QGroupBox):
         self.gpio_status_indicators = [pg.TextItem() for _ in range(self.camera_api.N_GPIO)]
         for i, gpio_indicator in enumerate(self.gpio_status_indicators):
             gpio_indicator.setPos(
-                (5 + i) * int(gui_config["font_size"] * 1.25), 4 * int(gui_config["font_size"] * 1.25)
+                (5 + i) * int(self.GUI.gui_config["font_size"] * 1.25), 4 * int(self.GUI.gui_config["font_size"] * 1.25)
             )
             self.graphics_view.addItem(gpio_indicator)
 

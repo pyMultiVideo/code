@@ -59,9 +59,9 @@ def exception_hook(exctype, value, traceback):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--experiment", help="Path to the experiement configuration file", type=str)
-    parser.add_argument("--config", help="Path to the configuration file", type=str)
-    parser.add_argument("--record_on_open", help="Path to the configuration file", type=bool)
+    parser.add_argument("--experiment", help="Path to the experiement configuration file (json)", type=str)
+    parser.add_argument("--config", help="Path to the configuration file (json)", type=str)
+    parser.add_argument("--record_on_startup", help="True: Cameras start recording on startup", type=bool)
     """
     Logic for config. If there is a config, instead of doing the normal init on the viewfinder tab, 
     we will load the a config file (from the state where there are not camera widgets intialised. )
