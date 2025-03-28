@@ -67,7 +67,7 @@ class GUIMain(QMainWindow):
 
     def closeEvent(self, event):
         """Close the GUI"""
-        # Close open camera widgets 
+        # Close open camera widgets
         for c_w in self.video_capture_tab.camera_widgets:
             if c_w.recording:
                 c_w.stop_recording()
@@ -80,10 +80,3 @@ class GUIMain(QMainWindow):
             self.camera_setup_tab.camera_preview.deleteLater()
         event.accept()
         sys.exit(0)
-
-    # Exception handling
-
-    def exception_hook(exctype, value, traceback):
-        """Hook for uncaught exceptions"""
-        logging.error("Uncaught exception", exc_info=(exctype, value, traceback))
-        sys.__excepthook__(exctype, value, traceback)

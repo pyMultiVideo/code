@@ -40,15 +40,28 @@ def main(parsed_args, unparsed_args):
     font.setPixelSize(gui_config["font_size"])
     app.setFont(font)
     # Parse the arguments to main window
+    global gui
     gui = GUIMain(parsed_args)
     gui.show()
-    sys.excepthook = GUIMain.exception_hook
+    sys.excepthook = exception_hook
     app.exec()
+
+
+def exception_hook(exctype, value, traceback):
+    """Hook for uncaught exceptions"""
+    if exctype == KeyboardInterrupt:
+        logging.info("KeyboardInterrupt detected. Closing GUI.")
+        gui.close()
+    else:
+        logging.error("Uncaught exception", exc_info=(exctype, value, traceback))
+    sys.__excepthook__(exctype, value, traceback)
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--experiment", help="Path to the experiement configuration file", type=str)
     parser.add_argument("--config", help="Path to the configuration file", type=str)
+    parser.add_argument("--record_on_open", help="Path to the configuration file", type=bool)
     """
     Logic for config. If there is a config, instead of doing the normal init on the viewfinder tab, 
     we will load the a config file (from the state where there are not camera widgets intialised. )
