@@ -4,6 +4,7 @@ import numpy as np
 from datetime import datetime
 from dataclasses import dataclass
 from collections import deque
+import multiprocessing
 
 import pyqtgraph as pg
 from PyQt6.QtCore import QTimer, pyqtSignal
@@ -12,6 +13,7 @@ from PyQt6.QtWidgets import QComboBox, QGroupBox, QHBoxLayout, QLabel, QPushButt
 
 from config.config import paths_config, gui_config
 from .data_recorder import Data_recorder
+from .image_processer import Image_processer
 from camera_api import init_camera_api_from_module
 
 
@@ -44,11 +46,12 @@ class ScrollableGraphicsView(pg.GraphicsView):
 class CameraWidget(QGroupBox):
     """Widget for displaying camera video and camera controls."""
 
-    def __init__(self, parent, label, subject_id="", preview_mode=False):
+    def __init__(self, parent, label, subject_id="", preview_mode=False, image_processing=False):
         super(CameraWidget, self).__init__(parent)
         self.parent = parent
         self.GUI = self.parent.GUI
         self.preview_mode = preview_mode  # True if widget is being used in camera setup tab.
+        self.image_processing = image_processing  # True post processing is done on image
         # Camera attributes
         self.subject_id = subject_id
         self.label = label
@@ -191,6 +194,8 @@ class CameraWidget(QGroupBox):
         """Stop streaming video from camera."""
         if self.recording:
             self.stop_recording()
+            if self.image_processing:
+                self.parent_conn.send({"signal": "TERMINATE"})  # Send termination signal to the image processor
         self.camera_api.stop_capturing()
 
     def fetch_image_data(self):
@@ -207,6 +212,8 @@ class CameraWidget(QGroupBox):
         # Record data to disk.
         if self.recording:
             self.data_recorder.record_new_images(new_images)
+            if self.image_processing:
+                self.parent_conn.send(new_images)  # send to process via pipe
 
     def update(self, update_video_display=True):
         """Called regularly by timer to fetch new images and optionally update video display."""
@@ -227,6 +234,12 @@ class CameraWidget(QGroupBox):
         save_dir = self.GUI.video_capture_tab.data_dir
         self.data_recorder.start_recording(subject_id, save_dir, self.settings)
         self.recording = True
+        # Start Image processing
+        if self.image_processing:
+            # Create a multiprocessing Pipe for communication between CameraWidget and ImageProcessor
+            self.parent_conn, self.child_conn = multiprocessing.Pipe()
+            self.image_processor_module = Image_processer(self, self.child_conn)
+            self.image_processor_module.start_process()
         # Update GUI
         self.stop_recording_button.setEnabled(True)
         self.camera_dropdown.setEnabled(False)
@@ -257,6 +270,9 @@ class CameraWidget(QGroupBox):
         image = np.frombuffer(self.latest_image, dtype=np.uint8).reshape(self.camera_height, self.camera_width)
         image = cv2.cvtColor(image, self.camera_api.cv2_conversion[self.settings.pixel_format])
         self.video_image_item.setImage(np.transpose(image, (1, 0, 2)))
+        # Get processed data from the pipe if image processing is enabled
+        if self.image_processing and self.parent_conn.poll():
+            self.process_recieved_pipe_information(self.parent_conn.recv())
         # Compute average framerate and display over image.
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
         calculated_framerate = 1e9 / avg_time_diff
@@ -283,6 +299,7 @@ class CameraWidget(QGroupBox):
                 color="magenta",
             )
             self.gain_text.setText(f"Gain (dB) :{self.camera_api.get_gain():.2f}")
+
 
     # GUI element updates -------------------------------------------------------------
 
