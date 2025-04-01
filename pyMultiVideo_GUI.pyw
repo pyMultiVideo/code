@@ -80,6 +80,11 @@ def parse_args():
         type=int,
     )
     parser.add_argument(
+        "--fps",
+        help="FPS (Hz) of all the cameras",
+        type=int,
+    )
+    parser.add_argument(
         "--close-after",
         help="Amount of time the application will be open for (Specific time in HH:MM)",
         type=valid_time,

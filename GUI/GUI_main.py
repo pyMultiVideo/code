@@ -90,8 +90,9 @@ class GUIMain(QMainWindow):
         # Recording Options
         if self.parsed_args.record_on_startup:
             for c_w in self.video_capture_tab.camera_widgets:
-                if self.parsed_args.downsampling_factor:  # Set the downsampling factor if specified
+                if self.parsed_args.downsampling_factor:  # Set the camera settings to be terminal input
                     c_w.settings.downsampling_factor = self.parsed_args.downsampling_factor
+                    c_w.settings.fps = self.parsed_args.fps
                 c_w.start_recording()
 
     def on_tab_change(self):

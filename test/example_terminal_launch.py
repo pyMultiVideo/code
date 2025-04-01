@@ -22,6 +22,8 @@ command = [
     "h264",#
     "--downsampling-factor",#
     str(3),#
+    "--fps",
+    str(60),
     "--record-on-startup",#
     "True",#
     "--close-after",#

@@ -4,7 +4,8 @@ import json
 import sys
 
 # Get the path to the test folder
-test_dir = Path(".") / "data" / "test"
+# test_dir = Path(".") / "data" / "test"
+test_dir = Path(".") / "data" / "test-with-fps"
 script_path = Path(".") / "pyMultiVideo_GUI.pyw"
 # Get the path of the current Python executable
 # python_exe = sys.executable
@@ -39,6 +40,8 @@ for dir in directories:
         test_config["compression_standard"],
         "--downsampling-factor",
         str(test_config["downsampling_factor"]),
+        "--fps",
+        str(test_config["fps"]),
         "--record-on-startup",
         "True",
         "--close-after",
