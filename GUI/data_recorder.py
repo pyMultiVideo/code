@@ -100,6 +100,7 @@ class Data_recorder:
                 f'"{self.video_filepath}"',  # Output file path
             ]
         )
+        print("FFMPEG_CONFIG", self.camera_widget.GUI.ffmpeg_config)
         self.ffmpeg_process = subprocess.Popen(ffmpeg_command, stdin=subprocess.PIPE)
 
     def stop_recording(self) -> None:

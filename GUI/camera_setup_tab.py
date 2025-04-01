@@ -45,6 +45,9 @@ class CamerasTab(QWidget):
         self.saved_setups_filepath = os.path.join(self.GUI.paths_config["camera_dir"], "camera_configs.json")
         self.setups = {}  # Dict of setups: {Unique_id: Camera_table_item}
         self.preview_showing = False
+        self.camera_preview = None  # Place holder for camera preview widget
+        self.setups_changed = False  # Flag that is checked for handleing the camera setups being changed
+
         # Check if any cameras are connected
         _, NO_CAMERAS_CONNECTED = get_camera_ids()
         if NO_CAMERAS_CONNECTED:
@@ -87,7 +90,6 @@ class CamerasTab(QWidget):
             self.saved_setups = [CameraSettingsConfig(**cam_dict) for cam_dict in cams_list]
 
         self.refresh()
-        self.setups_changed = False
 
     # Refresh timer / tab changing logic -------------------------------------------------------------------------------
 
@@ -169,6 +171,7 @@ class CamerasTab(QWidget):
                 return setup.settings.unique_id
             elif setup.settings.unique_id == camera_label:
                 return setup.settings.unique_id
+        raise ValueError(f"No camera unique_id found for label: {camera_label}")
         return None
 
     def get_camera_settings_from_label(self, label: str) -> CameraSettingsConfig:
@@ -180,6 +183,7 @@ class CamerasTab(QWidget):
                 query_label = setup.settings.name
             if query_label == label:
                 return setup.settings
+        raise ValueError(f"No camera settings found for label: {label}")
         return None
 
 

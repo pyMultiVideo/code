@@ -178,7 +178,7 @@ class OpenCVCamera(GenericCamera):
 # Camera system functions -------------------------------------------------------------------------------
 
 
-def list_available_cameras(VERBOSE=True) -> list[str]:
+def list_available_cameras(VERBOSE=False) -> list[str]:
     """List available webcams using OpenCV."""
     index = 0
     available_cameras = []

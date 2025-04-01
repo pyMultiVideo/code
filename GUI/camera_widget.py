@@ -237,6 +237,7 @@ class CameraWidget(QGroupBox):
 
     def stop_recording(self):
         """Stop recording video data to disk."""
+        print("running camera widget stop recording")
         self.data_recorder.stop_recording()
         self.recording = False
         # Update GUI
@@ -382,7 +383,7 @@ class CameraWidget(QGroupBox):
 
     def closeEvent(self, event):
         """Handle the close event to stop the timer and release resources"""
-        self.camera_api.close_api()
+        self.stop_capturing()
         if self.preview_mode:
             self.update_timer.stop()
         self.close()

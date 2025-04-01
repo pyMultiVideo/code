@@ -145,8 +145,14 @@ class VideoCaptureTab(QWidget):
         self.page_layout.addLayout(self.camera_layout)
         self.setLayout(self.page_layout)
 
+        if self.GUI.parsed_args.num_cameras:
+            available_cameras = sorted(list(self.camera_setup_tab.get_camera_labels()), key=str.lower)
+            if len(available_cameras) < self.GUI.parsed_args.num_cameras:
+                raise ValueError("Not enough cameras available to initialize the requested number of camera widgets.")
+            for i in range(self.GUI.parsed_args.num_cameras):
+                self.initialize_camera_widget(label=available_cameras[i], subject_id=available_cameras[i])
         # Check if the experiment file is present
-        if self.GUI.experiment_config is None:
+        elif self.GUI.experiment_config is None:
             available_cameras = sorted(list(self.camera_setup_tab.get_camera_labels()), key=str.lower)
             for camera_label in available_cameras[:1]:  # One camera by default
                 self.initialize_camera_widget(
@@ -158,8 +164,12 @@ class VideoCaptureTab(QWidget):
                 config_data = json.load(config_file)
                 config_data["cameras"] = [CameraWidgetConfig(**camera) for camera in config_data["cameras"]]
             experiment_config = ExperimentConfig(**config_data)
-
             self.configure_tab_from_config(experiment_config)
+
+        # Set the data directory to the argparse value if specified
+        if self.GUI.parsed_args.data_dir:
+            self.data_dir = self.GUI.parsed_args.data_dir
+            self.save_dir_textbox.setText(self.data_dir)
 
         # Timers
         self.camera_widget_update_timer = QTimer()
