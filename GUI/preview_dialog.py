@@ -37,6 +37,7 @@ class CameraPreviewWidget(QWidget):
 
         # Video display.
         self.graphics_view = pg.GraphicsView()
+        pg.setConfigOption("imageAxisOrder", "row-major")
         self.video_view_box = pg.ViewBox(defaultPadding=0, invertY=True)
         self.video_view_box.setMouseEnabled(x=False, y=False)
         self.graphics_view.setCentralItem(self.video_view_box)
@@ -103,7 +104,7 @@ class CameraPreviewWidget(QWidget):
         image = np.frombuffer(image_data, dtype=np.uint8).reshape(self.camera_height, self.camera_width)
         image = cv2.cvtColor(image, self.camera_api.cv2_conversion[self.settings.pixel_format])
         # Display the data
-        self.video_image_item.setImage(np.transpose(image, (1, 0, 2)))
+        self.video_image_item.setImage(image)
         # Calculate frame_rate
         self.frame_timestamps.extend(self.buffered_data["timestamps"])
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
