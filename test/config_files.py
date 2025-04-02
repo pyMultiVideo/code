@@ -23,13 +23,13 @@ subject_ids = [f"subject_{i}" for i in range(len(get_camera_labels()))]
 # The parameters which are varied
 testing_parameters = {
     # Folder test name
-    "test_name": f"test-with-fps",
+    "test_name": f"test",
     # "test_name": f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
     # Recording_length (s)
-    "close_after": "00:30",  # HH:MM
+    "close_after": "00:30",  # MM:SS
     # Config
     "n_cameras": list(range(1, len(get_camera_labels()) + 1)),
-    "downsample_range": [1, 2, 3, 4],
+    "downsample_range": [1, 2, 4],
     "fps_range": [30, 60, 90, 120],
     # GUI config
     "camera_update_range": [20, 30, 40],
@@ -39,6 +39,29 @@ testing_parameters = {
     "encoding_speed_options": ["fast", "medium", "slow"],
     "compression_standard": ["h264", "h265"],
 }
+
+# Calculate the total number of tests and the estimated duration
+total_tests = (
+    len(testing_parameters["n_cameras"])
+    * len(testing_parameters["downsample_range"])
+    * len(testing_parameters["fps_range"])
+    * len(testing_parameters["camera_update_range"])
+    * len(testing_parameters["camera_updates_per_display_update"])
+    * len(testing_parameters["crf_range"])
+    * len(testing_parameters["encoding_speed_options"])
+    * len(testing_parameters["compression_standard"])
+)
+
+# Convert "close_after" to seconds
+close_after_parts = list(map(int, testing_parameters["close_after"].split(":")))
+close_after_seconds = close_after_parts[0] * 60 + close_after_parts[1]
+
+# Calculate total test duration
+total_duration_seconds = total_tests * close_after_seconds
+total_duration_minutes = total_duration_seconds / 60
+
+print(f"Total number of tests: {total_tests}")
+print(f"Estimated total duration: {total_duration_minutes} minutes")
 
 # Setup data directors for test to take place in
 # 1. Create directory
@@ -95,9 +118,6 @@ for n_cameras in testing_parameters["n_cameras"]:
 
                                 # Save the experiment configuration to a JSON file in the test_config_dir
                                 test_config_file = test_config_dir / "test_config.json"
-                                try:
-                                    with open(test_config_file, "w") as f:
-                                        json.dump(test_config, f, indent=4)
-                                    print(f"Experiment configuration saved to: {test_config_file}")
-                                except Exception as e:
-                                    print(f"Failed to save experiment configuration: {e}")
+
+                                with open(test_config_file, "w") as f:
+                                    json.dump(test_config, f, indent=4)
