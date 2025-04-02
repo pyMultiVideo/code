@@ -49,8 +49,8 @@ class CamerasTab(QWidget):
         self.setups_changed = False  # Flag that is checked for handleing the camera setups being changed
 
         # Check if any cameras are connected
-        _, NO_CAMERAS_CONNECTED = get_camera_ids()
-        if NO_CAMERAS_CONNECTED:
+        _, CAMERAS_CONNECTED = get_camera_ids()
+        if not CAMERAS_CONNECTED:
             warning_box = QMessageBox()
             warning_box.setIcon(QMessageBox.Icon.Warning)
             warning_box.setText("No cameras connected.")

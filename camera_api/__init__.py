@@ -66,7 +66,7 @@ def get_camera_ids():
             camera_list.extend(camera_module.list_available_cameras())
         except ModuleNotFoundError:
             continue
-    return camera_list, len(camera_list) == 0
+    return camera_list, not len(camera_list) == 0
 
 
 def init_camera_api_from_module(settings):
