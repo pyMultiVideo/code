@@ -26,11 +26,11 @@ testing_parameters = {
     "test_name": f"test-with-fps",
     # "test_name": f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
     # Recording_length (s)
-    "close_after": "00:02",  # HH:MM
+    "close_after": "00:30",  # HH:MM
     # Config
     "n_cameras": list(range(1, len(get_camera_labels()) + 1)),
     "downsample_range": [1, 2, 3, 4],
-    "fps_range": [30, 60, 120],
+    "fps_range": [30, 60, 90, 120],
     # GUI config
     "camera_update_range": [20, 30, 40],
     "camera_updates_per_display_update": [1],
