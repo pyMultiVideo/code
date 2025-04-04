@@ -2,6 +2,9 @@ from pathlib import Path
 import os
 from datetime import datetime
 import json
+from config_functions import create_camera_config, create_experiment_config
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # pyMV code folder.
 
 
 # Get the camera_labels from the camera_configs.json
@@ -23,7 +26,7 @@ subject_ids = [f"subject_{i}" for i in range(len(get_camera_labels()))]
 # The parameters which are varied
 testing_parameters = {
     # Folder test name
-    "test_name": f"test",
+    "test_name": f"test-small",
     # "test_name": f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
     # Recording_length (s)
     "close_after": "00:30",  # MM:SS
@@ -32,7 +35,7 @@ testing_parameters = {
     "downsample_range": [1, 2, 4],
     "fps_range": [30, 60, 90, 120],
     # GUI config
-    "camera_update_range": [20, 30, 40],
+    "camera_update_range": [20],
     "camera_updates_per_display_update": [1],
     # FFMPEG
     "crf_range": [1, 23, 51],
@@ -81,43 +84,103 @@ try:
 except Exception as e:
     print(f"Failed to save testing parameters: {e}")
 
-# 3. Generate Config files
-# Generate config files for each combination of parameters and Iterate over all parameter combinations
-# Iterate over all parameter combinations, including the new parameters
-for n_cameras in testing_parameters["n_cameras"]:
-    for downsampling_factor in testing_parameters["downsample_range"]:
-        for fps in testing_parameters["fps_range"]:
-            for camera_update_rate in testing_parameters["camera_update_range"]:
-                for updates_per_display in testing_parameters["camera_updates_per_display_update"]:
-                    for crf in testing_parameters["crf_range"]:
-                        for encoding_speed in testing_parameters["encoding_speed_options"]:
-                            for compression_standard in testing_parameters["compression_standard"]:
-                                # Generate a unique filename for the test
-                                config_dir = (
-                                    f"config_ncams_{n_cameras}_downsample_{downsampling_factor}_fps_{fps}_"
-                                    f"update_{camera_update_rate}_upd_per_disp_{updates_per_display}_"
-                                    f"crf_{crf}_speed_{encoding_speed}_comp_{compression_standard}"
-                                )
-                                # Folder for the metadata to be saved into for the test
-                                test_config_dir = test_directory / config_dir
-                                test_config_dir.mkdir(parents=True, exist_ok=True)
+DOWNSAMPLING_FACTOR = 1
+CAMERA_UPDATE_RATE = 20
+UPDATES_PER_DISPLAY = 1
+CRF = 23
+ENCODERING_SPEED = "slow"
+COMPRESSION_STANDARD = "h265"
+N_CAMERAS = 2
+FPS = 60
 
-                                # Record the experiment configuration in a dictionary
-                                test_config = {
-                                    "n_cameras": n_cameras,
-                                    "downsampling_factor": downsampling_factor,
-                                    "fps": fps,
-                                    "camera_update_rate": camera_update_rate,
-                                    "camera_updates_per_display_update": updates_per_display,
-                                    "crf": crf,
-                                    "encoding_speed": encoding_speed,
-                                    "compression_standard": compression_standard,
-                                    "data_dir": str(test_config_dir.resolve()),  # Ensure this is a string
-                                    "close_after": testing_parameters["close_after"],
-                                }
 
-                                # Save the experiment configuration to a JSON file in the test_config_dir
-                                test_config_file = test_config_dir / "test_config.json"
+def save_test_config(test_config_dir, test_config):
+    """Helper function to save test configuration to a JSON file."""
+    test_config_file = test_config_dir / "test_config.json"
+    with open(test_config_file, "w") as f:
+        json.dump(test_config, f, indent=4)
 
-                                with open(test_config_file, "w") as f:
-                                    json.dump(test_config, f, indent=4)
+
+def generate_test_configs(
+    fps, n_camera, downsampling_factor, encoding_speed, compression_standard, updates_per_display
+):
+    """Helper function to generate test configurations."""
+    return {
+        "application_config": {
+            "gui_config": {
+                "camera_update_rate": CAMERA_UPDATE_RATE,
+                "camera_updates_per_display_update": updates_per_display,
+                "font_size": 12,
+            },
+            "ffmpeg_config": {
+                "crf": CRF,
+                "encoding_speed": encoding_speed,
+                "compression_standard": compression_standard,
+            },
+            "paths_config": {
+                "ROOT": ROOT,
+                "camera_dir": os.path.join(ROOT, "config"),
+                "encoder_dir": os.path.join(ROOT, "config"),
+                "data_dir": os.path.join(ROOT, "data"),
+                "config_dir": os.path.join(ROOT, "config"),
+                "icons_dir": os.path.join(ROOT, "GUI", "icons"),
+            },
+            "default_camera_config": {
+                "name": None,
+                "fps": fps,
+                "downsampling_factor": downsampling_factor,
+                "exposure_time": 15000,
+                "gain": 0,
+                "pixel_format": "Mono8",
+            },
+        },
+        "experiment_config": create_experiment_config(data_dir=test_config_dir, n_cameras=n_camera),
+        "camera_config": create_camera_config(n_cameras=n_camera, fps=fps, downsampling_factor=downsampling_factor),
+        "record-on-startup": True,
+        "close_after": testing_parameters["close_after"],
+    }
+
+
+# Generate configurations for varying FPS and cameras
+for fps in testing_parameters["fps_range"]:
+    for n_camera in testing_parameters["n_cameras"]:
+        config_dir = (
+            f"config_ncams_{n_camera}_downsample_{DOWNSAMPLING_FACTOR}_fps_{fps}_"
+            f"update_{CAMERA_UPDATE_RATE}_upd_per_disp_{UPDATES_PER_DISPLAY}_"
+            f"crf_{CRF}_speed_{ENCODERING_SPEED}_comp_{COMPRESSION_STANDARD}"
+        )
+        test_config_dir = test_directory / config_dir
+        test_config_dir.mkdir(parents=True, exist_ok=True)
+
+        test_config = generate_test_configs(
+            fps=fps,
+            n_camera=n_camera,
+            downsampling_factor=DOWNSAMPLING_FACTOR,
+            encoding_speed=ENCODERING_SPEED,
+            compression_standard=COMPRESSION_STANDARD,
+            updates_per_display=UPDATES_PER_DISPLAY,
+        )
+        save_test_config(test_config_dir, test_config)
+
+# Generate configurations for fixed cameras and FPS
+for downsampling_factor in testing_parameters["downsample_range"]:
+    for encoding_speed in testing_parameters["encoding_speed_options"]:
+        for compression_standard in testing_parameters["compression_standard"]:
+            for updates_per_display in testing_parameters["camera_updates_per_display_update"]:
+                config_dir = (
+                    f"config_ncams_{N_CAMERAS}_downsample_{downsampling_factor}_fps_{FPS}_"
+                    f"update_{CAMERA_UPDATE_RATE}_upd_per_disp_{updates_per_display}_"
+                    f"crf_{CRF}_speed_{encoding_speed}_comp_{compression_standard}"
+                )
+                test_config_dir = test_directory / config_dir
+                test_config_dir.mkdir(parents=True, exist_ok=True)
+
+                test_config = generate_test_configs(
+                    fps=FPS,
+                    n_camera=N_CAMERAS,
+                    downsampling_factor=downsampling_factor,
+                    encoding_speed=encoding_speed,
+                    compression_standard=compression_standard,
+                    updates_per_display=updates_per_display,
+                )
+                save_test_config(test_config_dir, test_config)

@@ -12,7 +12,6 @@ from .video_capture_tab import VideoCaptureTab
 from .camera_setup_tab import CamerasTab
 
 from config.config import __version__, gui_config, ffmpeg_config, paths_config
-import logging
 
 
 if os.name == "nt":  # Needed on windows to get taskbar icon to display correctly.
@@ -24,25 +23,20 @@ class GUIMain(QMainWindow):
 
     def __init__(self, parsed_args):
         super().__init__()
-        ### Deal with arguments parsed to application ###
-        self.paths_config = paths_config
-        self.ffmpeg_config = ffmpeg_config
-        self.gui_config = gui_config
+        # Deal with arguments parsed to application
         self.parsed_args = parsed_args
+        # config arguments
         print(self.parsed_args)
-        self.experiment_config = self.parsed_args.experiment_config
-        # Update config values with parsed arguments if specified
-        config_mappings = {
-            self.parsed_args.camera_update_rate: ("gui_config", "camera_update_rate"),
-            self.parsed_args.camera_updates_per_display_update: ("gui_config", "camera_updates_per_display_update"),
-            self.parsed_args.font_size: ("gui_config", "font_size"),
-            self.parsed_args.crf: ("ffmpeg_config", "crf"),
-            self.parsed_args.encoding_speed: ("ffmpeg_config", "encoding_speed"),
-            self.parsed_args.compression_standard: ("ffmpeg_config", "compression_standard"),
-        }
-        for arg, (config, key) in config_mappings.items():
-            if arg:
-                getattr(self, config)[key] = arg
+        if self.parsed_args.application_config:
+            config_data = json.loads(self.parsed_args.application_config)
+            self.paths_config = config_data.get("paths_config")
+            self.ffmpeg_config = config_data.get("ffmpeg_config")
+            self.gui_config = config_data.get("gui_config")
+        else:
+            self.paths_config = paths_config
+            self.ffmpeg_config = ffmpeg_config
+            self.gui_config = gui_config
+
         # close-after argument
         if self.parsed_args.close_after:
             # Parse time in HH:SS format
@@ -90,9 +84,6 @@ class GUIMain(QMainWindow):
         # Recording Options
         if self.parsed_args.record_on_startup:
             for c_w in self.video_capture_tab.camera_widgets:
-                if self.parsed_args.downsampling_factor:  # Set the camera settings to be terminal input
-                    c_w.settings.downsampling_factor = self.parsed_args.downsampling_factor
-                    c_w.settings.fps = self.parsed_args.fps
                 c_w.start_recording()
 
     def on_tab_change(self):

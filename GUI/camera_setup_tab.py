@@ -81,14 +81,18 @@ class CamerasTab(QWidget):
         self.page_layout.addWidget(self.camera_table_groupbox)
         self.setLayout(self.page_layout)
 
-        # Load saved setup info.
-        if not os.path.exists(self.saved_setups_filepath):
-            self.saved_setups = []
+        if self.GUI.parsed_args.camera_config is None:
+            # Load saved setup info.
+            if not os.path.exists(self.saved_setups_filepath):
+                self.saved_setups = []
+            else:
+                with open(self.saved_setups_filepath, "r") as file:
+                    cams_list = json.load(file)
+                self.saved_setups = [CameraSettingsConfig(**cam_dict) for cam_dict in cams_list]
         else:
-            with open(self.saved_setups_filepath, "r") as file:
-                cams_list = json.load(file)
+            # Load saved setups from JSON formatted string
+            cams_list = json.loads(self.GUI.parsed_args.camera_config)
             self.saved_setups = [CameraSettingsConfig(**cam_dict) for cam_dict in cams_list]
-
         self.refresh()
 
     # Refresh timer / tab changing logic -------------------------------------------------------------------------------

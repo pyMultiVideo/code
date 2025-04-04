@@ -4,8 +4,7 @@ import json
 import sys
 
 # Get the path to the test folder
-# test_dir = Path(".") / "data" / "test"
-test_dir = Path(".") / "data" / "test-with-fps"
+test_dir = Path(".") / "data" / "test-small"
 script_path = Path(".") / "pyMultiVideo_GUI.pyw"
 # Get the path of the current Python executable
 # python_exe = sys.executable
@@ -17,41 +16,27 @@ for dir in directories:
     # Get the config file paths for the experiment
     test_path = str(dir / "test_config.json")
     with open(test_path, "r") as f:
-        test_config = json.load(f)
+        config_data = json.load(f)
 
     # Construct the command as a list of arguments
     command = [
-        python_exe,  # Python executable
-        script_path,  # Path to GUI
+        sys.executable,  # Python executable
+        Path(".") / "pyMultiVideo_GUI.pyw",  # Path to GUI
         # Test options specified
-        "--data-dir",
-        '"' + str(test_config["data_dir"]).replace("\\", "/") + '"',
-        "--num-cameras",
-        str(test_config["n_cameras"]),
-        "--camera-updates",
-        str(test_config["camera_updates_per_display_update"]),
-        "--camera-update-rate",
-        str(test_config["camera_update_rate"]),
-        "--crf",
-        str(test_config["crf"]),
-        "--encoding-speed",
-        test_config["encoding_speed"],
-        "--compression-standard",
-        test_config["compression_standard"],
-        "--downsampling-factor",
-        str(test_config["downsampling_factor"]),
-        "--fps",
-        str(test_config["fps"]),
+        "--experiment-config",
+        json.dumps(json.dumps(config_data["experiment_config"])),  # Config file passed as JSON formatted string
+        "--camera-config",
+        json.dumps(json.dumps(config_data["camera_config"])),  # Config file passed as JSON formatted string
+        "--application-config",
+        json.dumps(json.dumps(config_data["application_config"])),  # Config file passed as JSON formatted string
         "--record-on-startup",
-        "True",
+        config_data["record-on-startup"],  # Application records on startup
         "--close-after",
-        test_config["close_after"],
+        config_data["close_after"],  # Time after which the application closes
     ]
 
     # Join the list into a single string with spaces between each element
     command = " ".join(map(str, command))
-    print(command)
-    print("TEST START")
     # Start the process
     process = subprocess.Popen(
         command, stdin=subprocess.PIPE, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
