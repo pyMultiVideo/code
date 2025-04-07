@@ -50,8 +50,17 @@ class GUIMain(QMainWindow):
             close_timer.timeout.connect(self.close)
             close_timer.start()
 
+        # Check if FFMPEG is available
+        self.ffmpeg_path = shutil.which("ffmpeg")
+        self.ffmpeg_path_available = bool(self.ffmpeg_path)
+        if not self.ffmpeg_path_available:
+            QMessageBox.warning(
+                self,
+                "Recording unavaialable",
+                "FFMPEG path not found. \nPlease install FFMPEG and add to environment variables",
+            )
         # Set window size, title, icon.
-        self.setGeometry(100, 100, 700, 800)  # x, y, width, height
+        self.setGeometry(100, 100, 900, 800)  # x, y, width, height
         self.setWindowTitle(f"pyMultiVideo v{__version__}")  # default window title
         self.setWindowIcon(QIcon(os.path.join(self.paths_config["icons_dir"], "logo.svg")))
         # Initialise the tabs and tab widget.
@@ -69,15 +78,7 @@ class GUIMain(QMainWindow):
         full_screen_controls_action.setShortcut("Ctrl+F")
         full_screen_controls_action.triggered.connect(self.video_capture_tab.toggle_full_screen_mode)
         view_menu.addAction(full_screen_controls_action)
-        # Check if FFMPEG is available
-        self.ffmpeg_path = shutil.which("ffmpeg")
-        self.ffmpeg_path_available = bool(self.ffmpeg_path)
-        if not self.ffmpeg_path_available:
-            QMessageBox.warning(
-                self,
-                "Recording unavaialable",
-                "FFMPEG path not found. \nPlease install FFMPEG and add to environment variables",
-            )
+
         # Display main window.
         self.show()
         self.video_capture_tab.tab_selected()

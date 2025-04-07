@@ -60,6 +60,10 @@ class XimeaCamera(GenericCamera):
         """Get the height of the camera image in pixels."""
         return self.cam.get_height()
 
+    def get_frame_rate(self) -> int:
+        """Get the camera frame rate in Hz."""
+        return self.cam.get_framerate()
+
     def get_frame_rate_range(self, exposure_time) -> tuple[int, int]:
         """Get the min and max frame rate (Hz)."""
         return ceil(self.cam.get_framerate_minimum()), floor(self.cam.get_framerate_maximum())
@@ -104,6 +108,25 @@ class XimeaCamera(GenericCamera):
     def set_gain(self, gain: float):
         """Set gain (dB)"""
         self.cam.set_gain(gain)
+
+    # Configure Camera for external acqusition
+
+    def configure_acqusition(self, trigger_line):
+        """Configure Acquisition for signal frame acquisition using Ximea API."""
+        # Enable trigger mode
+        self.cam.set_trigger_selector("XI_TRG_SEL_FRAME_START")  # Trigger on frame start
+        self.cam.set_trigger_source(f"XI_TRG_SRC_LINE{trigger_line}")  # Set trigger source to specified line
+        self.cam.set_trigger_source("XI_TRG_EDGE_RISING")  # Trigger on rising edge
+        self.cam.set_acq_frame_burst_count(1)  # Single frame acquisition mode
+        self.cam.set_trigger_delay(0)  # Disable trigger delay
+
+    def get_trigger_lines(self) -> list[int]:
+        """Get the lines that can be used to trigger frame acquisition."""
+        trigger_lines = []
+        # https://www.ximea.com/support/wiki/apis/XiAPI_Python_Manual#Trigger-source
+        for line in range(trigger_source_min, trigger_source_max + 1, trigger_source_inc):
+            trigger_lines.append(line)
+        return trigger_lines
 
     # Functions to control the camera streaming and check status.
 

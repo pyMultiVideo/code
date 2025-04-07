@@ -12,6 +12,8 @@ python_exe = r"C:/Users/alifa/miniconda3/envs/pyMultiCam_env/python.exe"
 
 # List files in the test directory
 directories = [d for d in test_dir.iterdir() if d.is_dir()]
+
+
 for dir in directories:
     # Get the config file paths for the experiment
     test_path = str(dir / "test_config.json")
