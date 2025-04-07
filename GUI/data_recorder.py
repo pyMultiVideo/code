@@ -10,14 +10,12 @@ from datetime import datetime
 
 try:
     subprocess.check_output("nvidia-smi")
-    print("Nvidia GPU detected")
     ffmpeg_encoder_map = {
         "h264": "h264_nvenc",
         "h265": "hevc_nvenc",
     }
     GPU_AVAILABLE = True
 except Exception:
-    print("No Nvidia GPU detected")
     ffmpeg_encoder_map = {
         "h264": "libx264",
         "h265": "libx265",

@@ -206,9 +206,11 @@ class VideoCaptureTab(QWidget):
     # GUI element update functions ----------------------------------------------------
 
     def tab_selected(self):
-        """Called when tab deselected to start aqusition of the camera video streams."""
-        for camera_widget in self.camera_widgets:
-            camera_widget.begin_capturing()
+        """Called when tab deselected to start aqusition of the camera video streams by re-initialising the camera widgets."""
+        camera_configs = [camera_widget.get_camera_config() for camera_widget in self.camera_widgets]
+        self.remove_all_camera_widgets()
+        for camera_config in camera_configs:
+            self.initialize_camera_widget(label=camera_config.label, subject_id=camera_config.subject_id)
         self.camera_widget_update_timer.start(int(1000 / self.GUI.gui_config["camera_update_rate"]))
         self.refresh()
 
@@ -339,7 +341,7 @@ class VideoCaptureTab(QWidget):
             self.data_dir = save_directory
 
     def get_camera_widget_labels(self) -> List[str]:
-        """Return the camera labels for all camera widgets."""
+        """Return the camera labels for all camera widgets currently initialsed."""
         return [
             camera_widget.label if camera_widget.label else camera_widget.unique_id
             for camera_widget in self.camera_widgets

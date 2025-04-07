@@ -77,14 +77,17 @@ class CameraWidget(QGroupBox):
         self.camera_name_item = pg.TextItem()
         self.camera_name_item.setPos(10, text_spacing)
         self.graphics_view.addItem(self.camera_name_item)
-        self.camera_name_item.setText(f"{self.label}", color="white")
+        self.camera_name_item.setText(
+            f"{self.label} : {self.subject_id}" if self.subject_id else f"{self.label}", color="white"
+        )
 
         # Recording Information overlay
         self.recording_status_item = pg.TextItem()
         self.recording_status_item.setPos(10, 2 * text_spacing)
         self.graphics_view.addItem(self.recording_status_item)
-        self.recording_status_item.setText("NOT RECORDING", color="r")
-
+        self.recording_status_item.setText(
+            "NO FRAME ACQUIRED" if self.settings.external_trigger else "NOT RECORDING", color="r"
+        )
         # Framerate overlay
         self.frame_rate_text = pg.TextItem()
         self.frame_rate_text.setPos(10, 3 * text_spacing)
@@ -172,11 +175,11 @@ class CameraWidget(QGroupBox):
             self.toggle_control_visibility()
             self.update_timer = QTimer()
             self.update_timer.timeout.connect(self.update)
-            self.update_timer.start(int(1000 / self.GUI.config["camera_update_rate"]))
+            self.update_timer.start(int(1000 / self.GUI.gui_config["camera_update_rate"]))
         else:
             self.data_recorder = Data_recorder(self)
 
-        self.begin_capturing()
+        self.begin_capturing()  # After init, start capturing from the widget
 
     # Camera control ----------------------------------------------------
 
@@ -241,7 +244,9 @@ class CameraWidget(QGroupBox):
         self.data_recorder.stop_recording()
         self.recording = False
         # Update GUI
-        self.recording_status_item.setText("NOT RECORDING", color="r")
+        self.recording_status_item.setText(
+            "NO FRAME ACQUIRED" if self.settings.external_trigger else "NOT RECORDING", color="r"
+        )
         self.stop_recording_button.setEnabled(False)
         self.start_recording_button.setEnabled(True)
         self.subject_id_text.setEnabled(True)
@@ -272,7 +277,10 @@ class CameraWidget(QGroupBox):
         # Display the current recording duration over image.
         if self.recording:
             elapsed_time = datetime.now() - self.data_recorder.record_start_time
-            self.recording_status_item.setText(f"RECORDING  {str(elapsed_time).split('.')[0]}", color="g")
+            status = (
+                "FRAME ACQUIRED" if self.settings.external_trigger else f"RECORDING  {str(elapsed_time).split('.')[0]}"
+            )
+            self.recording_status_item.setText(status, color="g")
         # Update dropped frames indicator.
         if self._newly_dropped_frames:
             self.dropped_frames_text.setText("DROPPED FRAMES", color="r")
