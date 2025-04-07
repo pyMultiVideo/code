@@ -1,3 +1,5 @@
+"""Example of how to launch the pyMultiVideo application from a python subprocess with a configuration that you would like to use."""
+
 import subprocess, sys
 from pathlib import Path
 import json, os

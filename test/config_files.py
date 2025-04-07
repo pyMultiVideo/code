@@ -2,26 +2,96 @@ from pathlib import Path
 import os
 from datetime import datetime
 import json
-from config_functions import create_camera_config, create_experiment_config
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # pyMV code folder.
 
 
-# Get the camera_labels from the camera_configs.json
-def get_camera_labels():
-    """From the config/camera_configs.json get the labels"""
-    camera_config = Path(".") / "config" / "camera_configs.json"
-    # Check if path exists
-    if not camera_config.exists():
-        raise FileNotFoundError(
-            f"The file {camera_config} does not exist. Please run the application once to generate this file."
-        )
-    with open(camera_config, "r") as f:
-        camera_data = json.load(f)
-    return [camera["name"] if camera.get("name") is not None else camera["unique_id"] for camera in camera_data]
+def get_camera_unique_ids():
+    # config/camera_configs.json
+    camera_configs = Path(".") / "config" / "camera_configs.json"
+    with open(camera_configs.resolve(), "r") as file:
+        data = json.load(file)
+    return [camera["unique_id"] for camera in data]
 
 
-subject_ids = [f"subject_{i}" for i in range(len(get_camera_labels()))]
+def save_config_file(test_config_dir, test_config):
+    """Helper function to save test configuration to a JSON file."""
+    test_config_file = test_config_dir / "test_config.json"
+    with open(test_config_file, "w") as f:
+        json.dump(test_config, f, indent=4)
+
+
+def create_experiment_config(data_dir, n_cameras):
+
+    camera_unique_ids = get_camera_unique_ids()
+    config = {
+        "data_dir": str(data_dir),
+        "n_cameras": n_cameras,
+        "n_columns": 1,
+        "cameras": [{"label": camera_unique_ids[i], "subject_id": f"recording-{i+1}"} for i in range(n_cameras)],
+    }
+    return config
+
+
+def create_camera_config(n_cameras, fps, downsampling_factor):
+    camera_unique_ids = get_camera_unique_ids()
+    cameras = [
+        {
+            "name": None,
+            "unique_id": camera_unique_ids[i],
+            "fps": fps,
+            "exposure_time": min(max(1000, 1000000 // fps), 100000)
+            - 1000,  # Ensure exposure time is between 1000 and 100000 microseconds
+            "gain": 0,
+            "pixel_format": "Mono8",
+            "downsampling_factor": downsampling_factor,
+        }
+        for i in range(n_cameras)
+    ]
+    return cameras
+
+
+def generate_performance_test_config(
+    fps, n_camera, downsampling_factor, encoding_speed, compression_standard, updates_per_display
+):
+    """Helper function to generate test configurations."""
+    return {
+        "application_config": {
+            "gui_config": {
+                "camera_update_rate": CAMERA_UPDATE_RATE,
+                "camera_updates_per_display_update": updates_per_display,
+                "font_size": 12,
+            },
+            "ffmpeg_config": {
+                "crf": CRF,
+                "encoding_speed": encoding_speed,
+                "compression_standard": compression_standard,
+            },
+            "paths_config": {
+                "ROOT": ROOT,
+                "camera_dir": os.path.join(ROOT, "config"),
+                "encoder_dir": os.path.join(ROOT, "config"),
+                "data_dir": os.path.join(ROOT, "data"),
+                "config_dir": os.path.join(ROOT, "config"),
+                "icons_dir": os.path.join(ROOT, "GUI", "icons"),
+            },
+            "default_camera_config": {
+                "name": None,
+                "fps": fps,
+                "downsampling_factor": downsampling_factor,
+                "exposure_time": 15000,
+                "gain": 0,
+                "pixel_format": "Mono8",
+            },
+        },
+        "experiment_config": create_experiment_config(data_dir=test_config_dir, n_cameras=n_camera),
+        "camera_config": create_camera_config(n_cameras=n_camera, fps=fps, downsampling_factor=downsampling_factor),
+        "record-on-startup": True,
+        "close_after": testing_parameters["close_after"],
+    }
+
+
+subject_ids = [f"subject_{i}" for i in range(len(get_camera_unique_ids()))]
 
 # The parameters which are varied
 testing_parameters = {
@@ -31,7 +101,7 @@ testing_parameters = {
     # Recording_length (s)
     "close_after": "00:30",  # MM:SS
     # Config
-    "n_cameras": list(range(1, len(get_camera_labels()) + 1)),
+    "n_cameras": list(range(1, len(get_camera_unique_ids()) + 1)),
     "downsample_range": [1, 2, 4],
     "fps_range": [30, 60, 90, 120],
     # GUI config
@@ -94,53 +164,6 @@ N_CAMERAS = 2
 FPS = 60
 
 
-def save_test_config(test_config_dir, test_config):
-    """Helper function to save test configuration to a JSON file."""
-    test_config_file = test_config_dir / "test_config.json"
-    with open(test_config_file, "w") as f:
-        json.dump(test_config, f, indent=4)
-
-
-def generate_test_configs(
-    fps, n_camera, downsampling_factor, encoding_speed, compression_standard, updates_per_display
-):
-    """Helper function to generate test configurations."""
-    return {
-        "application_config": {
-            "gui_config": {
-                "camera_update_rate": CAMERA_UPDATE_RATE,
-                "camera_updates_per_display_update": updates_per_display,
-                "font_size": 12,
-            },
-            "ffmpeg_config": {
-                "crf": CRF,
-                "encoding_speed": encoding_speed,
-                "compression_standard": compression_standard,
-            },
-            "paths_config": {
-                "ROOT": ROOT,
-                "camera_dir": os.path.join(ROOT, "config"),
-                "encoder_dir": os.path.join(ROOT, "config"),
-                "data_dir": os.path.join(ROOT, "data"),
-                "config_dir": os.path.join(ROOT, "config"),
-                "icons_dir": os.path.join(ROOT, "GUI", "icons"),
-            },
-            "default_camera_config": {
-                "name": None,
-                "fps": fps,
-                "downsampling_factor": downsampling_factor,
-                "exposure_time": 15000,
-                "gain": 0,
-                "pixel_format": "Mono8",
-            },
-        },
-        "experiment_config": create_experiment_config(data_dir=test_config_dir, n_cameras=n_camera),
-        "camera_config": create_camera_config(n_cameras=n_camera, fps=fps, downsampling_factor=downsampling_factor),
-        "record-on-startup": True,
-        "close_after": testing_parameters["close_after"],
-    }
-
-
 # Generate configurations for varying FPS and cameras
 for fps in testing_parameters["fps_range"]:
     for n_camera in testing_parameters["n_cameras"]:
@@ -152,7 +175,7 @@ for fps in testing_parameters["fps_range"]:
         test_config_dir = test_directory / config_dir
         test_config_dir.mkdir(parents=True, exist_ok=True)
 
-        test_config = generate_test_configs(
+        test_config = generate_performance_test_config(
             fps=fps,
             n_camera=n_camera,
             downsampling_factor=DOWNSAMPLING_FACTOR,
@@ -160,7 +183,7 @@ for fps in testing_parameters["fps_range"]:
             compression_standard=COMPRESSION_STANDARD,
             updates_per_display=UPDATES_PER_DISPLAY,
         )
-        save_test_config(test_config_dir, test_config)
+        save_config_file(test_config_dir, test_config)
 
 # Generate configurations for fixed cameras and FPS
 for downsampling_factor in testing_parameters["downsample_range"]:
@@ -175,7 +198,7 @@ for downsampling_factor in testing_parameters["downsample_range"]:
                 test_config_dir = test_directory / config_dir
                 test_config_dir.mkdir(parents=True, exist_ok=True)
 
-                test_config = generate_test_configs(
+                test_config = generate_performance_test_config(
                     fps=FPS,
                     n_camera=N_CAMERAS,
                     downsampling_factor=downsampling_factor,
@@ -183,4 +206,4 @@ for downsampling_factor in testing_parameters["downsample_range"]:
                     compression_standard=compression_standard,
                     updates_per_display=updates_per_display,
                 )
-                save_test_config(test_config_dir, test_config)
+                save_config_file(test_config_dir, test_config)
