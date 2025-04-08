@@ -21,7 +21,7 @@ class SpinnakerCamera(GenericCamera):
         self.N_GPIO = 3  # Number of GPIO pins
         self.manual_control_enabled = True
         self.trigger_line = 2  # Trigger line name
-
+        self.previous_frame_number = 0
         # Initialise camera -------------------------------------------------------------
         self.cam_list = PYSPINSYSTEM.GetCameras()
         self.cam = next(
@@ -271,6 +271,7 @@ class SpinnakerCamera(GenericCamera):
         if not self.cam.IsStreaming():
             self.cam.BeginAcquisition()
         self.frame_timestamp = 0
+        self.previous_frame_number = 0
 
         if CameraConfig:
             self.configure_settings(CameraConfig)
@@ -294,21 +295,16 @@ class SpinnakerCamera(GenericCamera):
         timestamps_buffer = []
         gpio_buffer = []
         dropped_frames = 0
-        # buffer_node = PySpin.CIntegerPtr(self.stream_nodemap.GetNode("StreamOutputBufferCount"))
-        # buffer_length = (
-        #     buffer_node.GetValue() if PySpin.IsAvailable(buffer_node) and PySpin.IsReadable(buffer_node) else 0
-        # )
-        # print(buffer_length)
-        # Get all available images from camera buffer.
+
         try:
             while True:
                 next_image = self.cam.GetNextImage(0)  # Raises exception if buffer empty.
                 img_buffer.append(next_image.GetData())  # Image pixels as bytes.
                 chunk_data = next_image.GetChunkData()  # Additional image data.
                 timestamps_buffer.append(chunk_data.GetTimestamp())  # Image timestamp (nanoseconds)
-                elapsed_frames = round((timestamps_buffer[-1] - self.frame_timestamp) / self.inter_frame_interval)
-                self.frame_timestamp = timestamps_buffer[-1]
-                dropped_frames += elapsed_frames - 1
+                if self.previous_frame_number != (chunk_data.GetFrameID() - 1): # Frame IDs from frames
+                    dropped_frames += 1
+                self.previous_frame_number = chunk_data.GetFrameID()
                 if self.device_model == "Chameleon3":
                     img_data = img_buffer[-1]
                     gpio_buffer.append([(img_data[32] >> 4) & 1, (img_data[32] >> 5) & 1, (img_data[32] >> 7) & 1])
