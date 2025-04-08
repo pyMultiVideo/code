@@ -9,7 +9,7 @@ import json
 
 # import tab classes
 from .video_capture_tab import VideoCaptureTab
-from .camera_setup_tab import CamerasTab
+from .camera_setup_tab import CameraSetupTab
 
 from config.config import __version__, gui_config, ffmpeg_config, paths_config
 
@@ -26,7 +26,6 @@ class GUIMain(QMainWindow):
         # Deal with arguments parsed to application
         self.parsed_args = parsed_args
         # config arguments
-        print(self.parsed_args)
         if self.parsed_args.application_config:
             config_data = json.loads(self.parsed_args.application_config)
             self.paths_config = config_data.get("paths_config")
@@ -64,7 +63,8 @@ class GUIMain(QMainWindow):
         self.setWindowTitle(f"pyMultiVideo v{__version__}")  # default window title
         self.setWindowIcon(QIcon(os.path.join(self.paths_config["icons_dir"], "logo.svg")))
         # Initialise the tabs and tab widget.
-        self.camera_setup_tab = CamerasTab(parent=self)
+        self.camera_setup_tab = CameraSetupTab(parent=self)
+        self.camera_setup_tab.tab_deselected()
         self.video_capture_tab = VideoCaptureTab(parent=self)
         self.tab_widget = QTabWidget()
         self.tab_widget.addTab(self.video_capture_tab, "Video Capture")

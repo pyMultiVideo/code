@@ -23,7 +23,7 @@ class CameraWidgetConfig:
 
 
 class ScrollableGraphicsView(pg.GraphicsView):
-    """Custom Graphics View to detect wheel events"""
+    """Custom Graphics View to detect scroll wheel events. Used to allow preview camera to have scrollable view"""
 
     wheelScrolled = pyqtSignal(str)
 
@@ -305,6 +305,7 @@ class CameraWidget(QGroupBox):
     def refresh(self):
         """refresh the camera widget"""
         self.update_camera_dropdown()
+        self.update_viewfinder_text()
 
     def update_camera_dropdown(self):
         """Update the cameras available in the camera select dropdown menu."""
@@ -329,6 +330,13 @@ class CameraWidget(QGroupBox):
         )
         # Re-enable function whilst updating text
         self.camera_dropdown.currentTextChanged.connect(self.change_camera)
+
+    def update_viewfinder_text(self):
+        """Update the viewfinder display text based on if settings have changed"""
+        self.recording_status_item.setText(
+            "NO FRAME ACQUIRED" if self.settings.external_trigger else "NOT RECORDING",
+            color="r",
+        )
 
     def subject_ID_edited(self):
         """Store new subject ID and update status of recording button."""
@@ -367,6 +375,7 @@ class CameraWidget(QGroupBox):
         if self.camera_api is not None:
             self.camera_api.close_api()
             del self.camera_api
+        self.latest_image = None
         # Initialise the new camera
         self.label = str(self.camera_dropdown.currentText())
         self.settings = self.GUI.camera_setup_tab.get_camera_settings_from_label(self.label)
@@ -388,6 +397,10 @@ class CameraWidget(QGroupBox):
                 (5 + i) * int(self.GUI.gui_config["font_size"] * 1.25), 4 * int(self.GUI.gui_config["font_size"] * 1.25)
             )
             self.graphics_view.addItem(gpio_indicator)
+        # Update Frame triggered text
+        self.recording_status_item.setText(
+            "NO FRAME ACQUIRED" if self.settings.external_trigger else "NOT RECORDING", color="r"
+        )
 
     def closeEvent(self, event):
         """Handle the close event to stop the timer and release resources"""

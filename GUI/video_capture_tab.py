@@ -148,13 +148,12 @@ class VideoCaptureTab(QWidget):
         if self.GUI.parsed_args.experiment_config is None:
             available_cameras = sorted(list(self.camera_setup_tab.get_camera_labels()), key=str.lower)
             for camera_label in available_cameras[:1]:  # One camera by default
-                self.initialize_camera_widget(
+                self.initialise_camera_widget(
                     label=camera_label,
                 )
         else:
             # Load the default config file
             config_data = json.loads(self.GUI.parsed_args.experiment_config)
-            print("ASDFHADFAKFDSKJFLSDJAJFSAKDFAD", config_data, "LOADED")
             config_data["cameras"] = [CameraWidgetConfig(**camera) for camera in config_data["cameras"]]
             experiment_config = ExperimentConfig(**config_data)
             self.configure_tab_from_config(experiment_config)
@@ -206,11 +205,9 @@ class VideoCaptureTab(QWidget):
     # GUI element update functions ----------------------------------------------------
 
     def tab_selected(self):
-        """Called when tab deselected to start aqusition of the camera video streams by re-initialising the camera widgets."""
-        camera_configs = [camera_widget.get_camera_config() for camera_widget in self.camera_widgets]
-        self.remove_all_camera_widgets()
-        for camera_config in camera_configs:
-            self.initialize_camera_widget(label=camera_config.label, subject_id=camera_config.subject_id)
+        """Called when tab deselected to start aqusition of the camera video streams."""
+        for camera_widget in self.camera_widgets:
+            camera_widget.begin_capturing()
         self.camera_widget_update_timer.start(int(1000 / self.GUI.gui_config["camera_update_rate"]))
         self.refresh()
 
@@ -230,7 +227,7 @@ class VideoCaptureTab(QWidget):
         while self.n_cameras_spinbox.value() > len(self.camera_widgets):
             if available_cameras:
                 label = available_cameras.pop(0)
-                self.initialize_camera_widget(label=label)
+                self.initialise_camera_widget(label=label)
             else:
                 break
         # Remove camera widgets.
@@ -238,7 +235,7 @@ class VideoCaptureTab(QWidget):
             self.remove_camera_widget(self.camera_widgets.pop())
         self.refresh()
 
-    def initialize_camera_widget(self, label: str, subject_id=None):
+    def initialise_camera_widget(self, label: str, subject_id=None):
         """Create a new camera widget and add it to the tab"""
         self.camera_widgets.append(CameraWidget(parent=self, label=label, subject_id=subject_id))
         position = len(self.camera_widgets) - 1
@@ -308,7 +305,7 @@ class VideoCaptureTab(QWidget):
         self.remove_all_camera_widgets()
         # Initialise camera widgets.
         for cam_config in experiment_config.cameras:
-            self.initialize_camera_widget(label=cam_config.label, subject_id=cam_config.subject_id)
+            self.initialise_camera_widget(label=cam_config.label, subject_id=cam_config.subject_id)
         # Set the values of the spinbox and encoder selection based on config file
         self.n_cameras_spinbox.setValue(experiment_config.n_cameras)
         self.n_columns_spinbox.setValue(experiment_config.n_columns)

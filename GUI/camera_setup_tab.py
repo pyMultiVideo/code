@@ -57,11 +57,11 @@ class TableCheckbox(QWidget):
         self.checkbox.setChecked(state)
 
 
-class CamerasTab(QWidget):
+class CameraSetupTab(QWidget):
     """Tab for naming cameras and editing camera-level settings."""
 
     def __init__(self, parent=None):
-        super(CamerasTab, self).__init__(parent)
+        super(CameraSetupTab, self).__init__(parent)
         self.GUI = parent
         self.saved_setups_filepath = os.path.join(self.GUI.paths_config["camera_dir"], "camera_configs.json")
         self.setups = {}  # Dict of setups: {Unique_id: Camera_table_item}
@@ -206,11 +206,11 @@ class CamerasTab(QWidget):
     def get_camera_settings_from_label(self, label: str) -> CameraSettingsConfig:
         """Get the camera settings config datastruct from the setups table."""
         for setup in self.setups.values():
-            if setup.settings.name is None:
-                query_label = setup.settings.unique_id
-            else:
-                query_label = setup.settings.name
-            if query_label == label:
+            # if setup.settings.name is None:
+            #     query_label = setup.settings.unique_id
+            # else:
+            #     query_label = setup.settings.name
+            if label in [setup.settings.name, setup.settings.unique_id]:
                 return setup.settings
         raise ValueError(f"No camera settings found for label: {label}")
         return None
@@ -252,28 +252,8 @@ class CameraOverviewTable(QTableWidget):
 class Camera_table_item:
     """Class representing single camera in the Camera Tab table."""
 
-    def __init__(
-        self,
-        setups_table,
-        name,
-        unique_id,
-        fps,
-        exposure_time,
-        gain,
-        pixel_format,
-        external_trigger,
-        downsampling_factor,
-    ):
-        self.settings = CameraSettingsConfig(
-            name=name,
-            unique_id=unique_id,
-            fps=fps,
-            downsampling_factor=downsampling_factor,
-            exposure_time=exposure_time,
-            gain=gain,
-            external_trigger=external_trigger,
-            pixel_format=pixel_format,
-        )
+    def __init__(self, setups_table, **kwargs):
+        self.settings = CameraSettingsConfig(**kwargs)
 
         self.setups_table = setups_table
         self.setups_tab = setups_table.setups_tab
@@ -286,7 +266,7 @@ class Camera_table_item:
             self.name_edit.setText(self.settings.name)
         else:
             self.name_edit.setPlaceholderText("Set a name")
-        self.name_edit.editingFinished.connect(self.camera_name_changed)
+        self.name_edit.textChanged.connect(self.camera_name_changed)
 
         # ID edit
         self.unique_id_edit = QLineEdit()
@@ -373,6 +353,7 @@ class Camera_table_item:
     def camera_name_changed(self):
         """Called when name text of setup is edited."""
         name = str(self.name_edit.text())
+
         if name and name not in [
             setup.settings.name
             for setup in self.setups_tab.setups.values()
@@ -385,6 +366,8 @@ class Camera_table_item:
             self.name_edit.setPlaceholderText("Set a name")
         self.setups_tab.update_saved_setups(setup=self)
         self.setups_tab.setups_changed = True
+        if self.setups_tab.preview_showing:
+            self.setups_tab.camera_preview.update_viewfinder_text()
 
     def get_label(self):
         """Return name if defined else unique ID."""
@@ -426,10 +409,10 @@ class Camera_table_item:
         """Change if the camera is"""
         self.settings.external_trigger = self.external_trigger_checkbox.isChecked()
         self.setups_tab.update_saved_setups(setup=self)
-        # Restart the preview
+        # Restart the preview if open
         if self.setups_tab.preview_showing:
-            self.setups_tab.camera_preview.close()
-            self.open_preview_camera()
+            self.setups_tab.camera_preview.camera_api.set_acqusition_mode(self.settings.external_trigger)
+            self.setups_tab.camera_preview.update_viewfinder_text()
         # FPS spin box only enabled if external trigger not enabled.
         self.fps_edit.setEnabled(not self.settings.external_trigger)
 

@@ -1,7 +1,6 @@
 import logging
 import sys
 import argparse
-
 from config.config import gui_config
 
 # Dependancy Mangement
@@ -26,7 +25,7 @@ def check_module(module_name):
 
 ### Terminal Commands -----------------------------------------------------------------------
 
- 
+
 def valid_time(value):
     try:
         hours, minutes = map(int, value.split(":"))
@@ -47,9 +46,11 @@ def parse_args():
     # Camera Conifg
     parser.add_argument("--camera-config", help="Path to the camera configuration file in JSON format", type=str)
     # Config.py
-    parser.add_argument("--application-config", help="Path to the application configuration file in JSON format", type=str)
+    parser.add_argument(
+        "--application-config", help="Path to the application configuration file in JSON format", type=str
+    )
     # Recording options
-    parser.add_argument("--record-on-startup", help="if True: Cameras start recording on startup", type=bool)
+    parser.add_argument("--record-on-startup", help="if true: Cameras start recording on startup", type=bool)
     parser.add_argument(
         "--close-after",
         help="Amount of time the application will be open for (Specific time in HH:MM)",

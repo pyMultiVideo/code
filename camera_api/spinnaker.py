@@ -20,7 +20,7 @@ class SpinnakerCamera(GenericCamera):
         self.serial_number, self.api = self.unique_id.split("-")
         self.N_GPIO = 3  # Number of GPIO pins
         self.manual_control_enabled = True
-        self.trigger_line = 0  # Trigger line name
+        self.trigger_line = 2  # Trigger line name
 
         # Initialise camera -------------------------------------------------------------
         self.cam_list = PYSPINSYSTEM.GetCameras()
@@ -75,43 +75,6 @@ class SpinnakerCamera(GenericCamera):
         chunk_selector.SetIntValue(chunk_selector.GetEntryByName("Timestamp").GetValue())
         self.cam.ChunkEnable.SetValue(True)
         self.cam.ChunkModeActive.SetValue(True)
-
-        # Configure Camera differently if you want external triggering or not -
-
-        if CameraConfig.external_trigger:
-            print("Setting up camera in external_trigger mode")
-            # Ensure trigger mode is off before configuring
-            trigger_mode = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerMode"))
-            trigger_mode.SetIntValue(trigger_mode.GetEntryByName("Off").GetValue())
-
-            # Set TriggerSelector to FrameStart
-            trigger_selector = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerSelector"))
-            trigger_selector.SetIntValue(trigger_selector.GetEntryByName("FrameStart").GetValue())
-
-            # Configure the trigger source to the specified line
-            trigger_source = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerSource"))
-            trigger_source.SetIntValue(trigger_source.GetEntryByName("Line" + str(self.trigger_line)).GetValue())
-
-            # Set the trigger activation to RisingEdge
-            trigger_activation = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerActivation"))
-            trigger_activation.SetIntValue(trigger_activation.GetEntryByName("RisingEdge").GetValue())
-
-            # Turn trigger mode back on
-            trigger_mode.SetIntValue(trigger_mode.GetEntryByName("On").GetValue())
-
-        else:  # Internal triggering
-            # Ensure that the trigger mode is off so manual camera control is enabled
-            trigger_mode = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerMode"))
-            trigger_mode.SetIntValue(trigger_mode.GetEntryByName("Off").GetValue())
-            # Set frame rate control to manual.
-            if self.device_model == "Chameleon3":
-                frc_node = PySpin.CBooleanPtr(self.nodemap.GetNode("AcquisitionFrameRateEnabled"))
-                frc_node.SetValue(True)
-                fra_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("AcquisitionFrameRateAuto"))
-                fra_node.SetIntValue(fra_node.GetEntryByName("Off").GetValue())
-            else:
-                fra_node = PySpin.CBooleanPtr(self.nodemap.GetNode("AcquisitionFrameRateEnable"))
-                fra_node.SetValue(True)
 
         # Acqusition mode continuous
         acq_mode = PySpin.CEnumerationPtr(self.nodemap.GetNode("AcquisitionMode"))
@@ -209,6 +172,44 @@ class SpinnakerCamera(GenericCamera):
 
     # Configure Camera for external acqusition
 
+    def set_acqusition_mode(self, external_trigger: bool):
+
+        print("Running SpinnakerCamera.configure_acqusition_mode")
+        if external_trigger:
+            print("Setting up camera in external_trigger mode")
+            # Ensure trigger mode is off before configuring
+            trigger_mode = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerMode"))
+            trigger_mode.SetIntValue(trigger_mode.GetEntryByName("Off").GetValue())
+
+            # Set TriggerSelector to FrameStart
+            trigger_selector = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerSelector"))
+            trigger_selector.SetIntValue(trigger_selector.GetEntryByName("FrameStart").GetValue())
+
+            # Configure the trigger source to the specified line
+            trigger_source = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerSource"))
+            trigger_source.SetIntValue(trigger_source.GetEntryByName("Line" + str(self.trigger_line)).GetValue())
+
+            # Set the trigger activation to RisingEdge
+            trigger_activation = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerActivation"))
+            trigger_activation.SetIntValue(trigger_activation.GetEntryByName("RisingEdge").GetValue())
+
+            # Turn trigger mode back on
+            trigger_mode.SetIntValue(trigger_mode.GetEntryByName("On").GetValue())
+
+        else:  # Internal triggering
+            # Ensure that the trigger mode is off so manual camera control is enabled
+            trigger_mode = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerMode"))
+            trigger_mode.SetIntValue(trigger_mode.GetEntryByName("Off").GetValue())
+            # Set frame rate control to manual.
+            if self.device_model == "Chameleon3":
+                frc_node = PySpin.CBooleanPtr(self.nodemap.GetNode("AcquisitionFrameRateEnabled"))
+                frc_node.SetValue(True)
+                fra_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("AcquisitionFrameRateAuto"))
+                fra_node.SetIntValue(fra_node.GetEntryByName("Off").GetValue())
+            else:
+                fra_node = PySpin.CBooleanPtr(self.nodemap.GetNode("AcquisitionFrameRateEnable"))
+                fra_node.SetValue(True)
+
     def get_trigger_lines(self):
         """Get a list of the GPI lines that can be used to trigger frame acquisition"""
         trigger_lines = []
@@ -224,10 +225,11 @@ class SpinnakerCamera(GenericCamera):
             print(f"Error retrieving trigger lines: {e}")
         return trigger_lines
 
-    # Functions to set camera paramteters.
+    # Functions to set camera paramteters ------------------------------------------------------------------------
 
     def configure_settings(self, CameraConfig):
         """Configure all settings from CameraConfig."""
+        self.set_acqusition_mode(CameraConfig.external_trigger)
         if CameraConfig.external_trigger:
             pass
         else:
@@ -256,14 +258,6 @@ class SpinnakerCamera(GenericCamera):
             pxf_node.SetIntValue(pxf_node.GetEntryByName(pixel_format).GetValue())
         else:
             print(f"Current pixel format: {self.camera_pixel_format()}")
-
-    def set_external_trigger(self, active: bool):
-        """Enable or disable the external trigger."""
-        trigger_mode = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerMode"))
-        if active:
-            trigger_mode.SetIntValue(trigger_mode.GetEntryByName("On").GetValue())
-        else:
-            trigger_mode.SetIntValue(trigger_mode.GetEntryByName("Off").GetValue())
 
     # Functions to control the camera streaming and check status.
 
@@ -367,6 +361,6 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
     return unique_id_list
 
 
-def initialise_camera_api(CameraSettingsConfig):
-    """Instantiate the SpinnakerCamera object based on the unique-id"""
-    return SpinnakerCamera(CameraConfig=CameraSettingsConfig)
+def initialise_camera_api(CameraConfig):
+    """Instantiate the SpinnakerCamera object"""
+    return SpinnakerCamera(CameraConfig=CameraConfig)

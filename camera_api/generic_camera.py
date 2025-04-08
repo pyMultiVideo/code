@@ -6,14 +6,25 @@ Generic API defining functionality needed for for camera system to interact with
 
 
 class GenericCamera:
+    """Template class for representing a camera. Defines functionallity that must be implemented for interaction with the GUI."""
+
     def __init__(self, CameraConfig=None):
-        """Template class for representing a camera. Defines functionallity that must be implemented for interaction with the GUI."""
+
+        # Options for camera -----------------------------------------------------------
+
         self.serial_number = None  # To be replaced with device serial number.
         self.device_model = "GenericCameraModel"  # Replace with the camera model name to be recorded in metadata.
         self.N_GPIO = 3  # Number of pins that the camera records each frame.
+        self.trigger_line = None  # Name of the line which will be used to trigger external acqusition
         self.manual_control_enabled = (
             False  # If true, there is manual control available for the camera (gain / exposure time)
         )
+
+        # Configure camera settings -----------------------------------------------------
+
+        # When the parameters is changed, the camera widget will restart, thus running this code
+        # if CameraConfig is not None:
+        #     self.configure_acqusition_mode(CameraConfig.external_trigger)
 
     # Functions to get the camera parameters -----------------------------------------------------------------
 
@@ -67,6 +78,12 @@ class GenericCamera:
         """Set the gain of the camera"""
         pass
 
+    # Configure Acqusition Mode -------------------------------------------------------------------------------
+
+    def set_acqusition_mode(self, external_trigger: bool):
+        """Configuriung the acqusition mode of the camera"""
+        pass
+
     #  Functions to control the camera streaming and check status ---------------------------------------------
 
     def begin_capturing(self) -> None:
@@ -111,6 +128,6 @@ def list_available_cameras() -> list[str]:
     return unique_id_list
 
 
-def initialise_camera_api(CameraSettingsConfig=None):
-    """Returns a camera instance based on the _id"""
-    return GenericCamera()
+def initialise_camera_api(CameraConfig=None):
+    """Returns a GenricCamera object"""
+    return GenericCamera(CameraConfig=CameraConfig)
