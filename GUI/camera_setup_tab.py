@@ -301,7 +301,7 @@ class Camera_table_item:
         self.gain_edit.setEnabled(self.camera_api.manual_control_enabled)
         # Pixel format edit
         self.pixel_format_edit = QComboBox()
-        self.pixel_format_edit.addItem(self.camera_api.pixel_format)
+        self.pixel_format_edit.addItems(list(self.camera_api.pixel_format_map.keys()))
         if self.settings.pixel_format:
             self.pixel_format_edit.setCurrentText(self.settings.pixel_format)
 

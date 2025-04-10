@@ -39,6 +39,6 @@ default_camera_config = {
     "downsampling_factor": 1,
     "exposure_time": 15000,
     "gain": 0,
-    'external_trigger': False,
-    "pixel_format": "Mono8",
+    "external_trigger": False,
+    "pixel_format": "Monochrome",
 }

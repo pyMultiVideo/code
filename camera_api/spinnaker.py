@@ -35,13 +35,21 @@ class SpinnakerCamera(GenericCamera):
         # Dictionaries for supporting colored cameras -----------------------------------
 
         # List of color formats pMV supports listed in order or priority. Prioritise Color.
-        self.supported_pixel_formats = OrderedDict(
+        self.pixel_format_map = OrderedDict(
             [
-                ("BayerRG8", "bayer_rggb8"),
-                ("Mono8", "gray"),
+                ("Colour", {"Internal": "BayerRG8", "ffmpeg": "bayer_rggb8", "cv2": cv2.COLOR_BayerRG2BGR}),
+                ("Mono", {"Internal": "Mono8", "ffmpeg": "gray", "cv2": cv2.COLOR_GRAY2BGR}),
             ]
         )
-        self.cv2_conversion = {"BayerRG8": cv2.COLOR_BayerRG2BGR, "Mono8": cv2.COLOR_GRAY2BGR}
+
+        # self.supported_pixel_formats = OrderedDict(  # FFMPEG dictionary
+        #     [
+        #         ("BayerRG8", "bayer_rggb8"),
+        #         ("Mono8", "gray"),
+        #     ]
+        # )
+        # # CV color conversion
+        # self.cv2_conversion = {"BayerRG8": cv2.COLOR_BayerRG2BGR, "Mono8": cv2.COLOR_GRAY2BGR}
         self.pixel_format = self.get_supported_pixel_formats()
         # Set the pixel format
         self.set_pixel_format(self.pixel_format)
@@ -149,19 +157,15 @@ class SpinnakerCamera(GenericCamera):
         pixel_format_entries = pixel_format_node.GetEntries()
 
         # Convert to string and check if available
-        available_pxl_fmts = []
+        pxl_formats = []
         for entry in pixel_format_entries:
             entry = PySpin.CEnumEntryPtr(entry)
             if PySpin.IsAvailable(entry) and PySpin.IsReadable(entry):
-                available_pxl_fmts.append(str(entry.GetSymbolic()))
+                pxl_formats.append(str(entry.GetSymbolic()))
 
         # Get the pixel format that we want the camera to use.
         pixel_format = next(
-            (
-                fmt
-                for fmt in self.supported_pixel_formats.keys()
-                if fmt in available_pxl_fmts and fmt in self.supported_pixel_formats
-            ),
+            (fmt["Internal"] for fmt in self.pixel_format_map.values() if fmt["Internal"] in pxl_formats),
             None,
         )
 
@@ -174,9 +178,7 @@ class SpinnakerCamera(GenericCamera):
 
     def set_acqusition_mode(self, external_trigger: bool):
 
-        print("Running SpinnakerCamera.configure_acqusition_mode")
         if external_trigger:
-            print("Setting up camera in external_trigger mode")
             # Ensure trigger mode is off before configuring
             trigger_mode = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerMode"))
             trigger_mode.SetIntValue(trigger_mode.GetEntryByName("Off").GetValue())
@@ -302,7 +304,7 @@ class SpinnakerCamera(GenericCamera):
                 img_buffer.append(next_image.GetData())  # Image pixels as bytes.
                 chunk_data = next_image.GetChunkData()  # Additional image data.
                 timestamps_buffer.append(chunk_data.GetTimestamp())  # Image timestamp (nanoseconds)
-                if self.previous_frame_number != (chunk_data.GetFrameID() - 1): # Frame IDs
+                if self.previous_frame_number != (chunk_data.GetFrameID() - 1):  # Frame IDs
                     dropped_frames += 1
                 self.previous_frame_number = chunk_data.GetFrameID()
                 if self.device_model == "Chameleon3":
