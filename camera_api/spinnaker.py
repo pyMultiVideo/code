@@ -105,7 +105,7 @@ class SpinnakerCamera(GenericCamera):
         """Get the camera frame rate in Hz."""
         return PySpin.CFloatPtr(self.nodemap.GetNode("AcquisitionFrameRate")).GetValue()
 
-    def get_frame_rate_range(self, exposure_time) -> tuple[int, int]:
+    def get_frame_rate_range(self, *exposure_time) -> tuple[int, int]:
         """Get the min and max frame rate (Hz)."""
         try:
             node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("AcquisitionFrameRate"))
@@ -118,7 +118,7 @@ class SpinnakerCamera(GenericCamera):
         """Get exposure of camera"""
         return float(PySpin.CFloatPtr(self.nodemap.GetNode("ExposureTime")).GetValue())
 
-    def get_exposure_time_range(self, fps) -> tuple[int, int]:
+    def get_exposure_time_range(self, *fps) -> tuple[int, int]:
         """Get the min and max exposure time (us)"""
         try:
             node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("ExposureTime"))
@@ -302,7 +302,7 @@ class SpinnakerCamera(GenericCamera):
                 img_buffer.append(next_image.GetData())  # Image pixels as bytes.
                 chunk_data = next_image.GetChunkData()  # Additional image data.
                 timestamps_buffer.append(chunk_data.GetTimestamp())  # Image timestamp (nanoseconds)
-                if self.previous_frame_number != (chunk_data.GetFrameID() - 1): # Frame IDs from frames
+                if self.previous_frame_number != (chunk_data.GetFrameID() - 1): # Frame IDs
                     dropped_frames += 1
                 self.previous_frame_number = chunk_data.GetFrameID()
                 if self.device_model == "Chameleon3":

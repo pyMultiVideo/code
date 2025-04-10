@@ -85,9 +85,7 @@ class CameraWidget(QGroupBox):
         self.recording_status_item = pg.TextItem()
         self.recording_status_item.setPos(10, 2 * text_spacing)
         self.graphics_view.addItem(self.recording_status_item)
-        self.recording_status_item.setText(
-            "NO FRAME ACQUIRED" if self.settings.external_trigger else "NOT RECORDING", color="r"
-        )
+        self.recording_status_item.setText("NOT RECORDING", color="r")
         # Framerate overlay
         self.frame_rate_text = pg.TextItem()
         self.frame_rate_text.setPos(10, 3 * text_spacing)
@@ -244,9 +242,7 @@ class CameraWidget(QGroupBox):
         self.data_recorder.stop_recording()
         self.recording = False
         # Update GUI
-        self.recording_status_item.setText(
-            "NO FRAME ACQUIRED" if self.settings.external_trigger else "NOT RECORDING", color="r"
-        )
+        self.recording_status_item.setText("NOT RECORDING", color="r")
         self.stop_recording_button.setEnabled(False)
         self.start_recording_button.setEnabled(True)
         self.subject_id_text.setEnabled(True)
@@ -277,10 +273,7 @@ class CameraWidget(QGroupBox):
         # Display the current recording duration over image.
         if self.recording:
             elapsed_time = datetime.now() - self.data_recorder.record_start_time
-            status = (
-                "FRAME ACQUIRED" if self.settings.external_trigger else f"RECORDING  {str(elapsed_time).split('.')[0]}"
-            )
-            self.recording_status_item.setText(status, color="g")
+            self.recording_status_item.setText(f"RECORDING  {str(elapsed_time).split('.')[0]}", color="g")
         # Update dropped frames indicator.
         if self._newly_dropped_frames:
             self.dropped_frames_text.setText("DROPPED FRAMES", color="r")
@@ -334,7 +327,7 @@ class CameraWidget(QGroupBox):
     def update_viewfinder_text(self):
         """Update the viewfinder display text based on if settings have changed"""
         self.recording_status_item.setText(
-            "NO FRAME ACQUIRED" if self.settings.external_trigger else "NOT RECORDING",
+            "NOT RECORDING",
             color="r",
         )
 
@@ -398,9 +391,7 @@ class CameraWidget(QGroupBox):
             )
             self.graphics_view.addItem(gpio_indicator)
         # Update Frame triggered text
-        self.recording_status_item.setText(
-            "NO FRAME ACQUIRED" if self.settings.external_trigger else "NOT RECORDING", color="r"
-        )
+        self.recording_status_item.setText("NOT RECORDING", color="r")
 
     def closeEvent(self, event):
         """Handle the close event to stop the timer and release resources"""

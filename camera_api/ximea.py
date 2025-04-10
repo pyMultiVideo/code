@@ -63,7 +63,7 @@ class XimeaCamera(GenericCamera):
         """Get the camera frame rate in Hz."""
         return self.cam.get_framerate()
 
-    def get_frame_rate_range(self, exposure_time) -> tuple[int, int]:
+    def get_frame_rate_range(self, *exposure_time) -> tuple[int, int]:
         """Get the min and max frame rate (Hz)."""
         return ceil(self.cam.get_framerate_minimum()), floor(self.cam.get_framerate_maximum())
 
@@ -71,7 +71,7 @@ class XimeaCamera(GenericCamera):
         """Get exposure of camera"""
         return self.cam.get_exposure()
 
-    def get_exposure_time_range(self, fps) -> tuple[int, int]:
+    def get_exposure_time_range(self, *fps) -> tuple[int, int]:
         """Get the min and max exposure time (us)"""
         return ceil(self.cam.get_exposure_minimum()), floor(self.cam.get_exposure_maximum())
 

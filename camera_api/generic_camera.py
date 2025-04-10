@@ -66,11 +66,11 @@ class GenericCamera:
 
     # Functions to set the camera parameters -----------------------------------------------------------------
 
-    def set_frame_rate(self, frame_rate: int) -> None:
+    def set_frame_rate(self, *frame_rate: int) -> None:
         """Set the aquisition frame rate of the camera"""
         pass
 
-    def set_exposure_time(self, exposure_time) -> None:
+    def set_exposure_time(self, *exposure_time) -> None:
         """Set the exposure_time of the camera"""
         pass
 
