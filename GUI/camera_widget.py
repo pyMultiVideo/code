@@ -259,6 +259,15 @@ class CameraWidget(QGroupBox):
         image = np.frombuffer(self.latest_image, dtype=np.uint8).reshape(self.camera_height, self.camera_width)
         if self.settings.pixel_format != "Mono8":
             image = cv2.cvtColor(image, self.camera_api.cv2_conversion[self.settings.pixel_format])
+        # Downsample if factor != 1
+        if self.GUI.gui_config["camera_view_finder_downsample_factor"] != 1:
+            image = cv2.resize(
+                image,
+                None,
+                fx=1 / self.GUI.gui_config["camera_view_finder_downsample_factor"],
+                fy=1 / self.GUI.gui_config["camera_view_finder_downsample_factor"],
+                interpolation=cv2.INTER_AREA,
+            )
         self.video_image_item.setImage(image)
         # Compute average framerate and display over image.
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
