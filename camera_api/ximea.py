@@ -65,7 +65,14 @@ class XimeaCamera(GenericCamera):
 
     def get_frame_rate_range(self, *exposure_time) -> tuple[int, int]:
         """Get the min and max frame rate (Hz)."""
-        return ceil(self.cam.get_framerate_minimum()), floor(self.cam.get_framerate_maximum())
+        try:
+            return ceil(self.cam.get_framerate_minimum()), floor(self.cam.get_framerate_maximum())
+        except xiapi.Xi_error as e:
+            if exposure_time:
+                max_frame_rate = 1e6 / exposure_time[0]  # Use the first value of the tuple
+                return ceil(1), floor(max_frame_rate)
+            else:
+                raise ValueError("Exposure time must be provided to calculate frame rate range.")
 
     def get_exposure_time(self) -> float:
         """Get exposure of camera"""
@@ -73,7 +80,11 @@ class XimeaCamera(GenericCamera):
 
     def get_exposure_time_range(self, *fps) -> tuple[int, int]:
         """Get the min and max exposure time (us)"""
-        return ceil(self.cam.get_exposure_minimum()), floor(self.cam.get_exposure_maximum())
+        try:
+            return ceil(self.cam.get_exposure_minimum()), floor(self.cam.get_exposure_maximum())
+        except xiapi.Xi_error as e:
+            max_exposure_time = 1e6 / fps[0] + 8  # Systematically underestimate maximum since init will fail if too big
+            return ceil(7), floor(max_exposure_time)
 
     def get_gain(self) -> int:
         """Get camera gain setting in dB."""

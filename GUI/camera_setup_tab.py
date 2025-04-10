@@ -350,6 +350,16 @@ class Camera_table_item:
         self.setups_table.setCellWidget(0, 7, self.external_trigger_checkbox)
         self.setups_table.setCellWidget(0, 8, self.preview_camera_button)
 
+    # Helper function
+
+    def current_camera_preview_showing(self):
+        """Check if the preview is currently showing for this camera."""
+        if self.setups_tab.camera_preview:
+            return self.setups_tab.camera_preview.label == self.get_label()
+        return False
+
+    ################### Attribute Changed Functions ##################################
+
     def camera_name_changed(self):
         """Called when name text of setup is edited."""
         name = str(self.name_edit.text())
@@ -366,7 +376,7 @@ class Camera_table_item:
             self.name_edit.setPlaceholderText("Set a name")
         self.setups_tab.update_saved_setups(setup=self)
         self.setups_tab.setups_changed = True
-        if self.setups_tab.preview_showing:
+        if self.current_camera_preview_showing():
             self.setups_tab.camera_preview.update_viewfinder_text()
 
     def get_label(self):
@@ -379,7 +389,7 @@ class Camera_table_item:
         """Called when fps text of setup is edited."""
         self.settings.fps = int(self.fps_edit.text())
         self.setups_tab.update_saved_setups(setup=self)
-        if self.setups_tab.preview_showing:
+        if self.current_camera_preview_showing():
             self.setups_tab.camera_preview.camera_api.set_frame_rate(self.settings.fps)
         self.exposure_time_edit.setRange(*self.camera_api.get_exposure_time_range(self.settings.fps))
 
@@ -387,7 +397,7 @@ class Camera_table_item:
         """"""
         self.settings.exposure_time = int(self.exposure_time_edit.text())
         self.setups_tab.update_saved_setups(setup=self)
-        if self.setups_tab.preview_showing:
+        if self.current_camera_preview_showing():
             self.setups_tab.camera_preview.camera_api.set_exposure_time(self.settings.exposure_time)
         self.fps_edit.setRange(*self.camera_api.get_frame_rate_range(self.settings.exposure_time))
 
@@ -395,14 +405,14 @@ class Camera_table_item:
         """"""
         self.settings.gain = float(self.gain_edit.text())
         self.setups_tab.update_saved_setups(setup=self)
-        if self.setups_tab.preview_showing:
+        if self.current_camera_preview_showing():
             self.setups_tab.camera_preview.camera_api.set_gain(self.settings.gain)
 
     def camera_pixel_format_changed(self):
         """Change the pixel format"""
         self.settings.pixel_format = self.pixel_format_edit.currentText()
         self.setups_tab.update_saved_setups(setup=self)
-        if self.setups_tab.preview_showing:
+        if self.current_camera_preview_showing():
             self.setups_tab.camera_preview.camera_api.set_pixel_format(self.settings.pixel_format)
 
     def camera_external_trigger_changed(self):
@@ -410,7 +420,7 @@ class Camera_table_item:
         self.settings.external_trigger = self.external_trigger_checkbox.isChecked()
         self.setups_tab.update_saved_setups(setup=self)
         # Restart the preview if open
-        if self.setups_tab.preview_showing:
+        if self.current_camera_preview_showing():
             self.setups_tab.camera_preview.camera_api.set_acqusition_mode(self.settings.external_trigger)
             self.setups_tab.camera_preview.update_viewfinder_text()
         # FPS spin box only enabled if external trigger not enabled.
