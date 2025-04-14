@@ -42,14 +42,7 @@ class SpinnakerCamera(GenericCamera):
             ]
         )
 
-        # self.supported_pixel_formats = OrderedDict(  # FFMPEG dictionary
-        #     [
-        #         ("BayerRG8", "bayer_rggb8"),
-        #         ("Mono8", "gray"),
-        #     ]
-        # )
-        # # CV color conversion
-        # self.cv2_conversion = {"BayerRG8": cv2.COLOR_BayerRG2BGR, "Mono8": cv2.COLOR_GRAY2BGR}
+    
         self.pixel_format = self.get_supported_pixel_formats()
         # Set the pixel format
         self.set_pixel_format(self.pixel_format)

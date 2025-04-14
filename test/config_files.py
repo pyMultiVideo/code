@@ -3,7 +3,17 @@ import os
 from datetime import datetime
 import json
 
+import sys
+from pathlib import Path
+
+# Add the parent directory to sys.path for proper imports
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+from config.config import paths_config, default_camera_config
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # pyMV code folder.
+
+### Start of helper functions ###
 
 
 def get_camera_unique_ids():
@@ -43,7 +53,7 @@ def create_camera_config(n_cameras, fps, downsampling_factor):
             "exposure_time": min(max(1000, 1000000 // fps), 100000)
             - 1000,  # Ensure exposure time is between 1000 and 100000 microseconds
             "gain": 0,
-            "pixel_format": "Mono8",
+            "pixel_format": default_camera_config["pixel_format"],
             "downsampling_factor": downsampling_factor,
         }
         for i in range(n_cameras)
@@ -67,28 +77,17 @@ def generate_performance_test_config(
                 "encoding_speed": encoding_speed,
                 "compression_standard": compression_standard,
             },
-            "paths_config": {
-                "ROOT": ROOT,
-                "camera_dir": os.path.join(ROOT, "config"),
-                "encoder_dir": os.path.join(ROOT, "config"),
-                "data_dir": os.path.join(ROOT, "data"),
-                "config_dir": os.path.join(ROOT, "config"),
-                "icons_dir": os.path.join(ROOT, "GUI", "icons"),
-            },
-            "default_camera_config": {
-                "name": None,
-                "fps": fps,
-                "downsampling_factor": downsampling_factor,
-                "exposure_time": 15000,
-                "gain": 0,
-                "pixel_format": "Mono8",
-            },
+            "paths_config": paths_config,
+            "default_camera_config": default_camera_config,
         },
         "experiment_config": create_experiment_config(data_dir=test_config_dir, n_cameras=n_camera),
         "camera_config": create_camera_config(n_cameras=n_camera, fps=fps, downsampling_factor=downsampling_factor),
         "record-on-startup": True,
         "close_after": testing_parameters["close_after"],
     }
+
+
+### End of Helper Functions ###
 
 
 subject_ids = [f"subject_{i}" for i in range(len(get_camera_unique_ids()))]
@@ -112,29 +111,6 @@ testing_parameters = {
     "encoding_speed_options": ["fast", "medium", "slow"],
     "compression_standard": ["h264", "h265"],
 }
-
-# Calculate the total number of tests and the estimated duration
-total_tests = (
-    len(testing_parameters["n_cameras"])
-    * len(testing_parameters["downsample_range"])
-    * len(testing_parameters["fps_range"])
-    * len(testing_parameters["camera_update_range"])
-    * len(testing_parameters["camera_updates_per_display_update"])
-    * len(testing_parameters["crf_range"])
-    * len(testing_parameters["encoding_speed_options"])
-    * len(testing_parameters["compression_standard"])
-)
-
-# Convert "close_after" to seconds
-close_after_parts = list(map(int, testing_parameters["close_after"].split(":")))
-close_after_seconds = close_after_parts[0] * 60 + close_after_parts[1]
-
-# Calculate total test duration
-total_duration_seconds = total_tests * close_after_seconds
-total_duration_minutes = total_duration_seconds / 60
-
-print(f"Total number of tests: {total_tests}")
-print(f"Estimated total duration: {total_duration_minutes} minutes")
 
 # Setup data directors for test to take place in
 # 1. Create directory

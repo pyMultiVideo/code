@@ -23,9 +23,9 @@ class GenericCamera:
             False  # If true, there is manual control available for the camera (gain / exposure time)
         )
         # This ordered dictionary represents the metadata that the camera class requires for handling different pixel formats. 
-        # 'Internal' refers to the camera's internal representation of the pixel format.
+        # 'Internal' refers to the camera's internal name for the pixel format.
         # 'ffmpeg' specifies the corresponding pixel format name used by ffmpeg.
-        # 'cv2' defines the OpenCV conversion code for the pixel format.
+        # 'cv2' specifices the OpenCV conversion code for the pixel format.
         self.pixel_format_map = OrderedDict(
             [
                 ("Colour", {"Internal": "BayerRG8", "ffmpeg": "bayer_rggb8", "cv2": cv2.COLOR_BayerRG2BGR}),

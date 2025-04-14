@@ -40,5 +40,5 @@ default_camera_config = {
     "exposure_time": 15000,
     "gain": 0,
     "external_trigger": False,
-    "pixel_format": "Monochrome",
+    "pixel_format": "Mono",
 }

@@ -303,7 +303,10 @@ class CameraWidget(QGroupBox):
     def update_camera_dropdown(self):
         """Update the cameras available in the camera select dropdown menu."""
         # Disconnect function whilst updating text
-        self.camera_dropdown.currentTextChanged.disconnect(self.change_camera)
+        try:
+            self.camera_dropdown.currentTextChanged.disconnect(self.change_camera)
+        except TypeError:
+            pass  # Signal was not connected
         # Available cameras
         available_cameras = sorted(
             set(self.GUI.camera_setup_tab.get_camera_labels())

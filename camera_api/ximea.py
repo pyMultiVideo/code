@@ -29,13 +29,12 @@ class XimeaCamera(GenericCamera):
         self.device_model = self.cam.get_device_model_id()
         # Dictionaries for supporting colored cameras -----------------------------------
         # List of color formats Ximea supports
-        self.supported_pixel_formats = OrderedDict(
+        self.pixel_format_map = OrderedDict(
             [
-                ("BayerRG8", "bayer_rggb8"),
-                ("XI_GenTL_Image_Format_Mono8", "gray"),
+                ("Colour", {"Internal": "BayerRG8", "ffmpeg": "bayer_rggb8", "cv2": cv2.COLOR_BayerRG2BGR}),
+                ("Mono", {"Internal": "Mono8", "ffmpeg": "gray", "cv2": cv2.COLOR_GRAY2BGR}),
             ]
         )
-        self.cv2_conversion = {"BayerRG8": cv2.COLOR_BayerRG2BGR, "XI_GenTL_Image_Format_Mono8": cv2.COLOR_GRAY2BGR}
         # Get the pixel format
         self.pixel_format = self.camera_pixel_format()
 
@@ -124,7 +123,6 @@ class XimeaCamera(GenericCamera):
 
     def set_acqusition_mode(self, external_trigger: bool):
 
-        print("Running XimeaCamera.configure_acqusition_mode")
         if external_trigger:
             self.cam.set_gpi_mode("XI_GPI_TRIGGER")
             self.cam.set_trigger_selector("XI_TRG_SEL_FRAME_START")  # Trigger on frame start
