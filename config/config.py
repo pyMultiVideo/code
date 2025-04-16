@@ -18,6 +18,13 @@ ffmpeg_config = {
     "compression_standard": "h264",  # ["h265" , "h264"]
 }
 
+# Server Config -----------------------------------------------------------------------
+
+server_config = {
+    "put_rate": 10,  # Controls the rate at which the camera widget sends images to the server
+    "server_buffer_size": 10,  # Length of the sever buffer
+}
+
 # Paths -------------------------------------------------------------------------------
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # pyMV code folder.
@@ -40,4 +47,6 @@ default_camera_config = {
     "exposure_time": 15000,
     "gain": 0,
     "pixel_format": "Mono8",
+    "pub_server_address": None,  # Name of the local address that the camera can push data to
+    "pull_server_address": None,  # Name of the local address that the camera will look for data from
 }

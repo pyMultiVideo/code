@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
     QHeaderView,
     QMessageBox,
+    QDialog,
 )
 
 from config.config import paths_config, default_camera_config
@@ -34,6 +35,8 @@ class CameraSettingsConfig:
     gain: float
     pixel_format: str
     downsampling_factor: int
+    pub_server_address: str
+    pull_server_address: str
 
 
 class CamerasTab(QWidget):
@@ -197,6 +200,7 @@ class CameraOverviewTable(QTableWidget):
             "Gain (dB)",
             "Pixel Format",
             "Downsample Factor",
+            "",
             "Camera Preview",
         ]
         self.setColumnCount(len(self.header_names))
@@ -218,7 +222,19 @@ class CameraOverviewTable(QTableWidget):
 class Camera_table_item:
     """Class representing single camera in the Camera Tab table."""
 
-    def __init__(self, setups_table, name, unique_id, fps, exposure_time, gain, pixel_format, downsampling_factor):
+    def __init__(
+        self,
+        setups_table,
+        name,
+        unique_id,
+        fps,
+        exposure_time,
+        gain,
+        pixel_format,
+        downsampling_factor,
+        pub_server_address,
+        pull_server_address,
+    ):
         self.settings = CameraSettingsConfig(
             name=name,
             unique_id=unique_id,
@@ -227,6 +243,8 @@ class Camera_table_item:
             exposure_time=exposure_time,
             gain=gain,
             pixel_format=pixel_format,
+            pub_server_address=pub_server_address,
+            pull_server_address=pull_server_address,
         )
 
         self.setups_table = setups_table
@@ -300,6 +318,12 @@ class Camera_table_item:
             self.downsampling_factor_edit.setCurrentText(str(self.settings.downsampling_factor))
         self.downsampling_factor_edit.activated.connect(self.camera_downsampling_factor_changed)
 
+        # More settings button
+        self.more_settings_button = QPushButton("")
+        self.more_settings_button.setIcon(QIcon(os.path.join(paths_config["icons_dir"], "three_dots.svg")))
+        self.more_settings_button.clicked.connect(self.open_more_settings)
+        self.more_settings_button.setToolTip("Open additional camera server settings")
+
         # Preview button.
         self.preview_camera_button = QPushButton("Preview")
         self.preview_camera_button.clicked.connect(self.open_preview_camera)
@@ -316,7 +340,8 @@ class Camera_table_item:
         self.setups_table.setCellWidget(0, 4, self.gain_edit)
         self.setups_table.setCellWidget(0, 5, self.pixel_format_edit)
         self.setups_table.setCellWidget(0, 6, self.downsampling_factor_edit)
-        self.setups_table.setCellWidget(0, 7, self.preview_camera_button)
+        self.setups_table.setCellWidget(0, 7, self.more_settings_button)
+        self.setups_table.setCellWidget(0, 8, self.preview_camera_button)
 
     def camera_name_changed(self):
         """Called when name text of setup is edited."""
@@ -377,6 +402,11 @@ class Camera_table_item:
         self.settings.downsampling_factor = int(self.downsampling_factor_edit.currentText())
         self.setups_tab.update_saved_setups(setup=self)
 
+    def open_more_settings(self):
+        """Open a dialog window for additional camera settings."""
+        dialog = Settings_dialog(self)
+        dialog.exec()
+
     # Camera preview functions -----------------------------------------------------------------------
 
     def open_preview_camera(self):
@@ -392,3 +422,44 @@ class Camera_table_item:
     def close_preview_camera(self):
         self.setups_tab.camera_preview.close()
         self.setups_tab.preview_showing = False
+
+
+class Settings_dialog(QDialog):
+    """Dialog for accessing further settings for each camera"""
+
+    def __init__(self, camera_table_item):
+        super(Settings_dialog, self).__init__()
+        # Reference to camera
+        self.camera_table_item = camera_table_item
+
+        # Create a groupbox for server settings
+        self.server_settings_groupbox = QGroupBox("Server Settings")
+        self.server_settings_layout = QVBoxLayout()
+
+        # Add server address input
+        self.server_pub_address_line_edit = QLineEdit()
+        self.server_pub_address_line_edit.setPlaceholderText("Publishing Address")
+        self.server_settings_layout.addWidget(self.server_pub_address_line_edit)
+
+        # # Add server address input
+        self.server_pull_address_edit = QLineEdit()
+        self.server_pull_address_edit.setPlaceholderText("Pulling Address")
+        self.server_settings_layout.addWidget(self.server_pull_address_edit)
+        # Add save button
+        self.save_server_settings_button = QPushButton("Save Server Settings")
+        self.save_server_settings_button.clicked.connect(self.save_server_settings)
+        self.server_settings_layout.addWidget(self.save_server_settings_button)
+
+        self.server_settings_groupbox.setLayout(self.server_settings_layout)
+
+    def save_server_settings(self):
+        """Save the server settings."""
+        self.camera_table_item.settings.pub_server_address = self.server_pub_address_line_edit.text()
+        self.camera_table_item.settings.pull_server_address = self.server_pull_address_edit.text()
+
+        # Logic to save or apply server settings
+        QMessageBox.information(
+            None,
+            "Server Settings",
+            f"Server settings saved:\nAddress: {self.camera_table_item.settings.pub_server_address}\nPort: {self.camera_table_item.settings.pub_server_address}",
+        )

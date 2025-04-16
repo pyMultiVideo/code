@@ -11,9 +11,9 @@ from PyQt6.QtCore import QTimer, pyqtSignal
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QComboBox, QGroupBox, QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLayout, QMessageBox
 
-from config.config import paths_config, gui_config
+from config.config import paths_config, gui_config, server_config
 from .data_recorder import Data_recorder
-from .image_processer import Image_processer
+from .image_server import Image_server
 from camera_api import init_camera_api_from_module
 
 
@@ -46,12 +46,11 @@ class ScrollableGraphicsView(pg.GraphicsView):
 class CameraWidget(QGroupBox):
     """Widget for displaying camera video and camera controls."""
 
-    def __init__(self, parent, label, subject_id="", preview_mode=False, image_processing=False):
+    def __init__(self, parent, label, subject_id="", preview_mode=False):
         super(CameraWidget, self).__init__(parent)
         self.parent = parent
         self.GUI = self.parent.GUI
         self.preview_mode = preview_mode  # True if widget is being used in camera setup tab.
-        self.image_processing = image_processing  # True post processing is done on image
         # Camera attributes
         self.subject_id = subject_id
         self.label = label
@@ -149,6 +148,12 @@ class CameraWidget(QGroupBox):
         self.stop_recording_button.clicked.connect(self.stop_recording)
         self.stop_recording_button.setToolTip("Stop Recording")
 
+        # Server start button
+        self.toggle_server_button = QPushButton("")
+        self.toggle_server_button.setIcon(QIcon(os.path.join(paths_config["icons_dir"], "up_down.svg")))
+        self.toggle_server_button.setFixedWidth(30)
+        self.toggle_server_button.clicked.connect(self.start_server)
+
         # Camera select dropdown
         self.camera_id_label = QLabel("Camera:")
         self.camera_dropdown = QComboBox()
@@ -162,6 +167,7 @@ class CameraWidget(QGroupBox):
         self.header_layout.addWidget(self.camera_dropdown)
         self.header_layout.addWidget(self.subject_id_label)
         self.header_layout.addWidget(self.subject_id_text)
+        self.header_layout.addWidget(self.toggle_server_button)
         self.header_layout.addWidget(self.start_recording_button)
         self.header_layout.addWidget(self.stop_recording_button)
 
@@ -187,6 +193,7 @@ class CameraWidget(QGroupBox):
         """Start streaming video from camera."""
         self.dropped_frames = 0
         self.recording = False
+        self.server_available = False
         # Begin capturing using the camera API
         self.camera_api.begin_capturing(self.settings)
 
@@ -194,8 +201,8 @@ class CameraWidget(QGroupBox):
         """Stop streaming video from camera."""
         if self.recording:
             self.stop_recording()
-            if self.image_processing:
-                self.parent_conn.send({"signal": "TERMINATE"})  # Send termination signal to the image processor
+        if self.server_available:
+            self.stop_server()
         self.camera_api.stop_capturing()
 
     def fetch_image_data(self):
@@ -212,8 +219,6 @@ class CameraWidget(QGroupBox):
         # Record data to disk.
         if self.recording:
             self.data_recorder.record_new_images(new_images)
-            if self.image_processing:
-                self.parent_conn.send(new_images)  # send to process via pipe
 
     def update(self, update_video_display=True):
         """Called regularly by timer to fetch new images and optionally update video display."""
@@ -234,12 +239,6 @@ class CameraWidget(QGroupBox):
         save_dir = self.GUI.video_capture_tab.data_dir
         self.data_recorder.start_recording(subject_id, save_dir, self.settings)
         self.recording = True
-        # Start Image processing
-        if self.image_processing:
-            # Create a multiprocessing Pipe for communication between CameraWidget and ImageProcessor
-            self.parent_conn, self.child_conn = multiprocessing.Pipe()
-            self.image_processor_module = Image_processer(self, self.child_conn)
-            self.image_processor_module.start_process()
         # Update GUI
         self.stop_recording_button.setEnabled(True)
         self.camera_dropdown.setEnabled(False)
@@ -270,9 +269,6 @@ class CameraWidget(QGroupBox):
         image = np.frombuffer(self.latest_image, dtype=np.uint8).reshape(self.camera_height, self.camera_width)
         image = cv2.cvtColor(image, self.camera_api.cv2_conversion[self.settings.pixel_format])
         self.video_image_item.setImage(np.transpose(image, (1, 0, 2)))
-        # Get processed data from the pipe if image processing is enabled
-        if self.image_processing and self.parent_conn.poll():
-            self.process_recieved_pipe_information(self.parent_conn.recv())
         # Compute average framerate and display over image.
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
         calculated_framerate = 1e9 / avg_time_diff
@@ -299,7 +295,6 @@ class CameraWidget(QGroupBox):
                 color="magenta",
             )
             self.gain_text.setText(f"Gain (dB) :{self.camera_api.get_gain():.2f}")
-
 
     # GUI element updates -------------------------------------------------------------
 
@@ -356,6 +351,47 @@ class CameraWidget(QGroupBox):
         if self.preview_mode:
             scale_factor = 1.1 if direction == "Wheel scrolled up" else 1 / 1.1
             self.video_view_box.scaleBy((scale_factor, scale_factor))
+
+    def draw_box(self, box_dict=None):
+        """At some rate, draw a box on the image as defined by some coordinates"""
+        pass
+
+    # Server Controls -----------------------------------------------------------------
+
+    def start_server(self):
+        # Create server instance
+        self.server = Image_server(
+            camera_widget=self,
+            pub_socket=self.settings.pub_server_address,
+            pull_socket=self.settings.pull_server_address,
+        )
+        # Create timer
+        self.server_pub_timer = QTimer()
+        self.server_pub_timer.timeout.connect(self.put_in_server)
+        self.server_pub_timer.start(int(1000 / server_config["put_rate"]))
+        self.server_available = True  # Flag on
+        # Change the start_server_button to be connected to the stop server
+        self.toggle_server_button.clicked.connect(self.stop_server)
+        self.toggle_server_button.icon(QIcon(os.path.join(paths_config["icons_dir"], "stop_up_down.svg")))
+
+    def stop_server(self):
+        # Removed server instance
+        self.server.close()  # Close the server object
+        self.server_pub_timer.stop()  # Stop the timer
+        self.server_available = False  # Flag off
+
+    def put_in_server(self):
+        """Puts the latest image in the server"""
+        if self.server_available:
+            self.server.put(self.latest_image)
+
+    def pull_from_server(self):
+        if self.server_available:
+            # Poll from the server
+
+            # If you recieve something draw it
+            self.draw_box()
+            pass
 
     ### Config related functions ------------------------------------------------------
 
