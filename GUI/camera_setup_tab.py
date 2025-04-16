@@ -132,7 +132,6 @@ class CameraSetupTab(QWidget):
         for unique_id in self.setups:
             if self.preview_showing:
                 self.setups[unique_id].close_preview_camera()
-            self.setups[unique_id].camera_api.stop_capturing()
 
     # Reading / Writing the Camera setups saved function --------------------------------------------------------
 
@@ -278,7 +277,7 @@ class Camera_table_item:
         self.fps_edit = QSpinBox()
         # Set the min and max values of the spinbox
         self.fps_edit.setRange(*self.camera_api.get_frame_rate_range(self.settings.exposure_time))
-        self.fps_edit.setMaximum(120)
+        self.fps_edit.setEnabled(not self.settings.external_trigger)
         if self.settings.fps:
             self.settings.fps = str(self.settings.fps)
             self.fps_edit.setValue(int(self.settings.fps))

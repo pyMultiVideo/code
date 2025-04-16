@@ -18,11 +18,12 @@ class GenericCamera:
         self.serial_number = None  # To be replaced with device serial number.
         self.device_model = "GenericCameraModel"  # Replace with the camera model name to be recorded in metadata.
         self.N_GPIO = 3  # Number of pins that the camera records each frame.
+        self.BUFFER_SIZE = 100
         self.trigger_line = None  # Name of the line which will be used to trigger external acqusition
         self.manual_control_enabled = (
             False  # If true, there is manual control available for the camera (gain / exposure time)
         )
-        # This ordered dictionary represents the metadata that the camera class requires for handling different pixel formats. 
+        # This ordered dictionary represents the metadata that the camera class requires for handling different pixel formats.
         # 'Internal' refers to the camera's internal name for the pixel format.
         # 'ffmpeg' specifies the corresponding pixel format name used by ffmpeg.
         # 'cv2' specifices the OpenCV conversion code for the pixel format.

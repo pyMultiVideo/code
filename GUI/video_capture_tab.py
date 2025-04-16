@@ -217,6 +217,8 @@ class VideoCaptureTab(QWidget):
             camera_widget.stop_capturing()
         self.camera_widget_update_timer.stop()
 
+    # Adding and removing camera widgets from the GUI --------------------------------
+
     def add_or_remove_camera_widgets(self):
         """Add or remove the camera widgets from the"""
         # Get the set of useable cameras

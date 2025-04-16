@@ -376,7 +376,7 @@ class CameraWidget(QGroupBox):
         self.label = str(self.camera_dropdown.currentText())
         self.settings = self.GUI.camera_setup_tab.get_camera_settings_from_label(self.label)
         self.camera_api = init_camera_api_from_module(self.settings)
-        self.camera_api.begin_capturing()
+        self.camera_api.begin_capturing(self.settings)
         self.camera_height = self.camera_api.get_height()
         self.camera_width = self.camera_api.get_width()
         # Rename pyqtgraph element
