@@ -2,3 +2,4 @@ numpy
 PyQt6
 pyqtgraph
 opencv-python
+pyzmq

@@ -11,7 +11,7 @@ import json
 from .video_capture_tab import VideoCaptureTab
 from .camera_setup_tab import CameraSetupTab
 
-from config.config import __version__, gui_config, ffmpeg_config, paths_config
+from config.config import __version__, gui_config, ffmpeg_config, paths_config, server_config
 
 
 if os.name == "nt":  # Needed on windows to get taskbar icon to display correctly.
@@ -31,10 +31,12 @@ class GUIMain(QMainWindow):
             self.paths_config = config_data.get("paths_config")
             self.ffmpeg_config = config_data.get("ffmpeg_config")
             self.gui_config = config_data.get("gui_config")
+            self.server_config = config_data.get("server_config")
         else:
             self.paths_config = paths_config
             self.ffmpeg_config = ffmpeg_config
             self.gui_config = gui_config
+            self.server_config = server_config
 
         # close-after argument
         if self.parsed_args.close_after:

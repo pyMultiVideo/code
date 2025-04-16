@@ -1,9 +1,8 @@
 import zmq
 from collections import deque
 import json
-import cv2
+import base64
 
-from config.config import server_config
 
 
 class Image_server:
@@ -32,12 +31,12 @@ class Image_server:
         self.pull_socket = self.context.socket(zmq.PULL)
         self.pull_socket.bind(pull_socket)
 
-        self.buffer = deque(maxlen=server_config["server_buffer_size"])
+        self.buffer = deque(maxlen=self.camera_widget.GUI.server_config["server_buffer_size"])
 
     def put(self, image):
         # Put images in the ring buffer
         # image should be wrapped in a dictionary, with the name of the camera it came from
-        msg = {self.camera_widget.settings.unique_id: image.to_bytes()}
+        msg = {str(self.camera_widget.settings.unique_id): base64.b64encode(image.tobytes()).decode('utf-8')}
         # Send the json of the msg
         self.pub_socket.send(json.dumps(msg).encode("utf-8"))
 

@@ -475,7 +475,11 @@ class Settings_dialog(QDialog):
         super(Settings_dialog, self).__init__()
         # Reference to camera
         self.camera_table_item = camera_table_item
-
+        # Set the title of the dialog box
+        self.setWindowTitle("Camera Server Settings")
+        self.setWindowIcon(
+            QIcon(os.path.join(self.camera_table_item.setups_tab.GUI.paths_config["icons_dir"], "logo.svg"))
+        )
         # Create a groupbox for server settings
         self.server_settings_groupbox = QGroupBox("Server Settings")
         self.server_settings_layout = QVBoxLayout()
@@ -483,27 +487,42 @@ class Settings_dialog(QDialog):
         # Add server address input
         self.server_pub_address_line_edit = QLineEdit()
         self.server_pub_address_line_edit.setPlaceholderText("Publishing Address")
+        if self.camera_table_item.settings.pub_server_address:
+            self.server_pub_address_line_edit.setText(self.camera_table_item.settings.pub_server_address)
+        self.server_pub_address_line_edit.textChanged.connect(self.enable_save_button)
         self.server_settings_layout.addWidget(self.server_pub_address_line_edit)
 
-        # # Add server address input
+        # Add server address input
         self.server_pull_address_edit = QLineEdit()
         self.server_pull_address_edit.setPlaceholderText("Pulling Address")
+        if self.camera_table_item.settings.pull_server_address:
+            self.server_pull_address_edit.setText(self.camera_table_item.settings.pull_server_address)
+        self.server_pull_address_edit.textChanged.connect(self.enable_save_button)
         self.server_settings_layout.addWidget(self.server_pull_address_edit)
+
         # Add save button
         self.save_server_settings_button = QPushButton("Save Server Settings")
+        self.save_server_settings_button.setEnabled(False)  # Initially disabled
         self.save_server_settings_button.clicked.connect(self.save_server_settings)
         self.server_settings_layout.addWidget(self.save_server_settings_button)
 
         self.server_settings_groupbox.setLayout(self.server_settings_layout)
 
+        # Add the groupbox to the dialog layout
+        dialog_layout = QVBoxLayout(self)
+        dialog_layout.addWidget(self.server_settings_groupbox)
+        self.setLayout(dialog_layout)
+
+    def enable_save_button(self):
+        """Enable the save button if any of the line edits have changed."""
+        self.save_server_settings_button.setEnabled(
+            self.server_pub_address_line_edit.text() != self.camera_table_item.settings.pub_server_address
+            or self.server_pull_address_edit.text() != self.camera_table_item.settings.pull_server_address
+        )
+
     def save_server_settings(self):
         """Save the server settings."""
         self.camera_table_item.settings.pub_server_address = self.server_pub_address_line_edit.text()
         self.camera_table_item.settings.pull_server_address = self.server_pull_address_edit.text()
-
-        # Logic to save or apply server settings
-        QMessageBox.information(
-            None,
-            "Server Settings",
-            f"Server settings saved:\nAddress: {self.camera_table_item.settings.pub_server_address}\nPort: {self.camera_table_item.settings.pub_server_address}",
-        )
+        self.camera_table_item.setups_tab.update_saved_setups(setup=self.camera_table_item)
+        self.save_server_settings_button.setEnabled(False)  # Disable the button after saving

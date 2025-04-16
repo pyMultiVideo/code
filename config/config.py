@@ -48,6 +48,6 @@ default_camera_config = {
     "gain": 0,
     "external_trigger": False,
     "pixel_format": "Mono",
-    "pub_server_address": None,  # Name of the local address that the camera can push data to
-    "pull_server_address": None,  # Name of the local address that the camera will look for data from
+    "pub_server_address": "tcp://localhost:5555",  # Name of the local address that the camera can push data to
+    "pull_server_address": "tcp://localhost:5556",  # Name of the local address that the camera will look for data from
 }

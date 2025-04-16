@@ -270,7 +270,7 @@ class CameraWidget(QGroupBox):
             return
         image = np.frombuffer(self.latest_image, dtype=np.uint8).reshape(self.camera_height, self.camera_width)
         if self.settings.pixel_format != "Mono":
-            image = cv2.cvtColor(image, self.camera_api.pixel_format_map[self.settings.pixel_format]['cv2'])
+            image = cv2.cvtColor(image, self.camera_api.pixel_format_map[self.settings.pixel_format]["cv2"])
         self.video_image_item.setImage(image)
         # Compute average framerate and display over image.
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
@@ -388,17 +388,21 @@ class CameraWidget(QGroupBox):
         # Create timer
         self.server_pub_timer = QTimer()
         self.server_pub_timer.timeout.connect(self.put_in_server)
-        self.server_pub_timer.start(int(1000 / server_config["put_rate"]))
+        self.server_pub_timer.start(int(1000 / self.GUI.server_config["put_rate"]))
         self.server_available = True  # Flag on
         # Change the start_server_button to be connected to the stop server
+        self.toggle_server_button.clicked.disconnect(self.start_server)
         self.toggle_server_button.clicked.connect(self.stop_server)
-        self.toggle_server_button.icon(QIcon(os.path.join(paths_config["icons_dir"], "stop_up_down.svg")))
+        self.toggle_server_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "stop_up_down.svg")))
 
     def stop_server(self):
         # Removed server instance
         self.server.close()  # Close the server object
         self.server_pub_timer.stop()  # Stop the timer
         self.server_available = False  # Flag off
+        self.toggle_server_button.clicked.disconnect(self.stop_server)
+        self.toggle_server_button.clicked.connect(self.start_server)
+        self.toggle_server_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "up_down.svg")))
 
     def put_in_server(self):
         """Puts the latest image in the server"""
