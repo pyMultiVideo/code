@@ -66,11 +66,11 @@ def get_camera_ids():
             camera_list.extend(camera_module.list_available_cameras())
         except ModuleNotFoundError:
             continue
-    return camera_list, len(camera_list) == 0
+    return camera_list, not len(camera_list) == 0
 
 
 def init_camera_api_from_module(settings):
     """Initialise a camera API object given the camera ID and any camera settings."""
     _, module_name = settings.unique_id.split("-")
     camera_module = importlib.import_module(f"camera_api.{module_name}")
-    return camera_module.initialise_camera_api(CameraSettingsConfig=settings)
+    return camera_module.initialise_camera_api(CameraConfig=settings)

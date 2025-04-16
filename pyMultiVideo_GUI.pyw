@@ -1,7 +1,6 @@
 import logging
 import sys
 import argparse
-
 from config.config import gui_config
 
 # Dependancy Mangement
@@ -24,6 +23,45 @@ def check_module(module_name):
         sys.exit()
 
 
+### Terminal Commands -----------------------------------------------------------------------
+
+
+def valid_time(value):
+    try:
+        hours, minutes = map(int, value.split(":"))
+        if hours < 0 or minutes < 0 or minutes >= 60:
+            raise ValueError
+        return value
+    except ValueError:
+        raise argparse.ArgumentTypeError("Time must be in the format HH:MM with valid values.")
+
+
+def parse_args():
+    """
+    Run the application with config option specified. By default, this overwrite options specificied in config/config.py or specific camera configs
+    """
+    parser = argparse.ArgumentParser()
+    # Experiment Config
+    parser.add_argument("--experiment-config", help="Path to the experiment configuration file in JSON format")
+    # Camera Conifg
+    parser.add_argument("--camera-config", help="Path to the camera configuration file in JSON format", type=str)
+    # Config.py
+    parser.add_argument(
+        "--application-config", help="Path to the application configuration file in JSON format", type=str
+    )
+    # Recording options
+    parser.add_argument("--record-on-startup", help="if true: Cameras start recording on startup", type=bool)
+    parser.add_argument(
+        "--close-after",
+        help="Amount of time the application will be open for (Specific time in HH:MM)",
+        type=valid_time,
+    )
+    # return the arguments to the main function
+    return parser.parse_known_args()
+
+
+# Running Application ----------------------------------------------------------------
+
 check_module("PyQt6")
 check_module("pyqtgraph")
 
@@ -42,20 +80,8 @@ def main(parsed_args, unparsed_args):
     # Parse the arguments to main window
     gui = GUIMain(parsed_args)
     gui.show()
-    sys.excepthook = GUIMain.exception_hook
+    sys.excepthook = gui.exception_hook
     app.exec()
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config", help="Path to the configuration file", type=str)
-    """
-    Logic for config. If there is a config, instead of doing the normal init on the viewfinder tab, 
-    we will load the a config file (from the state where there are not camera widgets intialised. )
-    """
-
-    parsed_args, unparsed_args = parser.parse_known_args()
-    return parsed_args, unparsed_args
 
 
 # Run the main function if this script is run

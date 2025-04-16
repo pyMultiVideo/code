@@ -7,7 +7,7 @@ from math import floor, ceil
 
 from . import GenericCamera
 
-# Look at the multiple camera example. There is a set_limit_batdwidth method
+# Look at the multiple camera example. There is a set_limit_bandwidth method that could cause problems.
 
 
 class XimeaCamera(GenericCamera):
@@ -26,29 +26,28 @@ class XimeaCamera(GenericCamera):
         self.cam.open_device_by_SN(self.serial_number)
         self.previous_frame_number = 0
         self.device_model = self.cam.get_device_model_id()
-
         # Dictionaries for supporting colored cameras -----------------------------------
         # List of color formats Ximea supports
-        self.supported_pixel_formats = OrderedDict(
+        self.pixel_format_map = OrderedDict(
             [
-                ("BayerRG8", "bayer_rggb8"),
-                ("XI_GenTL_Image_Format_Mono8", "gray"),
+                ("Colour", {"Internal": "BayerRG8", "ffmpeg": "bayer_rggb8", "cv2": cv2.COLOR_BayerRG2BGR}),
+                ("Mono", {"Internal": "Mono8", "ffmpeg": "gray", "cv2": cv2.COLOR_GRAY2BGR}),
             ]
         )
-        self.cv2_conversion = {"BayerRG8": cv2.COLOR_BayerRG2BGR, "XI_GenTL_Image_Format_Mono8": cv2.COLOR_GRAY2BGR}
         # Get the pixel format
-        self.pixel_format = self.camera_pixel_format()
+        self.pixel_format = self.get_camera_pixel_format()
 
         # Configure camera settings -----------------------------------------------------
-
         # Manual Control of camera
         self.cam.disable_aeag()  # Automatic exposure gain disabled
         self.cam.set_acq_timing_mode("XI_ACQ_TIMING_MODE_FRAME_RATE")  # Manual Framerate control
-        print(self.cam.get_gpi_level())
+        if not self.cam.CAM_OPEN:  # Set the buffer size. Requires the camera to be open to set.
+            self.cam.open_device_by_SN(self.serial_number)
+            self.previous_frame_number = 0
+            self.cam.set_acq_buffer_size(self.BUFFER_SIZE)
+
         # Configure user settings.
         self.begin_capturing(CameraConfig)
-        if CameraConfig is not None:
-            self.configure_settings(CameraConfig)
 
     # Functions to get the camera parameters ----------------------------------------------
 
@@ -64,17 +63,28 @@ class XimeaCamera(GenericCamera):
         """Get the camera frame rate in Hz."""
         return self.cam.get_framerate()
 
-    def get_frame_rate_range(self, exposure_time) -> tuple[int, int]:
+    def get_frame_rate_range(self, *exposure_time) -> tuple[int, int]:
         """Get the min and max frame rate (Hz)."""
-        return ceil(self.cam.get_framerate_minimum()), floor(self.cam.get_framerate_maximum())
+        try:
+            return ceil(self.cam.get_framerate_minimum()), floor(self.cam.get_framerate_maximum())
+        except xiapi.Xi_error as e:
+            if exposure_time:
+                max_frame_rate = 1e6 / exposure_time[0]  # Use the first value of the tuple
+                return ceil(1), floor(max_frame_rate)
+            else:
+                raise ValueError("Exposure time must be provided to calculate frame rate range.")
 
     def get_exposure_time(self) -> float:
         """Get exposure of camera"""
         return self.cam.get_exposure()
 
-    def get_exposure_time_range(self, fps) -> tuple[int, int]:
+    def get_exposure_time_range(self, *fps) -> tuple[int, int]:
         """Get the min and max exposure time (us)"""
-        return ceil(self.cam.get_exposure_minimum()), floor(self.cam.get_exposure_maximum())
+        try:
+            return ceil(self.cam.get_exposure_minimum()), floor(self.cam.get_exposure_maximum())
+        except xiapi.Xi_error as e:
+            max_exposure_time = 1e6 / fps[0] + 8  # Systematically underestimate maximum since init will fail if too big
+            return ceil(7), floor(max_exposure_time)
 
     def get_gain(self) -> int:
         """Get camera gain setting in dB."""
@@ -84,18 +94,11 @@ class XimeaCamera(GenericCamera):
         """Get range of gain"""
         return ceil(self.cam.get_gain_minimum()), floor(self.cam.get_gain_maximum())
 
-    def camera_pixel_format(self) -> str:
+    def get_camera_pixel_format(self) -> str:
         """Get string specifying camera pixel format"""
-        # return self.cam.get_param('pixel_format')
         return self.cam.get_transport_pixel_format()
 
-    # Functions to set camera parameters.
-
-    def configure_settings(self, CameraConfig):
-        """Configure all settings from CameraConfig."""
-        self.set_frame_rate(CameraConfig.fps)
-        self.set_gain(CameraConfig.gain)
-        self.set_exposure_time(CameraConfig.exposure_time)
+    # Functions to set camera parameters --------------------------------------------------------
 
     def set_frame_rate(self, frame_rate):
         """Set the frame rate of the camera in Hz indirectly by setting the exposure time."""
@@ -109,6 +112,26 @@ class XimeaCamera(GenericCamera):
         """Set gain (dB)"""
         self.cam.set_gain(gain)
 
+    # Configuring Acqusition mode -----------------------------------------------------------------
+
+    def set_acqusition_mode(self, external_trigger: bool):
+        """Setting the camera to external triggering or not"""
+        was_streaming = self.is_streaming()  # Check if the camera was streaming initially
+        if external_trigger:
+            if was_streaming:
+                self.cam.stop_acquisition()
+            self.cam.set_trigger_source("XI_TRG_EDGE_RISING")  # Turn Trigger back on
+            self.cam.set_trigger_selector("XI_TRG_SEL_FRAME_START")  # Trigger on frame start
+            self.cam.set_acq_frame_burst_count(1)  # Single frame acquisition mode
+        else:  # Turn off external trigger mode in case it is already enabled
+            if was_streaming:
+                self.cam.stop_acquisition()
+            self.cam.set_trigger_source("XI_TRG_OFF")
+
+        # Restart acquisition if it was streaming initially
+        if was_streaming:
+            self.cam.start_acquisition()
+
     # Functions to control the camera streaming and check status.
 
     def is_streaming(self):
@@ -121,23 +144,28 @@ class XimeaCamera(GenericCamera):
             return False
 
     def begin_capturing(self, CameraConfig=None) -> None:
-        """Start camera streaming images."""
+        """Begin streaming images from the camera and configuring acquisition settings.
+        Acqusition mode set before acquisition begins. All others are applied afterwards."""
+        # Configure the camera settings
         if not self.cam.CAM_OPEN:
             self.cam.open_device_by_SN(self.serial_number)
             self.previous_frame_number = 0
-        if not self.is_streaming():
-            self.cam.start_acquisition()
-        # Configure the camera camera settigns
         if CameraConfig:
-            self.configure_settings(CameraConfig)
+            self.set_acqusition_mode(CameraConfig.external_trigger)
+        if not self.is_streaming():
+            try:
+                self.cam.start_acquisition()
+            except xiapi.Xi_error as e:
+                print("Error starting acqusition:", e)
+        if CameraConfig:
+            self.set_frame_rate(CameraConfig.fps)
+            self.set_gain(CameraConfig.gain)
+            self.set_exposure_time(CameraConfig.exposure_time)
 
     def stop_capturing(self) -> None:
         """Stop the camera from streaming"""
-        try:
-            self.cam.stop_acquisition()
-            self.cam.close_device()
-        except:
-            print("Error raised closing Ximea API")
+        self.cam.stop_acquisition()
+        self.cam.close_device()
 
     def close_api(self):
         """Close the Ximea API and release resources."""
@@ -206,6 +234,6 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
     return unique_id_list
 
 
-def initialise_camera_api(CameraSettingsConfig):
-    """Instantiate the XimeaCamera object based on the unique-id"""
-    return XimeaCamera(CameraConfig=CameraSettingsConfig)
+def initialise_camera_api(CameraConfig):
+    """Instantiate the XimeaCamera object"""
+    return XimeaCamera(CameraConfig=CameraConfig)

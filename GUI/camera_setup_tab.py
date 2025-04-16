@@ -3,6 +3,7 @@ import json
 from dataclasses import dataclass, asdict
 
 from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QWidget,
     QGroupBox,
@@ -16,10 +17,11 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
     QHeaderView,
     QMessageBox,
+    QCheckBox,
     QDialog,
 )
 
-from config.config import paths_config, default_camera_config
+from config.config import default_camera_config
 from .camera_widget import CameraWidget
 from camera_api import get_camera_ids, init_camera_api_from_module
 
@@ -34,23 +36,45 @@ class CameraSettingsConfig:
     exposure_time: float
     gain: float
     pixel_format: str
+    external_trigger: bool
     downsampling_factor: int
     pub_server_address: str
     pull_server_address: str
 
 
-class CamerasTab(QWidget):
+class TableCheckbox(QWidget):
+    """Checkbox that is centered in cell when placed in table."""
+
+    def __init__(self, parent=None):
+        super(QWidget, self).__init__(parent)
+        self.checkbox = QCheckBox(parent=parent)
+        self.layout = QHBoxLayout(self)
+        self.layout.addWidget(self.checkbox)
+        self.layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+
+    def isChecked(self):
+        return self.checkbox.isChecked()
+
+    def setChecked(self, state):
+        self.checkbox.setChecked(state)
+
+
+class CameraSetupTab(QWidget):
     """Tab for naming cameras and editing camera-level settings."""
 
     def __init__(self, parent=None):
-        super(CamerasTab, self).__init__(parent)
+        super(CameraSetupTab, self).__init__(parent)
         self.GUI = parent
-        self.saved_setups_filepath = os.path.join(paths_config["camera_dir"], "camera_configs.json")
+        self.saved_setups_filepath = os.path.join(self.GUI.paths_config["camera_dir"], "camera_configs.json")
         self.setups = {}  # Dict of setups: {Unique_id: Camera_table_item}
         self.preview_showing = False
+        self.camera_preview = None  # Place holder for camera preview widget
+        self.setups_changed = False  # Flag that is checked for handleing the camera setups being changed
+
         # Check if any cameras are connected
-        _, NO_CAMERAS_CONNECTED = get_camera_ids()
-        if NO_CAMERAS_CONNECTED:
+        _, CAMERAS_CONNECTED = get_camera_ids()
+        if not CAMERAS_CONNECTED:
             warning_box = QMessageBox()
             warning_box.setIcon(QMessageBox.Icon.Warning)
             warning_box.setText("No cameras connected.")
@@ -66,7 +90,7 @@ class CamerasTab(QWidget):
         # Initialise Refresh button
         self.refresh_layout = QHBoxLayout()
         self.refresh_cameras_button = QPushButton("Refresh camera list")
-        self.refresh_cameras_button.setIcon(QIcon(os.path.join(paths_config["icons_dir"], "refresh.svg")))
+        self.refresh_cameras_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "refresh.svg")))
         self.refresh_cameras_button.clicked.connect(self.refresh)
         self.refresh_cameras_button.setToolTip("Refresh the list of connected cameras")
         self.refresh_layout.addStretch()
@@ -81,16 +105,23 @@ class CamerasTab(QWidget):
         self.page_layout.addWidget(self.camera_table_groupbox)
         self.setLayout(self.page_layout)
 
-        # Load saved setup info.
-        if not os.path.exists(self.saved_setups_filepath):
-            self.saved_setups = []
+        if self.GUI.parsed_args.camera_config is None:
+            # Load saved setup info.
+            if not os.path.exists(self.saved_setups_filepath):
+                self.saved_setups = []
+            else:
+                with open(self.saved_setups_filepath, "r") as file:
+                    cams_list = json.load(file)
+                self.saved_setups = [
+                    CameraSettingsConfig(**{**default_camera_config, **cam_dict}) for cam_dict in cams_list
+                ]
         else:
-            with open(self.saved_setups_filepath, "r") as file:
-                cams_list = json.load(file)
-            self.saved_setups = [CameraSettingsConfig(**cam_dict) for cam_dict in cams_list]
-
+            # Load saved setups from JSON formatted string
+            cams_list = json.loads(self.GUI.parsed_args.camera_config)
+            self.saved_setups = [
+                CameraSettingsConfig(**{**default_camera_config, **cam_dict}) for cam_dict in cams_list
+            ]
         self.refresh()
-        self.setups_changed = False
 
     # Refresh timer / tab changing logic -------------------------------------------------------------------------------
 
@@ -104,7 +135,6 @@ class CamerasTab(QWidget):
         for unique_id in self.setups:
             if self.preview_showing:
                 self.setups[unique_id].close_preview_camera()
-            self.setups[unique_id].camera_api.stop_capturing()
 
     # Reading / Writing the Camera setups saved function --------------------------------------------------------
 
@@ -172,17 +202,19 @@ class CamerasTab(QWidget):
                 return setup.settings.unique_id
             elif setup.settings.unique_id == camera_label:
                 return setup.settings.unique_id
+        raise ValueError(f"No camera unique_id found for label: {camera_label}")
         return None
 
     def get_camera_settings_from_label(self, label: str) -> CameraSettingsConfig:
         """Get the camera settings config datastruct from the setups table."""
         for setup in self.setups.values():
-            if setup.settings.name is None:
-                query_label = setup.settings.unique_id
-            else:
-                query_label = setup.settings.name
-            if query_label == label:
+            # if setup.settings.name is None:
+            #     query_label = setup.settings.unique_id
+            # else:
+            #     query_label = setup.settings.name
+            if label in [setup.settings.name, setup.settings.unique_id]:
                 return setup.settings
+        raise ValueError(f"No camera settings found for label: {label}")
         return None
 
 
@@ -200,6 +232,7 @@ class CameraOverviewTable(QTableWidget):
             "Gain (dB)",
             "Pixel Format",
             "Downsample Factor",
+            "External Trigger",
             "",
             "Camera Preview",
         ]
@@ -222,30 +255,8 @@ class CameraOverviewTable(QTableWidget):
 class Camera_table_item:
     """Class representing single camera in the Camera Tab table."""
 
-    def __init__(
-        self,
-        setups_table,
-        name,
-        unique_id,
-        fps,
-        exposure_time,
-        gain,
-        pixel_format,
-        downsampling_factor,
-        pub_server_address,
-        pull_server_address,
-    ):
-        self.settings = CameraSettingsConfig(
-            name=name,
-            unique_id=unique_id,
-            fps=fps,
-            downsampling_factor=downsampling_factor,
-            exposure_time=exposure_time,
-            gain=gain,
-            pixel_format=pixel_format,
-            pub_server_address=pub_server_address,
-            pull_server_address=pull_server_address,
-        )
+    def __init__(self, setups_table, **kwargs):
+        self.settings = CameraSettingsConfig(**kwargs)
 
         self.setups_table = setups_table
         self.setups_tab = setups_table.setups_tab
@@ -258,7 +269,7 @@ class Camera_table_item:
             self.name_edit.setText(self.settings.name)
         else:
             self.name_edit.setPlaceholderText("Set a name")
-        self.name_edit.editingFinished.connect(self.camera_name_changed)
+        self.name_edit.textChanged.connect(self.camera_name_changed)
 
         # ID edit
         self.unique_id_edit = QLineEdit()
@@ -270,7 +281,7 @@ class Camera_table_item:
         self.fps_edit = QSpinBox()
         # Set the min and max values of the spinbox
         self.fps_edit.setRange(*self.camera_api.get_frame_rate_range(self.settings.exposure_time))
-        self.fps_edit.setMaximum(120)
+        self.fps_edit.setEnabled(not self.settings.external_trigger)
         if self.settings.fps:
             self.settings.fps = str(self.settings.fps)
             self.fps_edit.setValue(int(self.settings.fps))
@@ -293,7 +304,7 @@ class Camera_table_item:
         self.gain_edit.setEnabled(self.camera_api.manual_control_enabled)
         # Pixel format edit
         self.pixel_format_edit = QComboBox()
-        self.pixel_format_edit.addItem(self.camera_api.pixel_format)
+        self.pixel_format_edit.addItems(list(self.camera_api.pixel_format_map.keys()))
         if self.settings.pixel_format:
             self.pixel_format_edit.setCurrentText(self.settings.pixel_format)
 
@@ -320,9 +331,17 @@ class Camera_table_item:
 
         # More settings button
         self.more_settings_button = QPushButton("")
-        self.more_settings_button.setIcon(QIcon(os.path.join(paths_config["icons_dir"], "three_dots.svg")))
+        self.more_settings_button.setIcon(
+            QIcon(os.path.join(self.setups_tab.GUI.paths_config["icons_dir"], "three_dots.svg"))
+        )
         self.more_settings_button.clicked.connect(self.open_more_settings)
         self.more_settings_button.setToolTip("Open additional camera server settings")
+
+        # External Trigger Check box
+        self.external_trigger_checkbox = TableCheckbox()
+        if self.settings.external_trigger:
+            self.external_trigger_checkbox.setChecked(bool(self.settings.external_trigger))
+        self.external_trigger_checkbox.checkbox.stateChanged.connect(self.camera_external_trigger_changed)
 
         # Preview button.
         self.preview_camera_button = QPushButton("Preview")
@@ -340,12 +359,24 @@ class Camera_table_item:
         self.setups_table.setCellWidget(0, 4, self.gain_edit)
         self.setups_table.setCellWidget(0, 5, self.pixel_format_edit)
         self.setups_table.setCellWidget(0, 6, self.downsampling_factor_edit)
-        self.setups_table.setCellWidget(0, 7, self.more_settings_button)
-        self.setups_table.setCellWidget(0, 8, self.preview_camera_button)
+        self.setups_table.setCellWidget(0, 7, self.external_trigger_checkbox)
+        self.setups_table.setCellWidget(0, 9, self.preview_camera_button)
+        self.setups_table.setCellWidget(0, 8, self.more_settings_button)
+
+    # Helper function
+
+    def current_camera_preview_showing(self):
+        """Check if the preview is currently showing for this camera."""
+        if self.setups_tab.camera_preview:
+            return self.setups_tab.camera_preview.label == self.get_label()
+        return False
+
+    ################### Attribute Changed Functions ##################################
 
     def camera_name_changed(self):
         """Called when name text of setup is edited."""
         name = str(self.name_edit.text())
+
         if name and name not in [
             setup.settings.name
             for setup in self.setups_tab.setups.values()
@@ -358,6 +389,8 @@ class Camera_table_item:
             self.name_edit.setPlaceholderText("Set a name")
         self.setups_tab.update_saved_setups(setup=self)
         self.setups_tab.setups_changed = True
+        if self.current_camera_preview_showing():
+            self.setups_tab.camera_preview.update_viewfinder_text()
 
     def get_label(self):
         """Return name if defined else unique ID."""
@@ -369,7 +402,7 @@ class Camera_table_item:
         """Called when fps text of setup is edited."""
         self.settings.fps = int(self.fps_edit.text())
         self.setups_tab.update_saved_setups(setup=self)
-        if self.setups_tab.preview_showing:
+        if self.current_camera_preview_showing():
             self.setups_tab.camera_preview.camera_api.set_frame_rate(self.settings.fps)
         self.exposure_time_edit.setRange(*self.camera_api.get_exposure_time_range(self.settings.fps))
 
@@ -377,7 +410,7 @@ class Camera_table_item:
         """"""
         self.settings.exposure_time = int(self.exposure_time_edit.text())
         self.setups_tab.update_saved_setups(setup=self)
-        if self.setups_tab.preview_showing:
+        if self.current_camera_preview_showing():
             self.setups_tab.camera_preview.camera_api.set_exposure_time(self.settings.exposure_time)
         self.fps_edit.setRange(*self.camera_api.get_frame_rate_range(self.settings.exposure_time))
 
@@ -385,15 +418,26 @@ class Camera_table_item:
         """"""
         self.settings.gain = float(self.gain_edit.text())
         self.setups_tab.update_saved_setups(setup=self)
-        if self.setups_tab.preview_showing:
+        if self.current_camera_preview_showing():
             self.setups_tab.camera_preview.camera_api.set_gain(self.settings.gain)
 
     def camera_pixel_format_changed(self):
         """Change the pixel format"""
         self.settings.pixel_format = self.pixel_format_edit.currentText()
         self.setups_tab.update_saved_setups(setup=self)
-        if self.setups_tab.preview_showing:
+        if self.current_camera_preview_showing():
             self.setups_tab.camera_preview.camera_api.set_pixel_format(self.settings.pixel_format)
+
+    def camera_external_trigger_changed(self):
+        """Change if the camera is"""
+        self.settings.external_trigger = self.external_trigger_checkbox.isChecked()
+        self.setups_tab.update_saved_setups(setup=self)
+        # Restart the preview if open
+        if self.current_camera_preview_showing():
+            self.setups_tab.camera_preview.camera_api.set_acqusition_mode(self.settings.external_trigger)
+            self.setups_tab.camera_preview.update_viewfinder_text()
+        # FPS spin box only enabled if external trigger not enabled.
+        self.fps_edit.setEnabled(not self.settings.external_trigger)
 
     # FFMPEG Parameters -----------------------------------------------------------------------
 
@@ -414,7 +458,7 @@ class Camera_table_item:
         self.setups_tab.refresh()
         if self.setups_tab.preview_showing:
             self.close_preview_camera()
-        self.setups_tab.camera_preview = CameraWidget(self.setups_tab, self.get_label(), preview_mode=True)
+        self.setups_tab.camera_preview = CameraWidget(self.setups_tab, label=self.get_label(), preview_mode=True)
         self.setups_tab.camera_preview.begin_capturing()
         self.setups_tab.page_layout.addWidget(self.setups_tab.camera_preview)
         self.setups_tab.preview_showing = True

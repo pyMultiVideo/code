@@ -46,7 +46,8 @@ default_camera_config = {
     "downsampling_factor": 1,
     "exposure_time": 15000,
     "gain": 0,
-    "pixel_format": "Mono8",
+    "external_trigger": False,
+    "pixel_format": "Mono",
     "pub_server_address": None,  # Name of the local address that the camera can push data to
     "pull_server_address": None,  # Name of the local address that the camera will look for data from
 }
