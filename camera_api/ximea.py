@@ -41,7 +41,6 @@ class XimeaCamera(GenericCamera):
         # Manual Control of camera
         self.cam.disable_aeag()  # Automatic exposure gain disabled
         self.cam.set_acq_timing_mode("XI_ACQ_TIMING_MODE_FRAME_RATE")  # Manual Framerate control
-        # self.cam.set_buffer_policy("XI_BP_SAFE")  # Set buffer policy to safe mode
         if not self.cam.CAM_OPEN:  # Set the buffer size. Requires the camera to be open to set.
             self.cam.open_device_by_SN(self.serial_number)
             self.previous_frame_number = 0
@@ -97,10 +96,9 @@ class XimeaCamera(GenericCamera):
 
     def get_camera_pixel_format(self) -> str:
         """Get string specifying camera pixel format"""
-        # return self.cam.get_param('pixel_format')
         return self.cam.get_transport_pixel_format()
 
-    # Functions to set camera parameters.
+    # Functions to set camera parameters --------------------------------------------------------
 
     def set_frame_rate(self, frame_rate):
         """Set the frame rate of the camera in Hz indirectly by setting the exposure time."""
@@ -114,10 +112,10 @@ class XimeaCamera(GenericCamera):
         """Set gain (dB)"""
         self.cam.set_gain(gain)
 
-    # Configuring Acqusition mode
+    # Configuring Acqusition mode -----------------------------------------------------------------
 
     def set_acqusition_mode(self, external_trigger: bool):
-
+        """Setting the camera to external triggering or not"""
         was_streaming = self.is_streaming()  # Check if the camera was streaming initially
         if external_trigger:
             if was_streaming:
@@ -145,14 +143,9 @@ class XimeaCamera(GenericCamera):
         except xiapi.Xi_error:
             return False
 
-    def configure_settings(self, CameraConfig):
-        """Configure all settings from CameraConfig."""
-        self.set_frame_rate(CameraConfig.fps)
-        self.set_gain(CameraConfig.gain)
-        self.set_exposure_time(CameraConfig.exposure_time)
-
     def begin_capturing(self, CameraConfig=None) -> None:
-        """Start camera streaming images."""
+        """Begin streaming images from the camera and configuring acquisition settings.
+        Acqusition mode set before acquisition begins. All others are applied afterwards."""
         # Configure the camera settings
         if not self.cam.CAM_OPEN:
             self.cam.open_device_by_SN(self.serial_number)
@@ -165,7 +158,9 @@ class XimeaCamera(GenericCamera):
             except xiapi.Xi_error as e:
                 print("Error starting acqusition:", e)
         if CameraConfig:
-            self.configure_settings(CameraConfig)
+            self.set_frame_rate(CameraConfig.fps)
+            self.set_gain(CameraConfig.gain)
+            self.set_exposure_time(CameraConfig.exposure_time)
 
     def stop_capturing(self) -> None:
         """Stop the camera from streaming"""
