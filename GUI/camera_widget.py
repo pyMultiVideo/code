@@ -10,7 +10,17 @@ import json
 import pyqtgraph as pg
 from PyQt6.QtCore import QTimer, pyqtSignal
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QComboBox, QGroupBox, QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLayout, QMessageBox
+from PyQt6.QtWidgets import (
+    QComboBox,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QTextEdit,
+    QVBoxLayout,
+    QMessageBox,
+    QGraphicsRectItem,
+)
 
 from .data_recorder import Data_recorder
 from .image_socket import Image_socket
@@ -390,7 +400,7 @@ class CameraWidget(QGroupBox):
             if hasattr(self, "current_rect_item") and self.current_rect_item is not None:
                 self.video_view_box.removeItem(self.current_rect_item)
             # Create a new rectangle item to overlay on the video display
-            rect_item = pg.QtGui.QGraphicsRectItem(x1, y1, x2 - x1, y2 - y1)
+            rect_item = QGraphicsRectItem(x1, y1, x2 - x1, y2 - y1)
             rect_item.setPen(pg.mkPen(color=color, width=2))  # Set rectangle color and thickness
             # Add the rectangle item to the video view box
             self.video_view_box.addItem(rect_item)
@@ -458,8 +468,13 @@ class CameraWidget(QGroupBox):
         if msg is None:
             return
         else:
-            self.draw_box()
-        pass
+            # Parse the received message
+            # msg_data = json.loads(msg)
+            msg_data = msg
+            if "DRAW_BOX" in msg_data:
+                top_left = tuple(msg_data["DRAW_BOX"]["TOP_LEFT"])
+                lower_right = tuple(msg_data["DRAW_BOX"]["BOTTOM_RIGHT"])
+                self.draw_box(top_left=top_left, lower_right=lower_right, color="yellow")
 
     ### Config related functions ------------------------------------------------------
 
