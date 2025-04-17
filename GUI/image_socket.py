@@ -19,10 +19,10 @@ class Image_socket:
         """Put msg in socket"""
         self.pub_socket.send_string(msg)
 
-    def get(self):
+    def get(self, timeout):
         """Try to recieve data in the pull socket"""
         try:
-            if self.pull_address.poll(timeout=1):
+            if self.pull_address.poll(timeout=timeout):
                 msg = self.pull_address.recv_json()
                 return msg
         except zmq.Again:

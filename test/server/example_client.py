@@ -19,7 +19,6 @@ print("Client started...")
 
 
 while True:
-    # if sub_socket.poll(timeout=1):
     if sub_socket.poll(timeout=1000):  # Wait for 1 second
         msg = sub_socket.recv()
         msg = json.loads(msg.decode("utf-8"))

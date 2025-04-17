@@ -464,8 +464,11 @@ class CameraWidget(QGroupBox):
         self.socket.put(json.dumps(msg))
 
     def pull_from_socket(self):
-        msg = self.socket.get()
+        msg = self.socket.get(timeout=0)
         if msg is None:
+            if hasattr(self, "current_rect_item"):
+                self.video_view_box.removeItem(self.current_rect_item)
+                del self.current_rect_item
             return
         else:
             # Parse the received message
