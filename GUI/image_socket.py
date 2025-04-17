@@ -15,9 +15,9 @@ class Image_socket:
         self.pull_address = self.context.socket(zmq.PULL)
         self.pull_address.bind(pull_address)
 
-    def put(self, msg):
-        # image should be wrapped in a dictionary, with the name of the camera it came from
-        self.pub_socket.send(msg)
+    def put(self, msg: str):
+        """Put msg in socket"""
+        self.pub_socket.send_string(msg)
 
     def get(self):
         """Try to recieve data in the pull socket"""

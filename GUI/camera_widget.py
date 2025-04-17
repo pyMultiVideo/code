@@ -5,6 +5,7 @@ from datetime import datetime
 from dataclasses import dataclass
 from collections import deque
 import base64
+import json
 
 import pyqtgraph as pg
 from PyQt6.QtCore import QTimer, pyqtSignal
@@ -151,7 +152,7 @@ class CameraWidget(QGroupBox):
 
         # Server start button
         self.toggle_socket_button = QPushButton("")
-        self.toggle_socket_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "up_down.svg")))
+        self.toggle_socket_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "plug-connected.svg")))
         self.toggle_socket_button.setFixedWidth(30)
         self.toggle_socket_button.clicked.connect(self.open_socket)
 
@@ -426,27 +427,31 @@ class CameraWidget(QGroupBox):
         # Change the start_server_button to be connected to the stop server
         self.toggle_socket_button.clicked.disconnect(self.open_socket)
         self.toggle_socket_button.clicked.connect(self.close_socket)
-        self.toggle_socket_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "stop_up_down.svg")))
+        self.toggle_socket_button.setIcon(
+            QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "plug-disconnected.svg"))
+        )
 
     def close_socket(self):
         self.socket.close()
         # Stop timers
-        self.socket_pub_timer.stop()  
+        self.socket_pub_timer.stop()
         self.socket_pulll_timer.stop()
         self.toggle_socket_button.clicked.disconnect(self.close_socket)
         self.toggle_socket_button.clicked.connect(self.open_socket)
-        self.toggle_socket_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "up_down.svg")))
+        self.toggle_socket_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "plug-connected.svg")))
 
     def put_in_socket(self):
         """Puts the latest image in the server"""
         # Construct message
         msg = {
-            "unique_id": str(self.camera_widget.settings.unique_id),
+            "unique_id": str(self.settings.unique_id),
             "timestamp": self.frame_timestamps[-1],
-            "image": base64.b64encode(self.latest_image.tobytes()).decode("utf-8"),
+            "image": base64.b64encode(np.array(self.latest_image).tobytes()).decode("utf-8"),
+            "height": self.camera_height,
+            "width": self.camera_width,
         }
-        # Put message in socket
-        self.socket.put(msg)
+        # Put JSON formatted string into the socket
+        self.socket.put(json.dumps(msg))
 
     def pull_from_socket(self):
         msg = self.socket.get()
