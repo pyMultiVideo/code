@@ -52,9 +52,6 @@ while True:
                 faces, key=lambda rect: rect[2] * rect[3]
             )  # rect[2] * rect[3] is the area of the rectangle
             x, y, w, h = largest_face
-            face_box = {"TOP_LEFT": [int(x), int(y)], "BOTTOM_RIGHT": [int(x + w), int(y + h)]}
-
-            # Include the most likely face in the message
-            msg = {"DRAW_BOX": face_box}
+            msg = {"DRAW_BOX": {"TOP_LEFT": [int(x), int(y)], "BOTTOM_RIGHT": [int(x + w), int(y + h)]}}
             print("Sending message")
             push_socket.send_string(json.dumps(msg))

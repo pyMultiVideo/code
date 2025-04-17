@@ -382,7 +382,7 @@ class CameraWidget(QGroupBox):
             scale_factor = 1.1 if direction == "Wheel scrolled up" else 1 / 1.1
             self.video_view_box.scaleBy((scale_factor, scale_factor))
 
-    def draw_box(self, top_left: tuple, lower_right: tuple, color):
+    def draw_box(self, top_left: tuple, lower_right: tuple, color="red"):
         """Draw a box on the image if the box is within the image boundaries."""
         if self.latest_image is None:
             return
@@ -464,7 +464,7 @@ class CameraWidget(QGroupBox):
         self.socket.put(json.dumps(msg))
 
     def pull_from_socket(self):
-        msg = self.socket.get(timeout=0)
+        msg = self.socket.get(timeout=0)  # Spend minimum time looking for images in the queue.
         if msg is None:
             if hasattr(self, "current_rect_item"):
                 self.video_view_box.removeItem(self.current_rect_item)
@@ -477,7 +477,7 @@ class CameraWidget(QGroupBox):
             if "DRAW_BOX" in msg_data:
                 top_left = tuple(msg_data["DRAW_BOX"]["TOP_LEFT"])
                 lower_right = tuple(msg_data["DRAW_BOX"]["BOTTOM_RIGHT"])
-                self.draw_box(top_left=top_left, lower_right=lower_right, color="yellow")
+                self.draw_box(top_left=top_left, lower_right=lower_right)
 
     ### Config related functions ------------------------------------------------------
 
