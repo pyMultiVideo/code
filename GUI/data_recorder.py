@@ -5,7 +5,6 @@ import shutil
 import subprocess
 import numpy as np
 from datetime import datetime
-
 # Check GPU availibility for video encode and set which encoders to use.
 
 try:
@@ -77,28 +76,35 @@ class Data_recorder:
         # Initalise ffmpeg process
         self.downsampled_width = self.camera_widget.camera_width // self.settings.downsampling_factor
         self.downsampled_height = self.camera_widget.camera_height // self.settings.downsampling_factor
-        ffmpeg_command = " ".join(
-            [
-                self.camera_widget.GUI.ffmpeg_path,  # Path to binary
-                "-f rawvideo",  # Input codec (raw video)
-                f"-s {self.camera_widget.camera_width}x{self.camera_widget.camera_height}",  # Input frame size
-                f"-pix_fmt {self.camera_widget.camera_api.supported_pixel_formats[self.settings.pixel_format]}",  # Input Pixel Format: 8-bit grayscale input to ffmpeg process. Input array 1D
-                f"-r {self.settings.fps}",  # Frame rate
-                "-i -",  # input comes from a pipe (stdin)
-                f"-c:v {ffmpeg_encoder_map[self.camera_widget.GUI.ffmpeg_config['compression_standard']]}",  # Output codec
-                f"-s {self.downsampled_width}x{self.downsampled_height}",  # Output frame size after any downsampling.
-                "-pix_fmt yuv420p",  # Output pixel format
-                f"-preset {self.camera_widget.GUI.ffmpeg_config['encoding_speed']}",  # Encoding speed [fast, medium, slow]
-                f"-b:v 0 ",  # Encoder uses variable bit rate https://superuser.com/questions/1236275/how-can-i-use-crf-encoding-with-nvenc-in-ffmpeg
-                (
-                    f"-cq {self.camera_widget.GUI.ffmpeg_config['crf']}"
-                    if GPU_AVAILABLE
-                    else f"-crf {self.camera_widget.GUI.ffmpeg_config['crf']}"
-                ),  # Controls quality vs filesize
-                f'"{self.video_filepath}"',  # Output file path
-            ]
-        )
-        print("FFMPEG_CONFIG", self.camera_widget.GUI.ffmpeg_config)
+        ffmpeg_command = [
+            self.camera_widget.GUI.ffmpeg_path,  # Path to binary
+            "-f",
+            "rawvideo",  # Input codec (raw video)
+            "-s",
+            f"{self.camera_widget.camera_width}x{self.camera_widget.camera_height}",  # Input frame size
+            "-pix_fmt",
+            f"{self.camera_widget.camera_api.supported_pixel_formats[self.settings.pixel_format]}",  # Input Pixel Format: 8-bit grayscale input to ffmpeg process. Input array 1D
+            "-r",
+            f"{self.settings.fps}",  # Frame rate
+            f"-i",
+            "-",  # input comes from a pipe (stdin)
+            "-c:v",
+            f"{ffmpeg_encoder_map[self.camera_widget.GUI.ffmpeg_config['compression_standard']]}",  # Output codec
+            "-s",
+            f"{self.downsampled_width}x{self.downsampled_height}",  # Output frame size after any downsampling.
+            "-pix_fmt",
+            f"yuv420p",  # Output pixel format
+            "-preset",
+            f"{self.camera_widget.GUI.ffmpeg_config['encoding_speed']}",  # Encoding speed [fast, medium, slow]
+            f"-b:v",
+            "0",  # Encoder uses variable bit rate https://superuser.com/questions/1236275/how-can-i-use-crf-encoding-with-nvenc-in-ffmpeg
+            "-cq" if GPU_AVAILABLE else "-crf",
+            f"{self.camera_widget.GUI.ffmpeg_config['crf']}",  # Controls quality vs filesize
+            f"{self.video_filepath}",  # Output file path
+        ]
+
+        # print("FFMPEG_CONFIG", sxelf.camera_widget.GUI.ffmpeg_config)
+        print("FFMPEG_COMMAND", ffmpeg_command)
         self.ffmpeg_process = subprocess.Popen(ffmpeg_command, stdin=subprocess.PIPE)
 
     def stop_recording(self) -> None:
