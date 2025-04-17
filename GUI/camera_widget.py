@@ -4,7 +4,7 @@ import numpy as np
 from datetime import datetime
 from dataclasses import dataclass
 from collections import deque
-import multiprocessing
+import base64
 
 import pyqtgraph as pg
 from PyQt6.QtCore import QTimer, pyqtSignal
@@ -12,7 +12,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QComboBox, QGroupBox, QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLayout, QMessageBox
 
 from .data_recorder import Data_recorder
-from .image_server import Image_server
+from .image_socket import Image_socket
 from camera_api import init_camera_api_from_module
 
 
@@ -150,10 +150,10 @@ class CameraWidget(QGroupBox):
         self.stop_recording_button.setToolTip("Stop Recording")
 
         # Server start button
-        self.toggle_server_button = QPushButton("")
-        self.toggle_server_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "up_down.svg")))
-        self.toggle_server_button.setFixedWidth(30)
-        self.toggle_server_button.clicked.connect(self.start_server)
+        self.toggle_socket_button = QPushButton("")
+        self.toggle_socket_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "up_down.svg")))
+        self.toggle_socket_button.setFixedWidth(30)
+        self.toggle_socket_button.clicked.connect(self.open_socket)
 
         # Camera select dropdown
         self.camera_id_label = QLabel("Camera:")
@@ -168,7 +168,7 @@ class CameraWidget(QGroupBox):
         self.header_layout.addWidget(self.camera_dropdown)
         self.header_layout.addWidget(self.subject_id_label)
         self.header_layout.addWidget(self.subject_id_text)
-        self.header_layout.addWidget(self.toggle_server_button)
+        self.header_layout.addWidget(self.toggle_socket_button)
         self.header_layout.addWidget(self.start_recording_button)
         self.header_layout.addWidget(self.stop_recording_button)
 
@@ -194,7 +194,6 @@ class CameraWidget(QGroupBox):
         """Start streaming video from camera."""
         self.dropped_frames = 0
         self.recording = False
-        self.server_available = False
         # Begin capturing using the camera API
         self.camera_api.begin_capturing(self.settings)
 
@@ -202,8 +201,8 @@ class CameraWidget(QGroupBox):
         """Stop streaming video from camera."""
         if self.recording:
             self.stop_recording()
-        if self.server_available:
-            self.stop_server()
+        if self.socket:
+            self.close_socket()
         self.camera_api.stop_capturing()
 
     def fetch_image_data(self):
@@ -372,50 +371,90 @@ class CameraWidget(QGroupBox):
             scale_factor = 1.1 if direction == "Wheel scrolled up" else 1 / 1.1
             self.video_view_box.scaleBy((scale_factor, scale_factor))
 
-    def draw_box(self, box_dict=None):
-        """At some rate, draw a box on the image as defined by some coordinates"""
-        pass
+    def draw_box(self, top_left: tuple, lower_right: tuple, color):
+        """Draw a box on the image if the box is within the image boundaries."""
+        if self.latest_image is None:
+            return
+        # Unpack the coordinates
+        x1, y1 = top_left
+        x2, y2 = lower_right
+        # Ensure the coordinates are within the image boundaries
+        if (
+            0 <= x1 < self.camera_width
+            and 0 <= y1 < self.camera_height
+            and 0 <= x2 < self.camera_width
+            and 0 <= y2 < self.camera_height
+        ):
+            # Remove the previous rectangle if it exists
+            if hasattr(self, "current_rect_item") and self.current_rect_item is not None:
+                self.video_view_box.removeItem(self.current_rect_item)
+            # Create a new rectangle item to overlay on the video display
+            rect_item = pg.QtGui.QGraphicsRectItem(x1, y1, x2 - x1, y2 - y1)
+            rect_item.setPen(pg.mkPen(color=color, width=2))  # Set rectangle color and thickness
+            # Add the rectangle item to the video view box
+            self.video_view_box.addItem(rect_item)
+            # Store the current rectangle item for future reference
+            self.current_rect_item = rect_item
 
-    # Server Controls -----------------------------------------------------------------
+    # Socket Controls -----------------------------------------------------------------
 
-    def start_server(self):
-        # Create server instance
-        self.server = Image_server(
-            camera_widget=self,
-            pub_socket=self.settings.pub_server_address,
-            pull_socket=self.settings.pull_server_address,
+    def open_socket(self):
+        # Show a confirmation dialog box
+        reply = QMessageBox.question(
+            self,
+            "Start Server",
+            f"Are you sure you want to start the publishing the data to: {self.settings.pub_server_address}?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
-        # Create timer
-        self.server_pub_timer = QTimer()
-        self.server_pub_timer.timeout.connect(self.put_in_server)
-        self.server_pub_timer.start(int(1000 / self.GUI.server_config["put_rate"]))
-        self.server_available = True  # Flag on
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        # Create zmq socket instance
+        self.socket = Image_socket(
+            camera_widget=self,
+            pub_address=self.settings.pub_server_address,
+            pull_address=self.settings.pull_server_address,
+        )
+        # Create timer for the rate of putting images into socket
+        self.socket_pub_timer = QTimer()
+        self.socket_pub_timer.timeout.connect(self.put_in_socket)
+        self.socket_pub_timer.start(int(1000 / self.GUI.server_config["put_rate"]))
+        # Create timer for the rate of getting images from the socket
+        self.socket_pulll_timer = QTimer()
+        self.socket_pulll_timer.timeout.connect(self.pull_from_socket)
+        self.socket_pulll_timer.start(int(1000 / self.GUI.server_config["pull_rate"]))
         # Change the start_server_button to be connected to the stop server
-        self.toggle_server_button.clicked.disconnect(self.start_server)
-        self.toggle_server_button.clicked.connect(self.stop_server)
-        self.toggle_server_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "stop_up_down.svg")))
+        self.toggle_socket_button.clicked.disconnect(self.open_socket)
+        self.toggle_socket_button.clicked.connect(self.close_socket)
+        self.toggle_socket_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "stop_up_down.svg")))
 
-    def stop_server(self):
-        # Removed server instance
-        self.server.close()  # Close the server object
-        self.server_pub_timer.stop()  # Stop the timer
-        self.server_available = False  # Flag off
-        self.toggle_server_button.clicked.disconnect(self.stop_server)
-        self.toggle_server_button.clicked.connect(self.start_server)
-        self.toggle_server_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "up_down.svg")))
+    def close_socket(self):
+        self.socket.close()
+        # Stop timers
+        self.socket_pub_timer.stop()  
+        self.socket_pulll_timer.stop()
+        self.toggle_socket_button.clicked.disconnect(self.close_socket)
+        self.toggle_socket_button.clicked.connect(self.open_socket)
+        self.toggle_socket_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "up_down.svg")))
 
-    def put_in_server(self):
+    def put_in_socket(self):
         """Puts the latest image in the server"""
-        if self.server_available:
-            self.server.put(self.latest_image)
+        # Construct message
+        msg = {
+            "unique_id": str(self.camera_widget.settings.unique_id),
+            "timestamp": self.frame_timestamps[-1],
+            "image": base64.b64encode(self.latest_image.tobytes()).decode("utf-8"),
+        }
+        # Put message in socket
+        self.socket.put(msg)
 
-    def pull_from_server(self):
-        if self.server_available:
-            # Poll from the server
-
-            # If you recieve something draw it
+    def pull_from_socket(self):
+        msg = self.socket.get()
+        if msg is None:
+            return
+        else:
             self.draw_box()
-            pass
+        pass
 
     ### Config related functions ------------------------------------------------------
 

@@ -22,6 +22,7 @@ ffmpeg_config = {
 
 server_config = {
     "put_rate": 10,  # Controls the rate at which the camera widget sends images to the server
+    "pull_rate": 10, # Control the rate at which the camera widget polls the socket to look for json formatted strings
     "server_buffer_size": 10,  # Length of the sever buffer
 }
 
