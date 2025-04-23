@@ -64,6 +64,8 @@ def parse_args():
 
 check_module("PyQt6")
 check_module("pyqtgraph")
+check_module("zmq")
+check_module("msgpack")
 
 # Import GUI now that dependancies are verified.
 import PyQt6.QtWidgets as QtWidgets

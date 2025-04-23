@@ -15,9 +15,15 @@ class Image_socket:
         self.pull_address = self.context.socket(zmq.PULL)
         self.pull_address.bind(pull_address)
 
-    def put(self, msg: str):
-        """Put msg in socket"""
-        self.pub_socket.send_string(msg)
+    def send(self, topic, msgpacked_metadata, image_bytes):
+        """Send a message using the send_multipart
+
+        Args:
+            topic (bytes): The type of data being send to the socket
+            metadata (bytes): Dictionary of the metadata being sent
+            image (bytes): bytes array of the data being sent to the PUB socket
+        """
+        self.pub_socket.send_multipart([topic, msgpacked_metadata, image_bytes])
 
     def get(self, timeout):
         """Try to recieve data in the pull socket"""

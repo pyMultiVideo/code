@@ -10,3 +10,5 @@ _installation/SDK/*
 _installation/miniconda.exe
 _installation/spinview/spinnakerSDK.exe
 config/camera_configs.json
+test/SLEAP/models/
+test/SLEAP/video/
