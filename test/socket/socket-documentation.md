@@ -79,7 +79,7 @@ You might like to send some visual information indicating the location of a dete
 The message must be formatted in the following way, otherwise, it will not be displayed.
 
 ```python
-{"DRAW_BOX": {"TOP_LEFT": [int(x), int(y)], "BOTTOM_RIGHT": [int(x + w), int(y + h)]}}
+{"DRAW_RECT": {"TOP_LEFT": [int(x), int(y)], "BOTTOM_RIGHT": [int(x + w), int(y + h)]}}
 ```
 
 If this information stops being sent to pyMutliVideo's pull socket, then the rectangles will stop being displayed and eventually deleted from the screen.
@@ -87,3 +87,8 @@ If this information stops being sent to pyMutliVideo's pull socket, then the rec
 ## Examples
 
 In this directory, there is an example of a minimal script demonstrating the ability to do face tracking and displaying the location of the face on the display output.
+
+This example requires that you download the centroid model and create a SLEAP environment in which you run the example to show it performance. 
+
+![performance](../SLEAP/inference_times_plot.png)
+*PERFORMANCE EVALUATION RUNNING ON MPS Metal*
