@@ -8,8 +8,8 @@ import json
 sns.set_style("ticks")
 
 # Test name
-test_name = "test-with-fps"
-data_folder = Path("..") / "data"
+test_name = "test-small"
+data_folder = Path(".") / "data"
 
 results_df = data_folder / test_name / "results.tsv"
 testing_parameters = data_folder / test_name / "testing_parameters.json"
@@ -35,7 +35,13 @@ fig.subplots_adjust(hspace=0.5, wspace=0.5)
 # Camera Config Settings
 axes[0, 0].set_title("Number of Cameras")
 sns.lineplot(
-    ax=axes[0, 0], data=df, x="n_cameras", y="percent_dropped_frames", hue="n_cameras", marker="o", legend=True
+    ax=axes[0, 0],
+    data=df,
+    x="experiment_config_n_cameras",
+    y="percent_dropped_frames",
+    hue="experiment_config_n_cameras",
+    marker="o",
+    legend=True,
 )
 axes[0, 0].xaxis.set_major_locator(plt.MaxNLocator(integer=True))
 axes[0, 0].set_xlabel("Number of Cameras")
@@ -47,7 +53,7 @@ sns.lineplot(
     data=df,
     x="downsampling_factor",
     y="percent_dropped_frames",
-    hue="n_cameras",
+    hue="experiment_config_n_cameras",
     marker="o",
     legend=False,
 )
@@ -55,7 +61,15 @@ axes[0, 1].set_xlabel("Downsample Factor")
 axes[0, 1].set_ylabel("Dropped Frames (%)")
 
 axes[0, 2].set_title("Frames per Second vs Dropped Frames (%)")
-sns.lineplot(ax=axes[0, 2], data=df, x="fps", y="percent_dropped_frames", hue="n_cameras", marker="o", legend=False)
+sns.lineplot(
+    ax=axes[0, 2],
+    data=df,
+    x="FPS",
+    y="percent_dropped_frames",
+    hue="experiment_config_n_cameras",
+    marker="o",
+    legend=False,
+)
 axes[0, 2].set_xlabel("Frames per Second")
 axes[0, 2].set_ylabel("Dropped Frames (%)")
 
@@ -64,9 +78,9 @@ axes[1, 0].set_title("Camera Updates")
 sns.lineplot(
     ax=axes[1, 0],
     data=df,
-    x="camera_update_rate",
+    x="application_config_gui_config_camera_update_rate",
     y="percent_dropped_frames",
-    hue="n_cameras",
+    hue="experiment_config_n_cameras",
     marker="o",
     legend=False,
 )
@@ -77,9 +91,9 @@ axes[1, 1].set_title("Camera Updates Per Display Update vs Dropped Frames (%)")
 sns.lineplot(
     ax=axes[1, 1],
     data=df,
-    x="camera_updates_per_display_update",
+    x="application_config_gui_config_camera_updates_per_display_update",
     y="percent_dropped_frames",
-    hue="n_cameras",
+    hue="experiment_config_n_cameras",
     marker="o",
     legend=False,
 )
@@ -90,17 +104,39 @@ axes[1, 2].axis("off")
 
 # FFMPEG settings plots
 axes[2, 0].set_title("CRF")
-sns.lineplot(ax=axes[2, 0], data=df, x="crf", y="percent_dropped_frames", hue="n_cameras", marker="o", legend=False)
+sns.lineplot(
+    ax=axes[2, 0],
+    data=df,
+    x="application_config_ffmpeg_config_crf",
+    y="percent_dropped_frames",
+    hue="experiment_config_n_cameras",
+    marker="o",
+    legend=False,
+)
 axes[2, 0].set_xlabel("CRF")
 axes[2, 0].set_ylabel("Dropped Frames (%)")
 
 axes[2, 1].set_title("Encoding Speed by Number of Cameras")
-sns.boxplot(ax=axes[2, 1], data=df, x="encoding_speed", y="percent_dropped_frames", hue="n_cameras", legend=False)
+sns.boxplot(
+    ax=axes[2, 1],
+    data=df,
+    x="application_config_ffmpeg_config_encoding_speed",
+    y="percent_dropped_frames",
+    hue="experiment_config_n_cameras",
+    legend=False,
+)
 axes[2, 1].set_xlabel("Encoding Speed")
 axes[2, 1].set_ylabel("Dropped Frames (%)")
 
 axes[2, 2].set_title("Compression Standard by Number of Cameras")
-sns.boxplot(ax=axes[2, 2], data=df, x="compression_standard", y="percent_dropped_frames", hue="n_cameras", legend=False)
+sns.boxplot(
+    ax=axes[2, 2],
+    data=df,
+    x="application_config_ffmpeg_config_compression_standard",
+    y="percent_dropped_frames",
+    hue="experiment_config_n_cameras",
+    legend=False,
+)
 axes[2, 2].set_xlabel("Compression Standard")
 axes[2, 2].set_ylabel("Dropped Frames (%)")
 

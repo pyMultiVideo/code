@@ -1,4 +1,9 @@
 numpy
-PyQt6
-pyqtgraph
-opencv-python
+PyQt6 # GUI
+pyqtgraph # GUI image display
+opencv-python # Colour conversion
+## Libraries for testing performance
+tqdm # Testing progress bar
+matplotlib # Plotting library
+seaborn
+pandas
