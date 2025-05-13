@@ -10,21 +10,25 @@ sns.set_style("ticks")
 # Test name
 test_name = "test-small"
 data_folder = Path(".") / "data"
-
 results_df = data_folder / test_name / "results.tsv"
-testing_parameters = data_folder / test_name / "testing_parameters.json"
-with open(testing_parameters.resolve(), "r") as f:
-    testing_params = json.load(f)
 df = pd.read_csv(results_df.resolve(), sep="\t")
 # Convert 'duration' and 'real_duration' to datetime format
 df["duration"] = pd.to_timedelta(df["duration"])
 df["real_duration"] = pd.to_timedelta(df["real_duration"])
 
+# %% Fix since dropped frames not working correctly
+# Calculate percentage of dropped frames (Fix because pMV is not doing this correctly)
+df['dropped_frames'] = (df['FPS'] * df['duration'].dt.total_seconds()) - df['recorded_frames']
+df['percent_dropped_frames'] = (df['dropped_frames'] / (df['FPS'] * df['duration'].dt.total_seconds())) * 100
+
 # %% Create a figure
 # Figure Title
 fig, axes = plt.subplots(3, 3, figsize=(15, 15))
-for i, (key, value) in enumerate(testing_params.items()):
-    fig.text(0.1, 1.05 - i * 0.012, f"{key}: {value}", ha="left", va="center", fontsize=12)
+# testing_parameters = data_folder / test_name / "testing_parameters.json"
+# with open(testing_parameters.resolve(), "r") as f:
+#     testing_params = json.load(f)
+# for i, (key, value) in enumerate(testing_params.items()):
+#     fig.text(0.1, 1.05 - i * 0.012, f"{key}: {value}", ha="left", va="center", fontsize=12)
 fig.text(0.1, 0.92, "Camera Config", ha="left", va="center", fontsize=20, rotation="horizontal")
 fig.text(0.1, 0.63, "GUI Config", ha="left", va="center", fontsize=20, rotation="horizontal")
 fig.text(0.1, 0.34, "FFMPEG Config", ha="left", va="center", fontsize=20, rotation="horizontal")
