@@ -24,11 +24,11 @@ df['percent_dropped_frames'] = (df['dropped_frames'] / (df['FPS'] * df['duration
 # %% Create a figure
 # Figure Title
 fig, axes = plt.subplots(3, 3, figsize=(15, 15))
-# testing_parameters = data_folder / test_name / "testing_parameters.json"
-# with open(testing_parameters.resolve(), "r") as f:
-#     testing_params = json.load(f)
-# for i, (key, value) in enumerate(testing_params.items()):
-#     fig.text(0.1, 1.05 - i * 0.012, f"{key}: {value}", ha="left", va="center", fontsize=12)
+testing_parameters = data_folder / test_name / "testing_parameters.json"
+with open(testing_parameters.resolve(), "r") as f:
+    testing_params = json.load(f)
+for i, (key, value) in enumerate(testing_params.items()):
+    fig.text(0.1, 1.05 - i * 0.012, f"{key}: {value}", ha="left", va="center", fontsize=12)
 fig.text(0.1, 0.92, "Camera Config", ha="left", va="center", fontsize=20, rotation="horizontal")
 fig.text(0.1, 0.63, "GUI Config", ha="left", va="center", fontsize=20, rotation="horizontal")
 fig.text(0.1, 0.34, "FFMPEG Config", ha="left", va="center", fontsize=20, rotation="horizontal")
