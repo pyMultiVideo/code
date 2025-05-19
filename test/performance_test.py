@@ -1,4 +1,4 @@
-import subprocess, time, signal
+import subprocess, time
 from pathlib import Path
 import json
 import sys

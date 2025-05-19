@@ -130,17 +130,17 @@ try:
 except Exception as e:
     print(f"Failed to save testing parameters: {e}")
 
-DOWNSAMPLING_FACTOR = 1
+DOWNSAMPLING_FACTOR = 2
 CAMERA_UPDATE_RATE = 20
 UPDATES_PER_DISPLAY = 1
 CRF = 23
-ENCODERING_SPEED = "slow"
+ENCODERING_SPEED = "fast"
 COMPRESSION_STANDARD = "h265"
-N_CAMERAS = 2
+N_CAMERAS = 4
 FPS = 60
 
 
-# Generate configurations for varying FPS and cameras
+# Generate config files for varying FPS and cameras
 for fps in testing_parameters["fps_range"]:
     for n_camera in testing_parameters["n_cameras"]:
         config_dir = (
@@ -161,7 +161,7 @@ for fps in testing_parameters["fps_range"]:
         )
         save_config_file(test_config_dir, test_config)
 
-# Generate configurations for fixed cameras and FPS
+# Generate config files for fixed cameras and FPS
 for downsampling_factor in testing_parameters["downsample_range"]:
     for encoding_speed in testing_parameters["encoding_speed_options"]:
         for compression_standard in testing_parameters["compression_standard"]:

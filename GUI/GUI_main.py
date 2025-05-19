@@ -17,7 +17,7 @@ from config.config import __version__, gui_config, ffmpeg_config, paths_config
 if os.name == "nt":  # Needed on windows to get taskbar icon to display correctly.
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(f"pyMultiVideo v{__version__}")
 
-PROFILING = True
+PROFILING = False
 
 
 class GUIMain(QMainWindow):
