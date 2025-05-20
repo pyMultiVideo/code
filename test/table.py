@@ -5,7 +5,7 @@ import pandas as pd
 import cv2
 from tqdm import tqdm
 
-test_dir = Path(".") / "data" / "test-small"
+test_dir = Path(".") / "data" / "test-fps-data"
 directories = [d for d in test_dir.resolve().iterdir() if d.is_dir()]
 
 camera_rows = []
@@ -49,7 +49,7 @@ for directory in tqdm(directories, desc="Processing directories"):
 
         # Extract video properties
         metadata["real_frame_count"] = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
-        metadata["real_fps"] = video_capture.get(cv2.CAP_PROP_FPS) # FPS encoded by FFMPEG
+        metadata["real_fps"] = video_capture.get(cv2.CAP_PROP_FPS)  # FPS encoded by FFMPEG
         metadata["real_duration"] = (
             pd.to_timedelta(metadata["real_frame_count"] / metadata["real_fps"], unit="s")
             if metadata["real_fps"] > 0

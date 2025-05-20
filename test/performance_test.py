@@ -5,14 +5,14 @@ import sys
 from tqdm import tqdm
 
 # Get the path to the test folder
-test_dir = Path(".") / "data" / "test-small"
+test_dir = Path(".") / "data" / "test-fps-data"
 script_path = Path(".") / "pyMultiVideo_GUI.pyw"
 # Get the path of the current Python executable
 # python_exe = sys.executable
 python_exe = r"C:/Users/alifa/miniconda3/envs/pyMultiCam_env/python.exe"
 
 # List files in the test directory
-directories = [d for d in test_dir.iterdir() if d.is_dir()]
+directories = [d.resolve() for d in test_dir.iterdir() if d.is_dir()]
 
 # Calculate the approximate run time of the test
 total_runtime = 0
