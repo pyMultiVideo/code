@@ -1,11 +1,12 @@
 import os
 import json
 from typing import List
+from dataclasses import dataclass, asdict
 
 from PyQt6.QtWidgets import (
     QVBoxLayout,
     QGroupBox,
-    QPlainTextEdit,
+    QLineEdit,
     QHBoxLayout,
     QGridLayout,
     QWidget,
@@ -13,15 +14,22 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QSpinBox,
     QLabel,
+    QMessageBox,
 )
-from PyQt6.QtGui import QFontMetrics, QIcon
+from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import QTimer, Qt
 
-from dataclasses import asdict
-from .camera_widget import CameraWidget
-from .message_dialogs import show_info_message
-from .utility import ExperimentConfig, CameraWidgetConfig, gpu_available
-from config.config import gui_config, paths_config
+from .camera_widget import CameraWidget, CameraWidgetConfig
+
+
+@dataclass
+class ExperimentConfig:
+    """Represents the configuration of the VideoCaptureTab."""
+
+    data_dir: str
+    n_cameras: int
+    n_columns: int
+    cameras: list[CameraWidgetConfig]
 
 
 class VideoCaptureTab(QWidget):
@@ -32,7 +40,6 @@ class VideoCaptureTab(QWidget):
         self.GUI = parent
         self.camera_setup_tab = self.GUI.camera_setup_tab
         self.camera_widgets = []
-        self.paths = paths_config
         self.camera_layout = QGridLayout()
 
         self.config_groupbox = QGroupBox("Experiment Configuration")
@@ -53,7 +60,7 @@ class VideoCaptureTab(QWidget):
 
         # Save layout button
         self.save_camera_config_button = QPushButton("Save")
-        self.save_camera_config_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "save.svg")))
+        self.save_camera_config_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "save.svg")))
         self.save_camera_config_button.setFixedHeight(30)
         self.save_camera_config_button.clicked.connect(self.save_experiment_config)
         self.save_camera_config_button.setToolTip("Save the current camera configuration")
@@ -78,21 +85,17 @@ class VideoCaptureTab(QWidget):
 
         # Buttons for saving and loading camera configurations
         self.save_dir_button = QPushButton("")
-        self.save_dir_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "folder.svg")))
+        self.save_dir_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "folder.svg")))
         self.save_dir_button.setFixedWidth(30)
         self.save_dir_button.setFixedHeight(30)
         self.save_dir_button.clicked.connect(self.get_save_dir)
         self.save_dir_button.setToolTip("Change the directory to save data")
 
         # Display the save directory
-        self.save_dir_textbox = QPlainTextEdit(self.paths["data_dir"])
-        self.save_dir_textbox.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.save_dir_textbox.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.save_dir_textbox.setMaximumBlockCount(1)
+        self.save_dir_textbox = QLineEdit(self.GUI.paths_config["data_dir"])
+        self.save_dir_textbox.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.save_dir_textbox.setReadOnly(True)
-        self.temp_data_dir = self.paths["data_dir"]
-        self.save_dir_textbox.setPlainText(self.temp_data_dir)
-        self.update_save_directory_display()
+        self.data_dir = self.GUI.paths_config["data_dir"]
 
         self.save_dir_hlayout = QHBoxLayout()
         self.save_dir_hlayout.addWidget(self.save_dir_textbox)
@@ -103,7 +106,7 @@ class VideoCaptureTab(QWidget):
 
         # Button for recording video
         self.start_recording_button = QPushButton("")
-        self.start_recording_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "record.svg")))
+        self.start_recording_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "record.svg")))
         self.start_recording_button.setFixedWidth(30)
         self.start_recording_button.setFixedHeight(30)
         self.start_recording_button.clicked.connect(self.start_recording)
@@ -112,7 +115,7 @@ class VideoCaptureTab(QWidget):
 
         # Button for stopping recording
         self.stop_recording_button = QPushButton("")
-        self.stop_recording_button.setIcon(QIcon(os.path.join(self.paths["assets_dir"], "stop.svg")))
+        self.stop_recording_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "stop.svg")))
         self.stop_recording_button.setFixedWidth(30)
         self.stop_recording_button.setFixedHeight(30)
         self.stop_recording_button.clicked.connect(self.stop_recording)
@@ -141,24 +144,18 @@ class VideoCaptureTab(QWidget):
         self.page_layout.addWidget(self.header_groupbox)
         self.page_layout.addLayout(self.camera_layout)
         self.setLayout(self.page_layout)
-
-        # Check if the config file is present
-        if self.GUI.startup_config is None:
-            available_cameras = sorted(
-                list(set(self.camera_setup_tab.get_camera_labels()) - set(self.get_camera_widget_labels())),
-                key=str.lower,
-            )
+        # Handle if the parsed args are send via the command line
+        if self.GUI.parsed_args.experiment_config is None:
+            available_cameras = sorted(list(self.camera_setup_tab.get_camera_labels()), key=str.lower)
             for camera_label in available_cameras[:1]:  # One camera by default
-                self.initialize_camera_widget(
+                self.initialise_camera_widget(
                     label=camera_label,
                 )
         else:
             # Load the default config file
-            with open(self.GUI.startup_config, "r") as config_file:
-                config_data = json.load(config_file)
-                config_data["cameras"] = [CameraWidgetConfig(**camera) for camera in config_data["cameras"]]
+            config_data = json.loads(self.GUI.parsed_args.experiment_config)
+            config_data["cameras"] = [CameraWidgetConfig(**camera) for camera in config_data["cameras"]]
             experiment_config = ExperimentConfig(**config_data)
-
             self.configure_tab_from_config(experiment_config)
 
         # Timers
@@ -170,12 +167,10 @@ class VideoCaptureTab(QWidget):
 
     def update_camera_widgets(self):
         """Fetches new images from all cameras, updates video displays every n calls."""
+        self.update_counter = (self.update_counter + 1) % self.GUI.gui_config["camera_updates_per_display_update"]
+        video_display_update = self.update_counter == 0
         for camera_widget in self.camera_widgets:
-            camera_widget.fetch_image_data()
-        self.update_counter = (self.update_counter + 1) % gui_config["GUI_updates_per_camera_update"]
-        if self.update_counter == 0:
-            for camera_widget in self.camera_widgets:
-                camera_widget.update_video_display()
+            camera_widget.update(video_display_update)
 
     def refresh(self):
         """Refresh tab"""
@@ -189,30 +184,16 @@ class VideoCaptureTab(QWidget):
         # Update button states
         self.update_global_recording_button_states()
 
-    def resizeEvent(self, event):
-        """Called on resized widget"""
-        self.update_save_directory_display()
-        super().resizeEvent(event)
-
     # Camera acquisition and recording control ----------------------------------------
 
     def start_recording(self):
+        """Start recording video from all camera widgets."""
         # Check whether all the files name will be the same
-        camera_labels = [
-            camera_widget.subject_id_text.toPlainText()
-            for camera_widget in self.camera_widgets
-            if camera_widget.subject_id_text.toPlainText()
-        ]
-        if len(camera_labels) != len(set(camera_labels)):
+        subject_IDs = [camera_widget.subject_id for camera_widget in self.camera_widgets if camera_widget.subject_id]
+        if len(subject_IDs) != len(set(subject_IDs)):
             self.start_recording_button.setEnabled(False)
-            show_info_message("Duplicate Subject IDs detected. Please ensure all are unique.")
+            QMessageBox.information(None, "Duplicate Subject IDs", "Duplicate Subject IDs detected.")
             return
-        # Check for invalid characters in file paths
-        invalid_chars = set('<>:"/\\|?*')
-        for camera_widget in self.camera_widgets:
-            if any(char in invalid_chars for char in camera_widget.subject_id_text.toPlainText()):
-                show_info_message("One or more Subject IDs contain invalid characters.")
-                return
 
         for camera_widget in self.camera_widgets:
             camera_widget.start_recording()
@@ -227,7 +208,7 @@ class VideoCaptureTab(QWidget):
         """Called when tab deselected to start aqusition of the camera video streams."""
         for camera_widget in self.camera_widgets:
             camera_widget.begin_capturing()
-        self.camera_widget_update_timer.start(int(1000 / gui_config["camera_update_rate"]))
+        self.camera_widget_update_timer.start(int(1000 / self.GUI.gui_config["camera_update_rate"]))
         self.refresh()
 
     def tab_deselected(self):
@@ -236,18 +217,7 @@ class VideoCaptureTab(QWidget):
             camera_widget.stop_capturing()
         self.camera_widget_update_timer.stop()
 
-    def update_save_directory_display(self):
-        """Display the path in the textbox"""
-        save_dir = self.temp_data_dir
-        # Calculate the width of the textbox
-        text_edit_width = self.save_dir_textbox.viewport().width()
-        font = self.save_dir_textbox.font()
-        char_width = QFontMetrics(font).horizontalAdvance("W")
-        n_char = text_edit_width // char_width
-
-        if len(save_dir) > n_char:
-            save_dir = ".." + save_dir[-(n_char):]
-        self.save_dir_textbox.setPlainText(save_dir)
+    # Adding and removing camera widgets from the GUI --------------------------------
 
     def add_or_remove_camera_widgets(self):
         """Add or remove the camera widgets from the"""
@@ -259,7 +229,7 @@ class VideoCaptureTab(QWidget):
         while self.n_cameras_spinbox.value() > len(self.camera_widgets):
             if available_cameras:
                 label = available_cameras.pop(0)
-                self.initialize_camera_widget(label=label)
+                self.initialise_camera_widget(label=label)
             else:
                 break
         # Remove camera widgets.
@@ -267,7 +237,7 @@ class VideoCaptureTab(QWidget):
             self.remove_camera_widget(self.camera_widgets.pop())
         self.refresh()
 
-    def initialize_camera_widget(self, label: str, subject_id=None):
+    def initialise_camera_widget(self, label: str, subject_id=None):
         """Create a new camera widget and add it to the tab"""
         self.camera_widgets.append(CameraWidget(parent=self, label=label, subject_id=subject_id))
         position = len(self.camera_widgets) - 1
@@ -309,7 +279,7 @@ class VideoCaptureTab(QWidget):
         default_name = os.path.join("experiments", "experiment_config.json")
         file_path = QFileDialog.getSaveFileName(self, "Save File", default_name, "JSON Files (*.json)")
         experiment_config = ExperimentConfig(
-            data_dir=self.temp_data_dir,
+            data_dir=self.data_dir,
             n_cameras=self.n_cameras_spinbox.value(),
             n_columns=self.n_columns_spinbox.value(),
             cameras=[camera_widget.get_camera_config() for camera_widget in self.camera_widgets],
@@ -327,7 +297,7 @@ class VideoCaptureTab(QWidget):
         # Check if the config file is valid.
         for camera in experiment_config.cameras:
             if camera.label not in self.camera_setup_tab.get_camera_labels():
-                show_info_message(f"Camera {camera.label} is not connected")
+                QMessageBox.information(None, "Camera not connected", f"Camera {camera.label} is not connected")
                 return
         # Configure tab.
         self.configure_tab_from_config(experiment_config)
@@ -337,12 +307,11 @@ class VideoCaptureTab(QWidget):
         self.remove_all_camera_widgets()
         # Initialise camera widgets.
         for cam_config in experiment_config.cameras:
-            self.initialize_camera_widget(label=cam_config.label, subject_id=cam_config.subject_id)
+            self.initialise_camera_widget(label=cam_config.label, subject_id=cam_config.subject_id)
         # Set the values of the spinbox and encoder selection based on config file
         self.n_cameras_spinbox.setValue(experiment_config.n_cameras)
         self.n_columns_spinbox.setValue(experiment_config.n_columns)
-        self.temp_data_dir = experiment_config.data_dir
-        self.update_save_directory_display()
+        self.data_dir = experiment_config.data_dir
 
     def handle_camera_setups_modified(self):
         """Handle the renamed cameras by renaming the relevent attributes of the camera groupboxes"""
@@ -365,13 +334,13 @@ class VideoCaptureTab(QWidget):
 
     def get_save_dir(self):
         """Return the save directory"""
-        save_directory = QFileDialog.getExistingDirectory(self, "Select Directory", paths_config["data_dir"])
+        save_directory = QFileDialog.getExistingDirectory(self, "Select Directory", self.data_dir)
         if save_directory:
-            self.save_dir_textbox.setPlainText(save_directory)
-            self.temp_data_dir = save_directory
+            self.save_dir_textbox.setText(save_directory)
+            self.data_dir = save_directory
 
     def get_camera_widget_labels(self) -> List[str]:
-        """Return the camera labels for all camera widgets."""
+        """Return the camera labels for all camera widgets currently initialsed."""
         return [
             camera_widget.label if camera_widget.label else camera_widget.unique_id
             for camera_widget in self.camera_widgets
@@ -379,7 +348,7 @@ class VideoCaptureTab(QWidget):
 
     def update_global_recording_button_states(self):
         """Update the states of global recording buttons based on the readiness and recording status of cameras."""
-        all_ready = all(camera_widget.start_recording_button.isEnabled() for camera_widget in self.camera_widgets)
+        all_ready = all(c_w.start_recording_button.isEnabled() for c_w in self.camera_widgets)
         any_recording = any(camera_widget.recording for camera_widget in self.camera_widgets)
         self.start_recording_button.setEnabled(all_ready)
         self.stop_recording_button.setEnabled(any_recording)

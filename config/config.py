@@ -1,5 +1,4 @@
 import os
-import shutil
 
 # GUI settings ------------------------------------------------------------------------
 
@@ -7,7 +6,8 @@ __version__ = "1.0.0"
 
 gui_config = {
     "camera_update_rate": 30,  # Rate at which to get new images from camera buffer.
-    "GUI_updates_per_camera_update": 1,  # How often GUI is updated relative to camera.
+    "camera_updates_per_display_update": 1,  # How often images are fetched from camera per update of video display.
+    "font_size": 12,  # Font size to use in GUI.
 }
 
 # Default FFMPEG config ----------------------------------------------------------------
@@ -24,24 +24,21 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # pyMV code 
 
 paths_config = {
     "ROOT": ROOT,
-    "FFMPEG": shutil.which("ffmpeg"),
     "camera_dir": os.path.join(ROOT, "config"),
     "encoder_dir": os.path.join(ROOT, "config"),
     "data_dir": os.path.join(ROOT, "data"),
     "config_dir": os.path.join(ROOT, "config"),
-    "assets_dir": os.path.join(ROOT, "GUI", "icons"),
+    "icons_dir": os.path.join(ROOT, "GUI", "icons"),
 }
 
 # Default Camera Settings --------------------------------------------------------------
 
 default_camera_config = {
+    "name": None,
     "fps": 60,
     "downsampling_factor": 1,
     "exposure_time": 15000,
     "gain": 0,
-    "pixel_format": "Mono8",
+    "external_trigger": False,
+    "pixel_format": "Mono",
 }
-
-# Profiling Settings ------------------------------------------------------------------
-
-profiling_config = {"profile_code": True, "profile_name": "profile"}
