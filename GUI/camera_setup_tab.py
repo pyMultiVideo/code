@@ -286,6 +286,7 @@ class Camera_table_item:
         # Exposure time edit
         self.exposure_time_edit = QSpinBox()
         self.exposure_time_edit.setSingleStep(100)
+        self.exposure_time_edit.setRange(*self.camera_api.get_exposure_time_range(self.settings.fps))
         self.exposure_time_edit.setValue(self.settings.exposure_time)
         self.exposure_time_edit.setEnabled(self.camera_api.manual_control_enabled)
         if self.settings.exposure_time:

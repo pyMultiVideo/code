@@ -17,14 +17,11 @@ from config.config import __version__, gui_config, ffmpeg_config, paths_config
 if os.name == "nt":  # Needed on windows to get taskbar icon to display correctly.
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(f"pyMultiVideo v{__version__}")
 
-PROFILING = False
-
 
 class GUIMain(QMainWindow):
     """Class implementing the main GUI window."""
 
     def __init__(self, parsed_args):
-        # Start profiler
 
         super().__init__()
         # Deal with arguments parsed to application
@@ -39,11 +36,6 @@ class GUIMain(QMainWindow):
             self.paths_config = paths_config
             self.ffmpeg_config = ffmpeg_config
             self.gui_config = gui_config
-        if PROFILING:
-            from pyinstrument import Profiler
-
-            self.profiler = Profiler()
-            self.profiler.start()
 
         # close-after argument
         if self.parsed_args.close_after:
@@ -117,14 +109,7 @@ class GUIMain(QMainWindow):
         if self.camera_setup_tab.camera_preview:
             self.camera_setup_tab.camera_preview.closeEvent(event)
             self.camera_setup_tab.camera_preview.deleteLater()
-        # Stop profiler and save results to HTML
-        if hasattr(self, "profiler"):
-            self.profiler.stop()
-            html_output = self.profiler.output_html()
-            output_path = os.path.join(self.paths_config.get("config_dir", "."), "profiler_report.html")
-            with open(output_path, "w", encoding="utf-8") as f:
-                f.write(html_output)
-            print(f"Profiler HTML report saved to: {output_path}")
+
         event.accept()
         sys.exit(0)
 
