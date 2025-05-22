@@ -5,7 +5,7 @@ import pandas as pd
 import cv2
 from tqdm import tqdm
 
-test_dir = Path(".") / "data" / "test-fps-data"
+test_dir = Path(".") / "data" / "test-large"
 directories = [d for d in test_dir.resolve().iterdir() if d.is_dir()]
 
 camera_rows = []
