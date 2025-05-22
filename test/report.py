@@ -30,15 +30,15 @@ ENCODERING_SPEED = "fast"
 COMPRESSION_STANDARD = "h265"
 N_CAMERAS = 3
 FPS = 60
-
 # %% Create a figure
 # Figure Title
 fig, axes = plt.subplots(3, 3, figsize=(15, 15))
 testing_parameters = data_folder / test_name / "testing_parameters.json"
 with open(testing_parameters.resolve(), "r") as f:
     testing_params = json.load(f)
+# Use the same line spacing as the Config sections (0.012)
 for i, (key, value) in enumerate(testing_params.items()):
-    fig.text(0.1, 1.05 - i * 0.012, f"{key}: {value}", ha="left", va="center", fontsize=12)
+    fig.text(0.1, 1.05 - i * 0.012, f"{key.upper()}:{value}", ha="left", va="center", fontsize=12)
 fig.text(0.1, 0.92, "Camera Config", ha="left", va="center", fontsize=20, rotation="horizontal")
 fig.text(0.1, 0.63, f"GUI Config (for {N_CAMERAS} cameras)", ha="left", va="center", fontsize=20, rotation="horizontal")
 fig.text(
@@ -67,6 +67,7 @@ lineplot_n_cameras = sns.lineplot(
     hue="experiment_config_n_cameras",
     marker="o",
     legend=True,
+    palette="rainbow",
 )
 if lineplot_n_cameras.legend_ is not None:
     lineplot_n_cameras.legend_.set_title("Number of Cameras")
@@ -90,6 +91,7 @@ lineplot_downsampling = sns.lineplot(
     hue="experiment_config_n_cameras",
     marker="o",
     legend=False,
+    palette="rainbow",
 )
 if lineplot_downsampling.legend_ is not None:
     lineplot_downsampling.legend_.set_title("Number of Cameras")
@@ -112,6 +114,7 @@ lineplot_fps = sns.lineplot(
     hue="experiment_config_n_cameras",
     marker="o",
     legend=False,
+    palette="rainbow",
 )
 if lineplot_fps.legend_ is not None:
     lineplot_fps.legend_.set_title("Number of Cameras")
@@ -159,6 +162,7 @@ lineplot_updates_per_display = sns.lineplot(
     hue="application_config_gui_config_camera_updates_per_display_update",
     marker="o",
     legend=True,
+    palette="Spectral",
 )
 if lineplot_updates_per_display.legend_ is not None:
     lineplot_updates_per_display.legend_.set_title("Updates per Display update")
