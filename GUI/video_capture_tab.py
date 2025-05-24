@@ -3,6 +3,7 @@ import json
 from typing import List
 from dataclasses import dataclass, asdict
 import concurrent.futures
+
 from PyQt6.QtWidgets import (
     QVBoxLayout,
     QGroupBox,
@@ -40,6 +41,11 @@ class VideoCaptureTab(QWidget):
         self.GUI = parent
         self.camera_setup_tab = self.GUI.camera_setup_tab
         self.camera_widgets = []
+
+        # Initalise executors
+        self.video_encoding_executor = concurrent.futures.ThreadPoolExecutor(max_workers=32)
+        self.futures = []
+
         self.camera_layout = QGridLayout()
 
         self.config_groupbox = QGroupBox("Experiment Configuration")
@@ -172,7 +178,7 @@ class VideoCaptureTab(QWidget):
         for camera_widget in self.camera_widgets:
             camera_widget.update(video_display_update)
         # Wait till all threads have been processed before re-running the function.
-        if hasattr(self, 'futures'): 
+        if hasattr(self, "futures"):
             # Wait will all the encoding is done
             concurrent.futures.wait(self.futures)
 
@@ -198,9 +204,7 @@ class VideoCaptureTab(QWidget):
             self.start_recording_button.setEnabled(False)
             QMessageBox.information(None, "Duplicate Subject IDs", "Duplicate Subject IDs detected.")
             return
-        # Initalise executors
-        self.video_encoding_executor = concurrent.futures.ThreadPoolExecutor(max_workers=len(self.camera_widgets))
-        self.futures = []
+
         # Begin Recording
         for camera_widget in self.camera_widgets:
             camera_widget.start_recording()
@@ -208,12 +212,6 @@ class VideoCaptureTab(QWidget):
     def stop_recording(self):
         for camera_widget in self.camera_widgets:
             camera_widget.stop_recording()
-
-        # Shut down the executors if they exist
-        if hasattr(self, "video_encoding_executor"):
-            self.video_encoding_executor.shutdown(wait=False)
-            del self.video_encoding_executor
-            del self.futures
 
     # GUI element update functions ----------------------------------------------------
 
