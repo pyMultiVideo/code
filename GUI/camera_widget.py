@@ -45,8 +45,8 @@ class CameraWidget(QGroupBox):
 
     def __init__(self, parent, label, subject_id="", preview_mode=False):
         super(CameraWidget, self).__init__(parent)
-        self.parent = parent
-        self.GUI = self.parent.GUI
+        self.video_capture_tab = parent
+        self.GUI = self.video_capture_tab.GUI
         self.preview_mode = preview_mode  # True if widget is being used in camera setup tab.
         # Camera attributes
         self.subject_id = subject_id
@@ -207,7 +207,7 @@ class CameraWidget(QGroupBox):
         self.dropped_frames += new_images["dropped_frames"]
         # Record data to disk.
         if self.recording:
-            self.data_recorder.record_new_images(new_images)
+            self.data_recorder.submit_work(new_images)
 
     def update(self, update_video_display=True):
         """Called regularly by timer to fetch new images and optionally update video display."""
@@ -226,7 +226,7 @@ class CameraWidget(QGroupBox):
             return
         # Start data recording.
         save_dir = self.GUI.video_capture_tab.data_dir
-        self.data_recorder.start_recording(subject_id, save_dir, self.settings)
+        self.data_recorder.start_recording(subject_id,  save_dir, self.settings)
         self.recording = True
         # Update GUI
         self.stop_recording_button.setEnabled(True)

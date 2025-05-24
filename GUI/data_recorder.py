@@ -124,3 +124,10 @@ class Data_recorder:
         self.ffmpeg_process.stdin.write(frame)
         for gpio_pinstate in new_images["gpio_data"]:  # Write GPIO pinstate to file.
             self.gpio_writer.writerow(gpio_pinstate)
+
+    def submit_work(self, new_images):
+        """Submit a job to the video encoding ThreadPool"""
+        # Submit encoding tasks to the thread pool executor for parallel processing
+        self.camera_widget.video_capture_tab.futures.append(
+            self.camera_widget.video_capture_tab.video_encoding_executor.submit(self.record_new_images, new_images)
+        )

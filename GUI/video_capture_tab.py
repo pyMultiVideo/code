@@ -2,7 +2,7 @@ import os
 import json
 from typing import List
 from dataclasses import dataclass, asdict
-
+import concurrent.futures
 from PyQt6.QtWidgets import (
     QVBoxLayout,
     QGroupBox,
@@ -171,6 +171,10 @@ class VideoCaptureTab(QWidget):
         video_display_update = self.update_counter == 0
         for camera_widget in self.camera_widgets:
             camera_widget.update(video_display_update)
+        # Wait till all threads have been processed before re-running the function.
+        if hasattr(self, 'futures'): 
+            # Wait will all the encoding is done
+            concurrent.futures.wait(self.futures)
 
     def refresh(self):
         """Refresh tab"""
@@ -194,13 +198,22 @@ class VideoCaptureTab(QWidget):
             self.start_recording_button.setEnabled(False)
             QMessageBox.information(None, "Duplicate Subject IDs", "Duplicate Subject IDs detected.")
             return
-
+        # Initalise executors
+        self.video_encoding_executor = concurrent.futures.ThreadPoolExecutor(max_workers=len(self.camera_widgets))
+        self.futures = []
+        # Begin Recording
         for camera_widget in self.camera_widgets:
             camera_widget.start_recording()
 
     def stop_recording(self):
         for camera_widget in self.camera_widgets:
             camera_widget.stop_recording()
+
+        # Shut down the executors if they exist
+        if hasattr(self, "video_encoding_executor"):
+            self.video_encoding_executor.shutdown(wait=False)
+            del self.video_encoding_executor
+            del self.futures
 
     # GUI element update functions ----------------------------------------------------
 
