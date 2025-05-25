@@ -5,7 +5,7 @@ import sys
 from tqdm import tqdm
 
 # Get the path to the test folder
-test_dir = Path(".") / "data" / "test-fps-data"
+test_dir = Path(".") / "data" / "test-large"
 script_path = Path(".") / "pyMultiVideo_GUI.pyw"
 # Get the path of the current Python executable
 # python_exe = sys.executable
