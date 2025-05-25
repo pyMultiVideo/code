@@ -128,6 +128,6 @@ class Data_recorder:
     def submit_work(self, new_images):
         """Submit a job to the video encoding ThreadPool"""
         # Submit encoding tasks to the thread pool executor for parallel processing
-        self.camera_widget.video_capture_tab.futures.append(
-            self.camera_widget.video_capture_tab.video_encoding_executor.submit(self.record_new_images, new_images)
+        self.camera_widget.video_capture_tab.threadpool_futures.append(
+            self.camera_widget.video_capture_tab.threadpool.submit(self.record_new_images, new_images)
         )

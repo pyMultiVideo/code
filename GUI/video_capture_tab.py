@@ -43,8 +43,8 @@ class VideoCaptureTab(QWidget):
         self.camera_widgets = []
 
         # Initalise executors
-        self.video_encoding_executor = concurrent.futures.ThreadPoolExecutor(max_workers=32)
-        self.futures = []
+        self.threadpool = concurrent.futures.ThreadPoolExecutor(max_workers=32)
+        self.threadpool_futures = []
 
         self.camera_layout = QGridLayout()
 
@@ -178,9 +178,7 @@ class VideoCaptureTab(QWidget):
         for camera_widget in self.camera_widgets:
             camera_widget.update(video_display_update)
         # Wait till all threads have been processed before re-running the function.
-        if hasattr(self, "futures"):
-            # Wait will all the encoding is done
-            concurrent.futures.wait(self.futures)
+        concurrent.futures.wait(self.threadpool_futures)
 
     def refresh(self):
         """Refresh tab"""
