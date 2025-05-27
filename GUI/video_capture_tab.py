@@ -42,12 +42,12 @@ class VideoCaptureTab(QWidget):
         self.camera_setup_tab = self.GUI.camera_setup_tab
         self.camera_widgets = []
 
-        # Initalise executors
+        # Initalise Threadpool
         self.threadpool = concurrent.futures.ThreadPoolExecutor(max_workers=32)
         self.threadpool_futures = []
 
+        # GUI Layout
         self.camera_layout = QGridLayout()
-
         self.config_groupbox = QGroupBox("Experiment Configuration")
 
         # Camera quantity select
