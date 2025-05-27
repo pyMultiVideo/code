@@ -18,20 +18,12 @@ if os.name == "nt":  # Needed on windows to get taskbar icon to display correctl
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(f"pyMultiVideo v{__version__}")
 
 
-PROFILING = True
-
-
 class GUIMain(QMainWindow):
     """Class implementing the main GUI window."""
 
     def __init__(self, parsed_args):
 
         super().__init__()
-        if PROFILING:
-            import pyinstrument
-
-            self.profiler = pyinstrument.Profiler()
-            self.profiler.start()
 
         # Deal with arguments parsed to application
         self.parsed_args = parsed_args
@@ -119,10 +111,6 @@ class GUIMain(QMainWindow):
             self.camera_setup_tab.camera_preview.closeEvent(event)
             self.camera_setup_tab.camera_preview.deleteLater()
 
-        # Stop and show profiler results if profiling is enabled
-        if PROFILING and hasattr(self, "profiler"):
-            self.profiler.stop()
-            self.profiler.open_in_browser()
         event.accept()
         sys.exit(0)
 
