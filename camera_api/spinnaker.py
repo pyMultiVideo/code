@@ -310,7 +310,6 @@ class SpinnakerCamera(GenericCamera):
                     gpio_buffer.append([int(gpio_binary[3]), int(gpio_binary[1]), int(gpio_binary[0])])
                 next_image.Release()  # Clears image from buffer.
         except PySpin.SpinnakerException:  # Buffer is empty.
-            # print(len(img_buffer))
             if len(img_buffer) == 0:
                 return
             else:

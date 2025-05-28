@@ -24,6 +24,7 @@ class GUIMain(QMainWindow):
     def __init__(self, parsed_args):
 
         super().__init__()
+
         # Deal with arguments parsed to application
         self.parsed_args = parsed_args
         # config arguments
