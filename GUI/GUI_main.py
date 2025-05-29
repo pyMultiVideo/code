@@ -17,6 +17,8 @@ from config.config import __version__, gui_config, ffmpeg_config, paths_config
 if os.name == "nt":  # Needed on windows to get taskbar icon to display correctly.
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(f"pyMultiVideo v{__version__}")
 
+PROFILING = False
+
 
 class GUIMain(QMainWindow):
     """Class implementing the main GUI window."""
@@ -24,6 +26,10 @@ class GUIMain(QMainWindow):
     def __init__(self, parsed_args):
 
         super().__init__()
+        if PROFILING: 
+            import pyinstrument
+            self.profiler = pyinstrument.Profiler()
+            self.profiler.start()
         # Deal with arguments parsed to application
         self.parsed_args = parsed_args
         # config arguments
@@ -109,7 +115,9 @@ class GUIMain(QMainWindow):
         if self.camera_setup_tab.camera_preview:
             self.camera_setup_tab.camera_preview.closeEvent(event)
             self.camera_setup_tab.camera_preview.deleteLater()
-
+        if PROFILING:
+            self.profiler.stop()
+            self.profiler.open_in_browser()
         event.accept()
         sys.exit(0)
 
