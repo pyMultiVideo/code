@@ -95,7 +95,7 @@ subject_ids = [f"subject_{i}" for i in range(len(get_camera_unique_ids()))]
 # The parameters which are varied
 testing_parameters = {
     # Folder test name
-    "test_name": f"test-fps-data",
+    "test_name": f"test-large",
     # "test_name": f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
     # Recording_length (s)
     "close_after": "00:30",  # MM:SS
@@ -104,8 +104,8 @@ testing_parameters = {
     "downsample_range": [1, 2, 4],
     "fps_range": [30, 60, 90, 120],
     # GUI config
-    "camera_update_range": [20],
-    "camera_updates_per_display_update": [1],
+    "camera_update_range": [10, 20, 40],
+    "camera_updates_per_display_update": [1, 2, 4],
     # FFMPEG
     "crf_range": [1, 23, 51],
     "encoding_speed_options": ["fast", "medium", "slow"],
