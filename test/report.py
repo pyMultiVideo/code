@@ -4,11 +4,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import json
+from matplotlib import cm
+import numpy as np
 
 sns.set_style("ticks")
 
 # Test name
-test_name = "test-large"
+test_name = "test-encoding-optim"
 data_folder = Path(".") / "data"
 results_df = data_folder / test_name / "results.tsv"
 df = pd.read_csv(results_df.resolve(), sep="\t")
@@ -50,6 +52,8 @@ fig.subplots_adjust(hspace=0.5, wspace=0.5)
 # Replace negative percent_dropped_frames with 0 for plotting
 df["percent_dropped_frames"] = df["percent_dropped_frames"].clip(lower=0)
 # Camera Config Settings
+n_cameras_unique = df["experiment_config_n_cameras"].nunique()
+rainbow_palette_cameras = [cm.rainbow(i / max(n_cameras_unique - 1, 1)) for i in range(n_cameras_unique)]
 axes[0, 0].set_title("Number of Cameras")
 lineplot_n_cameras = sns.lineplot(
     ax=axes[0, 0],
@@ -67,7 +71,7 @@ lineplot_n_cameras = sns.lineplot(
     hue="experiment_config_n_cameras",
     marker="o",
     legend=True,
-    palette="rainbow",
+    palette=rainbow_palette_cameras,
 )
 if lineplot_n_cameras.legend_ is not None:
     lineplot_n_cameras.legend_.set_title("Number of Cameras")
@@ -75,6 +79,7 @@ axes[0, 0].xaxis.set_major_locator(plt.MaxNLocator(integer=True))
 axes[0, 0].set_xlabel("Number of Cameras")
 axes[0, 0].set_ylabel("Dropped Frames (%)")
 
+# Downsampling plot with rainbow palette for number of cameras
 axes[0, 1].set_title("Downsampling")
 lineplot_downsampling = sns.lineplot(
     ax=axes[0, 1],
@@ -91,13 +96,14 @@ lineplot_downsampling = sns.lineplot(
     hue="experiment_config_n_cameras",
     marker="o",
     legend=False,
-    palette="rainbow",
+    palette=rainbow_palette_cameras,
 )
 if lineplot_downsampling.legend_ is not None:
     lineplot_downsampling.legend_.set_title("Number of Cameras")
 axes[0, 1].set_xlabel("Downsample Factor")
 axes[0, 1].set_ylabel("Dropped Frames (%)")
 
+# FPS plot with rainbow palette for number of cameras
 axes[0, 2].set_title("Frames per second vs Dropped Frames (%)")
 lineplot_fps = sns.lineplot(
     ax=axes[0, 2],
@@ -114,7 +120,7 @@ lineplot_fps = sns.lineplot(
     hue="experiment_config_n_cameras",
     marker="o",
     legend=False,
-    palette="rainbow",
+    palette=rainbow_palette_cameras,
 )
 if lineplot_fps.legend_ is not None:
     lineplot_fps.legend_.set_title("Number of Cameras")

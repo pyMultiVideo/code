@@ -2,6 +2,7 @@ import os
 import json
 from typing import List
 from dataclasses import dataclass, asdict
+import concurrent.futures
 
 from PyQt6.QtWidgets import (
     QVBoxLayout,
@@ -40,8 +41,13 @@ class VideoCaptureTab(QWidget):
         self.GUI = parent
         self.camera_setup_tab = self.GUI.camera_setup_tab
         self.camera_widgets = []
-        self.camera_layout = QGridLayout()
 
+        # Initalise Threadpool
+        self.threadpool = concurrent.futures.ThreadPoolExecutor(max_workers=32)
+        self.threadpool_futures = []
+
+        # GUI Layout
+        self.camera_layout = QGridLayout()
         self.config_groupbox = QGroupBox("Experiment Configuration")
 
         # Camera quantity select
@@ -171,6 +177,8 @@ class VideoCaptureTab(QWidget):
         video_display_update = self.update_counter == 0
         for camera_widget in self.camera_widgets:
             camera_widget.update(video_display_update)
+        # Wait till all threads have been processed before re-running the function.
+        concurrent.futures.wait(self.threadpool_futures)
 
     def refresh(self):
         """Refresh tab"""
@@ -195,6 +203,7 @@ class VideoCaptureTab(QWidget):
             QMessageBox.information(None, "Duplicate Subject IDs", "Duplicate Subject IDs detected.")
             return
 
+        # Begin Recording
         for camera_widget in self.camera_widgets:
             camera_widget.start_recording()
 

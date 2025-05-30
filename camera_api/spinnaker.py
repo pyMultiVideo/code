@@ -37,12 +37,11 @@ class SpinnakerCamera(GenericCamera):
         # List of color formats pMV supports listed in order or priority. Prioritise Color.
         self.pixel_format_map = OrderedDict(
             [
-                ("Colour", {"Internal": "BayerRG8", "ffmpeg": "bayer_rggb8", "cv2": cv2.COLOR_BayerRG2BGR}),
                 ("Mono", {"Internal": "Mono8", "ffmpeg": "gray", "cv2": cv2.COLOR_GRAY2BGR}),
+                ("Colour", {"Internal": "BayerRG8", "ffmpeg": "bayer_rggb8", "cv2": cv2.COLOR_BayerRG2BGR}),
             ]
         )
 
-    
         self.pixel_format = self.get_supported_pixel_formats()
         # Set the pixel format
         self.set_pixel_format(self.pixel_format)
@@ -311,7 +310,6 @@ class SpinnakerCamera(GenericCamera):
                     gpio_buffer.append([int(gpio_binary[3]), int(gpio_binary[1]), int(gpio_binary[0])])
                 next_image.Release()  # Clears image from buffer.
         except PySpin.SpinnakerException:  # Buffer is empty.
-            # print(len(img_buffer))
             if len(img_buffer) == 0:
                 return
             else:
