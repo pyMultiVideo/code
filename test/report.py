@@ -8,7 +8,7 @@ import json
 sns.set_style("ticks")
 
 # Test name
-test_name = "test-small"
+test_name = "test-encoding-optim"
 data_folder = Path(".") / "data"
 results_df = data_folder / test_name / "results.tsv"
 df = pd.read_csv(results_df.resolve(), sep="\t")
@@ -19,10 +19,13 @@ df["real_duration"] = pd.to_timedelta(df["real_duration"])
 # %% Fix since dropped frames not working correctly
 # Calculate percentage of dropped frames (Fix because pMV is not doing this correctly)
 df["dropped_frames"] = (df["FPS"] * df["duration"].dt.total_seconds()) - df["recorded_frames"]
-df["percent_dropped_frames"] = (df["dropped_frames"] / (df["FPS"] * df["duration"].dt.total_seconds())) * 100
+# df["percent_dropped_frames"] = (df["dropped_frames"] / (df["FPS"] * df["duration"].dt.total_seconds())) * 100
+df["percent_dropped_frames"] = (df["dropped_frames"] / (df["FPS"] * df["real_duration"].dt.total_seconds())) * 100
 
+# Replace negative percent_dropped_frames with 0 for plotting
+# df["percent_dropped_frames"] = df["percent_dropped_frames"].clip(lower=0)
 
-N_CAMERAS = 2  # The number of cameras (for GUI config and FFMPEG Config)
+N_CAMERAS = 3  # The number of cameras (for GUI config and FFMPEG Config)
 # %% Create a figure
 # Figure Title
 fig, axes = plt.subplots(3, 3, figsize=(15, 15))
@@ -40,6 +43,10 @@ fig.text(
 # Adjust spacing between rows
 fig.subplots_adjust(hspace=0.5, wspace=0.5)
 # Camera Config Settings
+
+# Use a rainbow colormap for consistent hue mapping
+rainbow_palette = sns.color_palette("rainbow", n_colors=df["experiment_config_n_cameras"].nunique())
+
 axes[0, 0].set_title("Number of Cameras")
 lineplot_n_cameras = sns.lineplot(
     ax=axes[0, 0],
@@ -49,6 +56,7 @@ lineplot_n_cameras = sns.lineplot(
     hue="experiment_config_n_cameras",
     marker="o",
     legend=True,
+    palette=rainbow_palette,
 )
 if lineplot_n_cameras.legend_ is not None:
     lineplot_n_cameras.legend_.set_title("Number of Cameras")
@@ -65,11 +73,13 @@ lineplot_downsampling = sns.lineplot(
     hue="experiment_config_n_cameras",
     marker="o",
     legend=False,
+    palette=rainbow_palette,
 )
 if lineplot_downsampling.legend_ is not None:
     lineplot_downsampling.legend_.set_title("Number of Cameras")
 axes[0, 1].set_xlabel("Downsample Factor")
 axes[0, 1].set_ylabel("Dropped Frames (%)")
+
 axes[0, 2].set_title("Frames per second vs Dropped Frames (%)")
 lineplot_fps = sns.lineplot(
     ax=axes[0, 2],
@@ -79,6 +89,7 @@ lineplot_fps = sns.lineplot(
     hue="experiment_config_n_cameras",
     marker="o",
     legend=False,
+    palette=rainbow_palette,
 )
 if lineplot_fps.legend_ is not None:
     lineplot_fps.legend_.set_title("Number of Cameras")

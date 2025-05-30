@@ -4,9 +4,23 @@ import json
 import pandas as pd
 import cv2
 from tqdm import tqdm
+from moviepy import VideoFileClip
+import subprocess
+import json
 
-test_dir = Path(".") / "data" / "test-fps-data"
+test_dir = Path(".") / "data" / "test-encoding-optim"
 directories = [d for d in test_dir.resolve().iterdir() if d.is_dir()]
+
+
+def get_video_duration(path):
+    result = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "json", path],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    data = json.loads(result.stdout)
+    return float(data["format"]["duration"])
+
 
 camera_rows = []
 for directory in tqdm(directories, desc="Processing directories"):
@@ -43,20 +57,19 @@ for directory in tqdm(directories, desc="Processing directories"):
         metadata["video_file_path"] = str(video_file_path.resolve())
         # Load the MP4 file as a video
 
-        video_capture = cv2.VideoCapture(str(video_file_path.resolve()))
-        if not video_capture.isOpened():
-            raise ValueError(f"Unable to open video file: {video_file_path}")
-
-        # Extract video properties
-        metadata["real_frame_count"] = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
-        metadata["real_fps"] = video_capture.get(cv2.CAP_PROP_FPS)  # FPS encoded by FFMPEG
-        metadata["real_duration"] = (
-            pd.to_timedelta(metadata["real_frame_count"] / metadata["real_fps"], unit="s")
-            if metadata["real_fps"] > 0
-            else None
-        )
-
-        video_capture.release()
+        # video_capture = cv2.VideoCapture(str(video_file_path.resolve()))
+        # if not video_capture.isOpened():
+        #     raise ValueError(f"Unable to open video file: {video_file_path}")
+        # # Extract video properties
+        # # metadata["real_frame_count"] = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        # # metadata["real_fps"] = video_capture.get(cv2.CAP_PROP_FPS)  # FPS encoded by FFMPEG
+        # # metadata["real_duration"] = (
+        # #     pd.to_timedelta(metadata["real_frame_count"] / metadata["real_fps"], unit="s")
+        # #     if metadata["real_fps"] > 0
+        # #     else None
+        # # )
+        metadata["real_duration"] = get_video_duration(str(video_file_path.resolve()))
+        # video_capture.release()
         # Concatenate metadata and testing parameters
         combined_data = {**metadata, **testing_params}
         camera_rows.append(combined_data)
