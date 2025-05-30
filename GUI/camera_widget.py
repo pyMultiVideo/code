@@ -196,19 +196,26 @@ class CameraWidget(QGroupBox):
 
     def update(self, update_video_display=True):
         """Called regularly by timer to fetch new images and optionally update video display."""
-        self.submit_fetch_image_data()
+        self.fetch_image_data()
         if update_video_display:
             self.update_video_display()
 
-    def submit_fetch_image_data(self):
-        """Submit fetching image data to threadpool"""
-        self.video_capture_tab.threadpool_futures.append(
-            self.video_capture_tab.threadpool.submit(self.fetch_image_data)
-        )
+    def thread_get_available_images(self):
+        # Submit a job to the threadpool to fetch images for this camera widget
+        future = self.video_capture_tab.threadpool.submit(self.camera_api.get_available_images)
+        # Store the future in a dictionary keyed by this widget's label to associate results correctly
+        self.video_capture_tab.threadpool_futures[str(self.label) + "_fetch_image_data"] = future
+        # Retrieve the result for this specific camera widget
+        future = self.video_capture_tab.threadpool_futures.pop(str(self.label) + "_fetch_image_data", None)
+        if future is not None:
+            return future.result()
+        else:
+            return None
 
     def fetch_image_data(self):
         """Get images and associated data from camera and save to disk if recording."""
-        new_images = self.camera_api.get_available_images()
+        # new_images = self.camera_api.get_available_images()
+        new_images = self.thread_get_available_images()
         if new_images == None:
             return
         # Store most recent image and GPIO state for the next display update.

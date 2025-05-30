@@ -44,7 +44,7 @@ class VideoCaptureTab(QWidget):
 
         # Initalise Threadpool
         self.threadpool = concurrent.futures.ThreadPoolExecutor(max_workers=32)
-        self.threadpool_futures = []
+        self.threadpool_futures = {}
 
         # GUI Layout
         self.camera_layout = QGridLayout()
@@ -178,7 +178,7 @@ class VideoCaptureTab(QWidget):
         for camera_widget in self.camera_widgets:
             camera_widget.update(video_display_update)
         # Wait till all threads have been processed before re-running the function.
-        concurrent.futures.wait(self.threadpool_futures)
+        concurrent.futures.wait(self.threadpool_futures.values())
 
     def refresh(self):
         """Refresh tab"""
