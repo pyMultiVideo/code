@@ -49,7 +49,10 @@ class Data_recorder:
         # Open GPIO file and write header data.
         self.gpio_file = open(self.GPIO_filepath, mode="w", newline="")
         self.gpio_writer = csv.writer(self.gpio_file)
-        self.gpio_writer.writerow([f"GPIO{pin}" for pin in range(1, self.camera_widget.camera_api.N_GPIO + 1)])
+        self.gpio_writer.writerow(
+            [f"GPIO{pin}" for pin in range(1, self.camera_widget.camera_api.N_GPIO + 1)]
+            + ["Frame_number", "Timestamps"]
+        )
 
         # Create metadata file.
         self.metadata = {
@@ -122,8 +125,10 @@ class Data_recorder:
         # Concatenate the list of numpy buffers into one bytestream
         frame = np.concatenate([img for img in new_images["images"]])
         self.ffmpeg_process.stdin.write(frame)
-        for gpio_pinstate in new_images["gpio_data"]:  # Write GPIO pinstate to file.
-            self.gpio_writer.writerow(gpio_pinstate)
+        for gpio_pinstate, frame_number, timestamp in zip(
+            new_images["gpio_data"], new_images["framenumbers"], new_images["timestamps"]
+        ):  # Write GPIO pinstate to file.
+            self.gpio_writer.writerow(list(gpio_pinstate) + [frame_number, timestamp])
 
     def submit_work(self, new_images):
         """Submit a job to the video encoding ThreadPool"""

@@ -58,6 +58,7 @@ class CameraWidget(QGroupBox):
         self.camera_width = self.camera_api.get_width()
         self.latest_image = None
         self.frame_timestamps = deque([0], maxlen=10)
+        self.framenumbers = deque([0], maxlen=10)
         self.controls_visible = True
 
         # Video display ---------------------------------------------------------------
@@ -234,6 +235,7 @@ class CameraWidget(QGroupBox):
             return
         # Start data recording.
         save_dir = self.GUI.video_capture_tab.data_dir
+        self.data_recorder.start_recording(subject_id, save_dir, self.settings)
         self.data_recorder.start_recording(subject_id, save_dir, self.settings)
         self.recording = True
         # Update GUI
