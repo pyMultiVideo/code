@@ -53,7 +53,6 @@ class SpinnakerCamera(GenericCamera):
         bh_node.SetIntValue(bh_node.GetEntryByName("OldestFirst").GetValue())
         sbc_node = PySpin.CIntegerPtr(self.stream_nodemap.GetNode("StreamBufferCountManual"))
         sbc_node.SetValue(100)  # Set buffer size to 100 frames.
-
         # Configure ChunkData to include frame count and timestamp.
         chunk_selector = PySpin.CEnumerationPtr(self.nodemap.GetNode("ChunkSelector"))
         if self.device_model == "Chameleon3":
@@ -317,7 +316,6 @@ class SpinnakerCamera(GenericCamera):
                     "images": img_buffer,
                     "gpio_data": gpio_buffer,
                     "timestamps": timestamps_buffer,
-                    "dropped_frames": dropped_frames,
                 }
 
 
