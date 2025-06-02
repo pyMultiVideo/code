@@ -185,8 +185,8 @@ class CameraWidget(QGroupBox):
 
     def begin_capturing(self):
         """Start streaming video from camera."""
-        self.dropped_frames = 0
         self.recording = False
+        self._last_timestamp = None
         # Begin capturing using the camera API
         self.camera_api.begin_capturing(self.settings)
 
@@ -205,15 +205,30 @@ class CameraWidget(QGroupBox):
         self.latest_image = new_images["images"][-1]
         self.latest_GPIO = new_images["gpio_data"][-1]
         # Check for dropped frames based on expected interval between exposure timestamps
-        self._newly_dropped_frames = False
+        new_images["_newly_dropped_frames"] = 0
+        self._newly_dropped_frames = 0
         expected_interval_ns = 1e9 / float(self.settings.fps)
+
         # Convert nanosecond timestamps to datetime objects for comparison
         timestamps_dt = [datetime.fromtimestamp(ts / 1e9) for ts in new_images["timestamps"]]
+        # If there is a previous timestamp, compare it to the first timestamp in this batch
+        if self._last_timestamp is not None and timestamps_dt:
+            if not isclose(
+                (timestamps_dt[0] - self._last_timestamp).total_seconds(), expected_interval_ns / 1e9, rel_tol=1e-2
+            ):
+                new_images["_newly_dropped_frames"] += 1
+                self._newly_dropped_frames += 1
+
+        # Compare consecutive timestamps within this batch
         for prev, curr in zip(timestamps_dt[:-1], timestamps_dt[1:]):
             if not isclose((curr - prev).total_seconds(), expected_interval_ns / 1e9, rel_tol=1e-2):
-                self.dropped_frames += 1
-                self._newly_dropped_frames = True
+                new_images["_newly_dropped_frames"] += 1
+                self._newly_dropped_frames += 1
+
+        self._last_timestamp = timestamps_dt[-1]
+
         self.frame_timestamps.extend(new_images["timestamps"])  # For displaying the calculated framerate
+
         # Record data to disk.
         if self.recording:
             self.data_recorder.submit_work(new_images)
@@ -235,7 +250,6 @@ class CameraWidget(QGroupBox):
             return
         # Start data recording.
         save_dir = self.GUI.video_capture_tab.data_dir
-        self.data_recorder.start_recording(subject_id, save_dir, self.settings)
         self.data_recorder.start_recording(subject_id, save_dir, self.settings)
         self.recording = True
         # Update GUI
