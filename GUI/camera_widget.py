@@ -57,6 +57,7 @@ class CameraWidget(QGroupBox):
         self.camera_width = self.camera_api.get_width()
         self.latest_image = None
         self.frame_timestamps = deque([0], maxlen=10)
+        self.framenumbers = deque([0], maxlen=10)
         self.controls_visible = True
 
         # Video display ---------------------------------------------------------------
@@ -204,6 +205,7 @@ class CameraWidget(QGroupBox):
         self.latest_GPIO = new_images["gpio_data"][-1]
         self._newly_dropped_frames = new_images["dropped_frames"]
         self.frame_timestamps.extend(new_images["timestamps"])
+        self.framenumbers.extend(new_images["framenumbers"])
         self.dropped_frames += new_images["dropped_frames"]
         # Record data to disk.
         if self.recording:
@@ -226,7 +228,7 @@ class CameraWidget(QGroupBox):
             return
         # Start data recording.
         save_dir = self.GUI.video_capture_tab.data_dir
-        self.data_recorder.start_recording(subject_id,  save_dir, self.settings)
+        self.data_recorder.start_recording(subject_id, save_dir, self.settings)
         self.recording = True
         # Update GUI
         self.stop_recording_button.setEnabled(True)
@@ -258,7 +260,7 @@ class CameraWidget(QGroupBox):
             return
         image = np.frombuffer(self.latest_image, dtype=np.uint8).reshape(self.camera_height, self.camera_width)
         if self.settings.pixel_format != "Mono":
-            image = cv2.cvtColor(image, self.camera_api.pixel_format_map[self.settings.pixel_format]['cv2'])
+            image = cv2.cvtColor(image, self.camera_api.pixel_format_map[self.settings.pixel_format]["cv2"])
         self.video_image_item.setImage(image)
         # Compute average framerate and display over image.
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)

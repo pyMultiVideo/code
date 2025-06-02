@@ -290,6 +290,7 @@ class SpinnakerCamera(GenericCamera):
         """Gets all available images from the buffer and return images GPIO pinstate data and timestamps."""
         img_buffer = []
         timestamps_buffer = []
+        framenumbers_buffer = []
         gpio_buffer = []
         dropped_frames = 0
 
@@ -302,6 +303,7 @@ class SpinnakerCamera(GenericCamera):
                 if self.previous_frame_number != (chunk_data.GetFrameID() - 1):  # Frame IDs
                     dropped_frames += 1
                 self.previous_frame_number = chunk_data.GetFrameID()
+                framenumbers_buffer.append(self.previous_frame_number)
                 if self.device_model == "Chameleon3":
                     img_data = img_buffer[-1]
                     gpio_buffer.append([(img_data[32] >> 4) & 1, (img_data[32] >> 5) & 1, (img_data[32] >> 7) & 1])
@@ -317,6 +319,7 @@ class SpinnakerCamera(GenericCamera):
                     "images": img_buffer,
                     "gpio_data": gpio_buffer,
                     "timestamps": timestamps_buffer,
+                    "framenumbers": framenumbers_buffer,
                     "dropped_frames": dropped_frames,
                 }
 
