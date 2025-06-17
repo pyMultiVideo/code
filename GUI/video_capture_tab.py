@@ -321,6 +321,7 @@ class VideoCaptureTab(QWidget):
         self.n_cameras_spinbox.setValue(experiment_config.n_cameras)
         self.n_columns_spinbox.setValue(experiment_config.n_columns)
         self.data_dir = experiment_config.data_dir
+        self.save_dir_textbox.setText(self.data_dir)
 
     def handle_camera_setups_modified(self):
         """Handle the renamed cameras by renaming the relevent attributes of the camera groupboxes"""
