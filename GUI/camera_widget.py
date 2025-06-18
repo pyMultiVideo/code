@@ -207,7 +207,7 @@ class CameraWidget(QGroupBox):
         self.dropped_frames += new_images["dropped_frames"]
         # Record data to disk.
         if self.recording:
-            self.data_recorder.submit_work(new_images)
+            self.video_capture_tab.threadpool.submit(self.data_recorder.record_new_images, new_images)
 
     def update(self, update_video_display=True):
         """Called regularly by timer to fetch new images and optionally update video display."""
@@ -226,7 +226,7 @@ class CameraWidget(QGroupBox):
             return
         # Start data recording.
         save_dir = self.GUI.video_capture_tab.data_dir
-        self.data_recorder.start_recording(subject_id,  save_dir, self.settings)
+        self.data_recorder.start_recording(subject_id, save_dir, self.settings)
         self.recording = True
         # Update GUI
         self.stop_recording_button.setEnabled(True)
@@ -258,7 +258,7 @@ class CameraWidget(QGroupBox):
             return
         image = np.frombuffer(self.latest_image, dtype=np.uint8).reshape(self.camera_height, self.camera_width)
         if self.settings.pixel_format != "Mono":
-            image = cv2.cvtColor(image, self.camera_api.pixel_format_map[self.settings.pixel_format]['cv2'])
+            image = cv2.cvtColor(image, self.camera_api.pixel_format_map[self.settings.pixel_format]["cv2"])
         self.video_image_item.setImage(image)
         # Compute average framerate and display over image.
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
