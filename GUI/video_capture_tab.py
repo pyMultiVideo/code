@@ -2,7 +2,8 @@ import os
 import json
 from typing import List
 from dataclasses import dataclass, asdict
-import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
+import threading
 
 from PyQt6.QtWidgets import (
     QVBoxLayout,
@@ -33,6 +34,29 @@ class ExperimentConfig:
     cameras: list[CameraWidgetConfig]
 
 
+class MonitoringThreadPoolExecutor(ThreadPoolExecutor):
+    def __init__(self, *args, debug=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.active = 0
+        self.lock = threading.Lock()
+        self.debug = debug
+
+    def submit(self, fn, *args, **kwargs):
+        def wrapper(*args, **kwargs):
+            with self.lock:
+                self.active += 1
+                if self.debug:
+                    print(f"Active workers: {self.active}")
+            try:
+                return fn(*args, **kwargs)
+            finally:
+                with self.lock:
+                    self.active -= 1
+                    if self.debug:
+                        print(f"Active workers: {self.active}")
+
+        return super().submit(wrapper, *args, **kwargs)
+
 class VideoCaptureTab(QWidget):
     """Tab used to display the viewfinder and control the cameras"""
 
@@ -40,10 +64,10 @@ class VideoCaptureTab(QWidget):
         super(VideoCaptureTab, self).__init__(parent)
         self.GUI = parent
         self.camera_setup_tab = self.GUI.camera_setup_tab
-        self.camera_widgets = []
+        self.camera_widgets: list[CameraWidget] = []
 
         # Initalise Threadpool
-        self.threadpool = concurrent.futures.ThreadPoolExecutor()
+        self.threadpool = MonitoringThreadPoolExecutor(max_workers=32)
 
         # GUI Layout
         self.camera_layout = QGridLayout()
