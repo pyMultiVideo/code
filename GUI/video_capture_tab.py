@@ -43,8 +43,7 @@ class VideoCaptureTab(QWidget):
         self.camera_widgets = []
 
         # Initalise Threadpool
-        self.threadpool = concurrent.futures.ThreadPoolExecutor(max_workers=32)
-        self.threadpool_futures = []
+        self.threadpool = concurrent.futures.ThreadPoolExecutor()
 
         # GUI Layout
         self.camera_layout = QGridLayout()
@@ -174,11 +173,9 @@ class VideoCaptureTab(QWidget):
     def update_camera_widgets(self):
         """Fetches new images from all cameras, updates video displays every n calls."""
         self.update_counter = (self.update_counter + 1) % self.GUI.gui_config["camera_updates_per_display_update"]
-        video_display_update = self.update_counter == 0
+        update_video_display = self.update_counter == 0
         for camera_widget in self.camera_widgets:
-            camera_widget.update(video_display_update)
-        # Wait till all threads have been processed before re-running the function.
-        concurrent.futures.wait(self.threadpool_futures)
+            camera_widget.update(update_video_display)
 
     def refresh(self):
         """Refresh tab"""
@@ -321,6 +318,7 @@ class VideoCaptureTab(QWidget):
         self.n_cameras_spinbox.setValue(experiment_config.n_cameras)
         self.n_columns_spinbox.setValue(experiment_config.n_columns)
         self.data_dir = experiment_config.data_dir
+        self.save_dir_textbox.setText(self.data_dir)
 
     def handle_camera_setups_modified(self):
         """Handle the renamed cameras by renaming the relevent attributes of the camera groupboxes"""

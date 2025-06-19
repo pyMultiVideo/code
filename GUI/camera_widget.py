@@ -231,7 +231,7 @@ class CameraWidget(QGroupBox):
 
         # Record data to disk.
         if self.recording:
-            self.data_recorder.submit_work(new_images)
+            self.video_capture_tab.threadpool.submit(self.data_recorder.record_new_images, new_images)
 
     def update(self, update_video_display=True):
         """Called regularly by timer to fetch new images and optionally update video display."""

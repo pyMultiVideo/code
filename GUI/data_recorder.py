@@ -1,7 +1,6 @@
 import os
 import csv
 import json
-import shutil
 import subprocess
 import numpy as np
 from datetime import datetime
@@ -125,14 +124,5 @@ class Data_recorder:
         # Concatenate the list of numpy buffers into one bytestream
         frame = np.concatenate([img for img in new_images["images"]])
         self.ffmpeg_process.stdin.write(frame)
-        for gpio_pinstate, timestamp in zip(
-            new_images["gpio_data"], new_images["timestamps"]
-        ):  # Write GPIO pinstate to file.
-            self.gpio_writer.writerow(list(gpio_pinstate) + [timestamp])
-
-    def submit_work(self, new_images):
-        """Submit a job to the video encoding ThreadPool"""
-        # Submit encoding tasks to the thread pool executor for parallel processing
-        self.camera_widget.video_capture_tab.threadpool_futures.append(
-            self.camera_widget.video_capture_tab.threadpool.submit(self.record_new_images, new_images)
-        )
+        for gpio_pinstate in new_images["gpio_data"]:  # Write GPIO pinstate to file.
+            self.gpio_writer.writerow(gpio_pinstate)
