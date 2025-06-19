@@ -234,7 +234,7 @@ class CameraWidget(QGroupBox):
         self.start_recording_button.setEnabled(False)
         self.subject_id_text.setEnabled(False)
         self.GUI.tab_widget.tabBar().setEnabled(False)
-        self.GUI.video_capture_tab.update_global_recording_button_states()
+        self.GUI.video_capture_tab.update_button_states()
 
     def stop_recording(self):
         """Stop recording video data to disk."""
@@ -247,7 +247,7 @@ class CameraWidget(QGroupBox):
         self.start_recording_button.setEnabled(True)
         self.subject_id_text.setEnabled(True)
         self.camera_dropdown.setEnabled(True)
-        self.GUI.video_capture_tab.update_global_recording_button_states()
+        self.GUI.video_capture_tab.update_button_states()
         self.GUI.tab_widget.tabBar().setEnabled(True)
 
     # Video display -------------------------------------------------------------------
@@ -345,7 +345,7 @@ class CameraWidget(QGroupBox):
             self.camera_name_item.setText(f"{self.label}", color="white")
         # Overwrite start_recording button if FFMPEG not available
         self.start_recording_button.setEnabled(self.GUI.ffmpeg_path_available)
-        self.GUI.video_capture_tab.update_global_recording_button_states()
+        self.GUI.video_capture_tab.update_button_states()
 
     def toggle_control_visibility(self) -> None:
         """Toggle the visibility of the camera controls."""
