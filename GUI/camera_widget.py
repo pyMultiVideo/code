@@ -216,8 +216,12 @@ class CameraWidget(QGroupBox):
             if not isclose(
                 (timestamps_dt[0] - self._last_timestamp).total_seconds(), expected_interval_ns / 1e9, rel_tol=1e-2
             ):
-                new_images["_newly_dropped_frames"] += 1
-                self._newly_dropped_frames += 1
+                dropped = (
+                    round((timestamps_dt[0] - self._last_timestamp).total_seconds() / (expected_interval_ns / 1e9)) - 1
+                )  # Calculate the number of frames that would've been calculated in the interval between the frames
+                if dropped > 0:
+                    new_images["_newly_dropped_frames"] += dropped
+                    self._newly_dropped_frames += dropped
 
         # Compare consecutive timestamps within this batch
         for prev, curr in zip(timestamps_dt[:-1], timestamps_dt[1:]):

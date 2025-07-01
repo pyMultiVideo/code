@@ -38,8 +38,6 @@ class Data_recorder:
         self.settings = settings
         self.recorded_frames = 0
         self.dropped_frames = 0
-        self.unrecorded_time = 0
-        self.previous_timestamp = 0
         # Create Filepaths_config.
         self.subject_id = subject_id
         self.record_start_time = datetime.now()
@@ -74,8 +72,6 @@ class Data_recorder:
             "duration": None,
             "recorded_frames": 0,
             "dropped_frames": None,
-            "calculated_dropped_frames": None,
-            "unrecorded_time": None,
         }
         with open(self.metadata_filepath, "w") as meta_data_file:
             json.dump(self.metadata, meta_data_file, indent=4)
@@ -115,8 +111,6 @@ class Data_recorder:
         self.metadata["end_time"] = end_time.isoformat(timespec="milliseconds")
         self.metadata["duration"] = str(end_time - self.record_start_time)[:-3]
         self.metadata["recorded_frames"] = self.recorded_frames
-        self.metadata["unrecorded_time"] = str(timedelta(seconds=self.unrecorded_time))[:-3]
-        self.metadata["calculated_dropped_frames"] = math.floor(self.unrecorded_time * int(self.settings.fps))
         self.metadata["dropped_frames"] = self.dropped_frames
 
         with open(self.metadata_filepath, "w") as self.meta_data_file:
@@ -134,13 +128,3 @@ class Data_recorder:
         self.ffmpeg_process.stdin.write(frame)
         for gpio_pinstate in new_images["gpio_data"]:  # Write GPIO pinstate to file.
             self.gpio_writer.writerow(gpio_pinstate)
-        # For each new timestamp
-        for timestamp in new_images["timestamps"]:
-            # Skip interval calculation for the first timestamp
-            if self.previous_timestamp == 0:
-                self.previous_timestamp = timestamp
-                continue
-            frame_interval = (timestamp - self.previous_timestamp) / 1e9
-            self.previous_timestamp = timestamp
-            expected_interval = 1 / int(self.camera_widget.settings.fps)
-            self.unrecorded_time += max(0, frame_interval - expected_interval)

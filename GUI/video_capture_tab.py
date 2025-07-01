@@ -57,6 +57,7 @@ class MonitoringThreadPoolExecutor(ThreadPoolExecutor):
 
         return super().submit(wrapper, *args, **kwargs)
 
+
 class VideoCaptureTab(QWidget):
     """Tab used to display the viewfinder and control the cameras"""
 
