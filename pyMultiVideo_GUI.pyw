@@ -86,5 +86,16 @@ def main(parsed_args, unparsed_args):
 
 # Run the main function if this script is run
 if __name__ == "__main__":
-    parsed_args, unparsed_args = parse_args()
-    main(parsed_args, unparsed_args)
+    try:
+        parsed_args, unparsed_args = parse_args()
+        main(parsed_args, unparsed_args)
+    except Exception as e:
+        logging.error("Startup failure", exc_info=True)
+
+        app = QtWidgets.QApplication(sys.argv)
+        QtWidgets.QMessageBox.critical(
+            None,
+            "Application Startup Error",
+            "An error occurred while starting the application.\n" "Please check ErrorLog.txt for more details.",
+        )
+        sys.exit(1)
