@@ -23,6 +23,21 @@ def check_module(module_name):
         sys.exit()
 
 
+# Error GUI Dialog
+def open_error_dialog():
+    app = QApplication(sys.argv)
+    msg_box = QMessageBox()
+    msg_box.setIcon(QMessageBox.Icon.Critical)
+    msg_box.setWindowTitle("Application Startup Error")
+    msg_box.setTextFormat(Qt.TextFormat.RichText)
+    msg_box.setText(
+        "An error occurred while starting the application.<br>"
+        'Please check <a href="ErrorLog.txt">ErrorLog.txt</a> for more details.'
+    )
+    msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+    msg_box.exec()
+
+
 ### Terminal Commands -----------------------------------------------------------------------
 
 
@@ -66,13 +81,14 @@ check_module("PyQt6")
 check_module("pyqtgraph")
 
 # Import GUI now that dependancies are verified.
-import PyQt6.QtWidgets as QtWidgets
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication, QMessageBox
 from PyQt6 import QtGui
 from GUI.GUI_main import GUIMain
 
 
 def main(parsed_args, unparsed_args):
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     app.setStyle("Fusion")
     font = QtGui.QFont()
     font.setPixelSize(gui_config["font_size"])
@@ -91,11 +107,5 @@ if __name__ == "__main__":
         main(parsed_args, unparsed_args)
     except Exception as e:
         logging.error("Startup failure", exc_info=True)
-
-        app = QtWidgets.QApplication(sys.argv)
-        QtWidgets.QMessageBox.critical(
-            None,
-            "Application Startup Error",
-            "An error occurred while starting the application.\n" "Please check ErrorLog.txt for more details.",
-        )
-        sys.exit(1)
+        open_error_dialog()
+        sys.exit()
