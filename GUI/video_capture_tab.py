@@ -359,6 +359,7 @@ class VideoCaptureTab(QWidget):
         # Configure tab.
         self.configure_tab_from_config(experiment_config)
         self.saved_config = self.get_config()
+        self.update_button_states()
 
     def configure_tab_from_config(self, experiment_config: ExperimentConfig):
         """Configure tab to match settings in experiment config."""
