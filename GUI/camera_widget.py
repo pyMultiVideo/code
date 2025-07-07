@@ -1,7 +1,7 @@
 import os
 import cv2
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 from dataclasses import dataclass
 from collections import deque
 
@@ -23,7 +23,7 @@ class CameraWidgetConfig:
 
 
 class ScrollableGraphicsView(pg.GraphicsView):
-    """Custom Graphics View to detect wheel events"""
+    """Custom Graphics View to detect scroll wheel events. Used to allow preview camera to have scrollable view"""
 
     wheelScrolled = pyqtSignal(str)
 
@@ -45,8 +45,8 @@ class CameraWidget(QGroupBox):
 
     def __init__(self, parent, label, subject_id="", preview_mode=False):
         super(CameraWidget, self).__init__(parent)
-        self.parent = parent
-        self.GUI = self.parent.GUI
+        self.video_capture_tab = parent
+        self.GUI = self.video_capture_tab.GUI
         self.preview_mode = preview_mode  # True if widget is being used in camera setup tab.
         # Camera attributes
         self.subject_id = subject_id
@@ -57,6 +57,7 @@ class CameraWidget(QGroupBox):
         self.camera_width = self.camera_api.get_width()
         self.latest_image = None
         self.frame_timestamps = deque([0], maxlen=10)
+        self.framenumbers = deque([0], maxlen=10)
         self.controls_visible = True
 
         # Video display ---------------------------------------------------------------
@@ -85,9 +86,7 @@ class CameraWidget(QGroupBox):
         self.recording_status_item = pg.TextItem()
         self.recording_status_item.setPos(10, 2 * text_spacing)
         self.graphics_view.addItem(self.recording_status_item)
-        self.recording_status_item.setText(
-            "NO FRAME ACQUIRED" if self.settings.external_trigger else "NOT RECORDING", color="r"
-        )
+        self.recording_status_item.setText("NOT RECORDING", color="r")
         # Framerate overlay
         self.frame_rate_text = pg.TextItem()
         self.frame_rate_text.setPos(10, 3 * text_spacing)
@@ -185,8 +184,8 @@ class CameraWidget(QGroupBox):
 
     def begin_capturing(self):
         """Start streaming video from camera."""
-        self.dropped_frames = 0
         self.recording = False
+        self._last_timestamp = None
         # Begin capturing using the camera API
         self.camera_api.begin_capturing(self.settings)
 
@@ -204,12 +203,13 @@ class CameraWidget(QGroupBox):
         # Store most recent image and GPIO state for the next display update.
         self.latest_image = new_images["images"][-1]
         self.latest_GPIO = new_images["gpio_data"][-1]
+        # Check for dropped frames based on expected interval between exposure timestamps
         self._newly_dropped_frames = new_images["dropped_frames"]
-        self.frame_timestamps.extend(new_images["timestamps"])
-        self.dropped_frames += new_images["dropped_frames"]
+        self.frame_timestamps.extend(new_images["timestamps"])  # For displaying the calculated framerate
+
         # Record data to disk.
         if self.recording:
-            self.data_recorder.record_new_images(new_images)
+            self.video_capture_tab.threadpool.submit(self.data_recorder.record_new_images, new_images)
 
     def update(self, update_video_display=True):
         """Called regularly by timer to fetch new images and optionally update video display."""
@@ -236,7 +236,7 @@ class CameraWidget(QGroupBox):
         self.start_recording_button.setEnabled(False)
         self.subject_id_text.setEnabled(False)
         self.GUI.tab_widget.tabBar().setEnabled(False)
-        self.GUI.video_capture_tab.update_global_recording_button_states()
+        self.GUI.video_capture_tab.update_button_states()
 
     def stop_recording(self):
         """Stop recording video data to disk."""
@@ -244,14 +244,12 @@ class CameraWidget(QGroupBox):
         self.data_recorder.stop_recording()
         self.recording = False
         # Update GUI
-        self.recording_status_item.setText(
-            "NO FRAME ACQUIRED" if self.settings.external_trigger else "NOT RECORDING", color="r"
-        )
+        self.recording_status_item.setText("NOT RECORDING", color="r")
         self.stop_recording_button.setEnabled(False)
         self.start_recording_button.setEnabled(True)
         self.subject_id_text.setEnabled(True)
         self.camera_dropdown.setEnabled(True)
-        self.GUI.video_capture_tab.update_global_recording_button_states()
+        self.GUI.video_capture_tab.update_button_states()
         self.GUI.tab_widget.tabBar().setEnabled(True)
 
     # Video display -------------------------------------------------------------------
@@ -261,8 +259,8 @@ class CameraWidget(QGroupBox):
         if self.latest_image is None:
             return
         image = np.frombuffer(self.latest_image, dtype=np.uint8).reshape(self.camera_height, self.camera_width)
-        if self.settings.pixel_format != "Mono8":
-            image = cv2.cvtColor(image, self.camera_api.cv2_conversion[self.settings.pixel_format])
+        if self.settings.pixel_format != "Mono":
+            image = cv2.cvtColor(image, self.camera_api.pixel_format_map[self.settings.pixel_format]["cv2"])
         self.video_image_item.setImage(image)
         # Compute average framerate and display over image.
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
@@ -277,10 +275,7 @@ class CameraWidget(QGroupBox):
         # Display the current recording duration over image.
         if self.recording:
             elapsed_time = datetime.now() - self.data_recorder.record_start_time
-            status = (
-                "FRAME ACQUIRED" if self.settings.external_trigger else f"RECORDING  {str(elapsed_time).split('.')[0]}"
-            )
-            self.recording_status_item.setText(status, color="g")
+            self.recording_status_item.setText(f"RECORDING  {str(elapsed_time).split('.')[0]}", color="g")
         # Update dropped frames indicator.
         if self._newly_dropped_frames:
             self.dropped_frames_text.setText("DROPPED FRAMES", color="r")
@@ -305,11 +300,15 @@ class CameraWidget(QGroupBox):
     def refresh(self):
         """refresh the camera widget"""
         self.update_camera_dropdown()
+        self.update_viewfinder_text()
 
     def update_camera_dropdown(self):
         """Update the cameras available in the camera select dropdown menu."""
         # Disconnect function whilst updating text
-        self.camera_dropdown.currentTextChanged.disconnect(self.change_camera)
+        try:
+            self.camera_dropdown.currentTextChanged.disconnect(self.change_camera)
+        except TypeError:
+            pass  # Signal was not connected
         # Available cameras
         available_cameras = sorted(
             set(self.GUI.camera_setup_tab.get_camera_labels())
@@ -330,6 +329,13 @@ class CameraWidget(QGroupBox):
         # Re-enable function whilst updating text
         self.camera_dropdown.currentTextChanged.connect(self.change_camera)
 
+    def update_viewfinder_text(self):
+        """Update the viewfinder display text based on if settings have changed"""
+        self.recording_status_item.setText(
+            "NOT RECORDING",
+            color="r",
+        )
+
     def subject_ID_edited(self):
         """Store new subject ID and update status of recording button."""
         self.subject_id = self.subject_id_text.toPlainText()
@@ -341,7 +347,7 @@ class CameraWidget(QGroupBox):
             self.camera_name_item.setText(f"{self.label}", color="white")
         # Overwrite start_recording button if FFMPEG not available
         self.start_recording_button.setEnabled(self.GUI.ffmpeg_path_available)
-        self.GUI.video_capture_tab.update_global_recording_button_states()
+        self.GUI.video_capture_tab.update_button_states()
 
     def toggle_control_visibility(self) -> None:
         """Toggle the visibility of the camera controls."""
@@ -367,11 +373,12 @@ class CameraWidget(QGroupBox):
         if self.camera_api is not None:
             self.camera_api.close_api()
             del self.camera_api
+        self.latest_image = None
         # Initialise the new camera
         self.label = str(self.camera_dropdown.currentText())
         self.settings = self.GUI.camera_setup_tab.get_camera_settings_from_label(self.label)
         self.camera_api = init_camera_api_from_module(self.settings)
-        self.camera_api.begin_capturing()
+        self.camera_api.begin_capturing(self.settings)
         self.camera_height = self.camera_api.get_height()
         self.camera_width = self.camera_api.get_width()
         # Rename pyqtgraph element
@@ -388,6 +395,8 @@ class CameraWidget(QGroupBox):
                 (5 + i) * int(self.GUI.gui_config["font_size"] * 1.25), 4 * int(self.GUI.gui_config["font_size"] * 1.25)
             )
             self.graphics_view.addItem(gpio_indicator)
+        # Update Frame triggered text
+        self.recording_status_item.setText("NOT RECORDING", color="r")
 
     def closeEvent(self, event):
         """Handle the close event to stop the timer and release resources"""

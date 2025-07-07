@@ -9,7 +9,7 @@ import json
 
 # import tab classes
 from .video_capture_tab import VideoCaptureTab
-from .camera_setup_tab import CamerasTab
+from .camera_setup_tab import CameraSetupTab
 
 from config.config import __version__, gui_config, ffmpeg_config, paths_config
 
@@ -22,11 +22,12 @@ class GUIMain(QMainWindow):
     """Class implementing the main GUI window."""
 
     def __init__(self, parsed_args):
+
         super().__init__()
+
         # Deal with arguments parsed to application
         self.parsed_args = parsed_args
         # config arguments
-        print(self.parsed_args)
         if self.parsed_args.application_config:
             config_data = json.loads(self.parsed_args.application_config)
             self.paths_config = config_data.get("paths_config")
@@ -64,7 +65,8 @@ class GUIMain(QMainWindow):
         self.setWindowTitle(f"pyMultiVideo v{__version__}")  # default window title
         self.setWindowIcon(QIcon(os.path.join(self.paths_config["icons_dir"], "logo.svg")))
         # Initialise the tabs and tab widget.
-        self.camera_setup_tab = CamerasTab(parent=self)
+        self.camera_setup_tab = CameraSetupTab(parent=self)
+        self.camera_setup_tab.tab_deselected()
         self.video_capture_tab = VideoCaptureTab(parent=self)
         self.tab_widget = QTabWidget()
         self.tab_widget.addTab(self.video_capture_tab, "Video Capture")
@@ -73,11 +75,26 @@ class GUIMain(QMainWindow):
         self.setCentralWidget(self.tab_widget)
         # Initialise menu bar.
         main_menu = self.menuBar()
-        view_menu = main_menu.addMenu("View")
-        full_screen_controls_action = QAction("Toggle Fullscreen", self)
+        view_menu = main_menu.addMenu("Controls")
+        full_screen_controls_action = QAction(
+            QIcon(os.path.join(self.paths_config["icons_dir"], "fullscreen.svg")), "Toggle Fullscreen", self
+        )
         full_screen_controls_action.setShortcut("Ctrl+F")
         full_screen_controls_action.triggered.connect(self.video_capture_tab.toggle_full_screen_mode)
         view_menu.addAction(full_screen_controls_action)
+        # Recording Shortcuts
+        self.start_recording_all_action = QAction(
+            QIcon(os.path.join(self.paths_config["icons_dir"], "record.svg")), "Start Recording", self
+        )
+        self.start_recording_all_action.setShortcut("Ctrl+Shift+R")
+        self.start_recording_all_action.triggered.connect(self.video_capture_tab.start_recording)
+        self.stop_recording_all_action = QAction(
+            QIcon(os.path.join(self.paths_config["icons_dir"], "stop.svg")), "Stop Recording", self
+        )
+        self.stop_recording_all_action.setShortcut("Ctrl+Shift+E")
+        self.stop_recording_all_action.triggered.connect(self.video_capture_tab.stop_recording)
+        view_menu.addAction(self.start_recording_all_action)
+        view_menu.addAction(self.stop_recording_all_action)
 
         # Display main window.
         self.show()
@@ -108,6 +125,7 @@ class GUIMain(QMainWindow):
         if self.camera_setup_tab.camera_preview:
             self.camera_setup_tab.camera_preview.closeEvent(event)
             self.camera_setup_tab.camera_preview.deleteLater()
+
         event.accept()
         sys.exit(0)
 

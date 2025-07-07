@@ -2,18 +2,43 @@
 Generic API defining functionality needed for for camera system to interact with the GUI.
 """
 
+from collections import OrderedDict
+import cv2
+
 # GenericCamera class -------------------------------------------------------------------
 
 
 class GenericCamera:
+    """Template class for representing a camera. Defines functionallity that must be implemented for interaction with the GUI."""
+
     def __init__(self, CameraConfig=None):
-        """Template class for representing a camera. Defines functionallity that must be implemented for interaction with the GUI."""
+
+        # Options for camera -----------------------------------------------------------
+
         self.serial_number = None  # To be replaced with device serial number.
         self.device_model = "GenericCameraModel"  # Replace with the camera model name to be recorded in metadata.
         self.N_GPIO = 3  # Number of pins that the camera records each frame.
+        self.BUFFER_SIZE = 100
+        self.trigger_line = None  # Name of the line which will be used to trigger external acqusition
         self.manual_control_enabled = (
             False  # If true, there is manual control available for the camera (gain / exposure time)
         )
+        # This ordered dictionary represents the metadata that the camera class requires for handling different pixel formats.
+        # 'Internal' refers to the camera's internal name for the pixel format.
+        # 'ffmpeg' specifies the corresponding pixel format name used by ffmpeg.
+        # 'cv2' specifices the OpenCV conversion code for the pixel format.
+        self.pixel_format_map = OrderedDict(
+            [
+                ("Colour", {"Internal": "BayerRG8", "ffmpeg": "bayer_rggb8", "cv2": cv2.COLOR_BayerRG2BGR}),
+                ("Mono", {"Internal": "Mono8", "ffmpeg": "gray", "cv2": cv2.COLOR_GRAY2BGR}),
+            ]
+        )
+
+        # Configure camera settings -----------------------------------------------------
+
+        # When the parameters is changed, the camera widget will restart, thus running this code
+        # if CameraConfig is not None:
+        #     self.configure_acqusition_mode(CameraConfig.external_trigger)
 
     # Functions to get the camera parameters -----------------------------------------------------------------
 
@@ -55,16 +80,22 @@ class GenericCamera:
 
     # Functions to set the camera parameters -----------------------------------------------------------------
 
-    def set_frame_rate(self, frame_rate: int) -> None:
+    def set_frame_rate(self, *frame_rate: int) -> None:
         """Set the aquisition frame rate of the camera"""
         pass
 
-    def set_exposure_time(self, exposure_time) -> None:
+    def set_exposure_time(self, *exposure_time) -> None:
         """Set the exposure_time of the camera"""
         pass
 
     def set_gain(self, gain):
         """Set the gain of the camera"""
+        pass
+
+    # Configure Acqusition Mode -------------------------------------------------------------------------------
+
+    def set_acqusition_mode(self, external_trigger: bool):
+        """Configuriung the acqusition mode of the camera"""
         pass
 
     #  Functions to control the camera streaming and check status ---------------------------------------------
@@ -111,6 +142,6 @@ def list_available_cameras() -> list[str]:
     return unique_id_list
 
 
-def initialise_camera_api(CameraSettingsConfig=None):
-    """Returns a camera instance based on the _id"""
-    return GenericCamera()
+def initialise_camera_api(CameraConfig=None):
+    """Returns a GenricCamera object"""
+    return GenericCamera(CameraConfig=CameraConfig)

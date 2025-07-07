@@ -1,4 +1,9 @@
 numpy
-PyQt6
-pyqtgraph
-opencv-python
+PyQt6 
+pyqtgraph 
+opencv-python 
+
+tqdm 
+matplotlib
+seaborn
+pandas

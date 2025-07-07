@@ -1,7 +1,6 @@
 import logging
 import sys
 import argparse
-
 from config.config import gui_config
 
 # Dependancy Mangement
@@ -24,9 +23,24 @@ def check_module(module_name):
         sys.exit()
 
 
+def open_error_dialog():
+    """Startup error dialog"""
+    app = QApplication(sys.argv)
+    msg_box = QMessageBox()
+    msg_box.setIcon(QMessageBox.Icon.Critical)
+    msg_box.setWindowTitle("Application Startup Error")
+    msg_box.setTextFormat(Qt.TextFormat.RichText)
+    msg_box.setText(
+        "An error occurred while starting the application.<br>"
+        'Please check <a href="ErrorLog.txt">ErrorLog.txt</a> for more details.'
+    )
+    msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+    msg_box.exec()
+
+
 ### Terminal Commands -----------------------------------------------------------------------
 
- 
+
 def valid_time(value):
     try:
         hours, minutes = map(int, value.split(":"))
@@ -47,9 +61,11 @@ def parse_args():
     # Camera Conifg
     parser.add_argument("--camera-config", help="Path to the camera configuration file in JSON format", type=str)
     # Config.py
-    parser.add_argument("--application-config", help="Path to the application configuration file in JSON format", type=str)
+    parser.add_argument(
+        "--application-config", help="Path to the application configuration file in JSON format", type=str
+    )
     # Recording options
-    parser.add_argument("--record-on-startup", help="if True: Cameras start recording on startup", type=bool)
+    parser.add_argument("--record-on-startup", help="if true: Cameras start recording on startup", type=bool)
     parser.add_argument(
         "--close-after",
         help="Amount of time the application will be open for (Specific time in HH:MM)",
@@ -65,13 +81,14 @@ check_module("PyQt6")
 check_module("pyqtgraph")
 
 # Import GUI now that dependancies are verified.
-import PyQt6.QtWidgets as QtWidgets
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication, QMessageBox
 from PyQt6 import QtGui
 from GUI.GUI_main import GUIMain
 
 
 def main(parsed_args, unparsed_args):
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     app.setStyle("Fusion")
     font = QtGui.QFont()
     font.setPixelSize(gui_config["font_size"])
@@ -85,5 +102,10 @@ def main(parsed_args, unparsed_args):
 
 # Run the main function if this script is run
 if __name__ == "__main__":
-    parsed_args, unparsed_args = parse_args()
-    main(parsed_args, unparsed_args)
+    try:
+        parsed_args, unparsed_args = parse_args()
+        main(parsed_args, unparsed_args)
+    except Exception as e:
+        logging.error("Startup failure", exc_info=True)
+        open_error_dialog()
+        sys.exit()

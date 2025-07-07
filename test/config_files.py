@@ -3,7 +3,17 @@ import os
 from datetime import datetime
 import json
 
+import sys
+from pathlib import Path
+
+# Add the parent directory to sys.path for proper imports
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+from config.config import paths_config, default_camera_config
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # pyMV code folder.
+
+### Start of helper functions ###
 
 
 def get_camera_unique_ids():
@@ -43,7 +53,7 @@ def create_camera_config(n_cameras, fps, downsampling_factor):
             "exposure_time": min(max(1000, 1000000 // fps), 100000)
             - 1000,  # Ensure exposure time is between 1000 and 100000 microseconds
             "gain": 0,
-            "pixel_format": "Mono8",
+            "pixel_format": default_camera_config["pixel_format"],
             "downsampling_factor": downsampling_factor,
         }
         for i in range(n_cameras)
@@ -67,22 +77,8 @@ def generate_performance_test_config(
                 "encoding_speed": encoding_speed,
                 "compression_standard": compression_standard,
             },
-            "paths_config": {
-                "ROOT": ROOT,
-                "camera_dir": os.path.join(ROOT, "config"),
-                "encoder_dir": os.path.join(ROOT, "config"),
-                "data_dir": os.path.join(ROOT, "data"),
-                "config_dir": os.path.join(ROOT, "config"),
-                "icons_dir": os.path.join(ROOT, "GUI", "icons"),
-            },
-            "default_camera_config": {
-                "name": None,
-                "fps": fps,
-                "downsampling_factor": downsampling_factor,
-                "exposure_time": 15000,
-                "gain": 0,
-                "pixel_format": "Mono8",
-            },
+            "paths_config": paths_config,
+            "default_camera_config": default_camera_config,
         },
         "experiment_config": create_experiment_config(data_dir=test_config_dir, n_cameras=n_camera),
         "camera_config": create_camera_config(n_cameras=n_camera, fps=fps, downsampling_factor=downsampling_factor),
@@ -91,12 +87,15 @@ def generate_performance_test_config(
     }
 
 
+### End of Helper Functions ###
+
+
 subject_ids = [f"subject_{i}" for i in range(len(get_camera_unique_ids()))]
 
 # The parameters which are varied
 testing_parameters = {
     # Folder test name
-    "test_name": f"test-small",
+    "test_name": f"test-photo-1",
     # "test_name": f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
     # Recording_length (s)
     "close_after": "00:30",  # MM:SS
@@ -105,36 +104,13 @@ testing_parameters = {
     "downsample_range": [1, 2, 4],
     "fps_range": [30, 60, 90, 120],
     # GUI config
-    "camera_update_range": [20],
-    "camera_updates_per_display_update": [1],
+    "camera_update_range": [10, 20, 40],
+    "camera_updates_per_display_update": [1, 2, 4],
     # FFMPEG
     "crf_range": [1, 23, 51],
     "encoding_speed_options": ["fast", "medium", "slow"],
     "compression_standard": ["h264", "h265"],
 }
-
-# Calculate the total number of tests and the estimated duration
-total_tests = (
-    len(testing_parameters["n_cameras"])
-    * len(testing_parameters["downsample_range"])
-    * len(testing_parameters["fps_range"])
-    * len(testing_parameters["camera_update_range"])
-    * len(testing_parameters["camera_updates_per_display_update"])
-    * len(testing_parameters["crf_range"])
-    * len(testing_parameters["encoding_speed_options"])
-    * len(testing_parameters["compression_standard"])
-)
-
-# Convert "close_after" to seconds
-close_after_parts = list(map(int, testing_parameters["close_after"].split(":")))
-close_after_seconds = close_after_parts[0] * 60 + close_after_parts[1]
-
-# Calculate total test duration
-total_duration_seconds = total_tests * close_after_seconds
-total_duration_minutes = total_duration_seconds / 60
-
-print(f"Total number of tests: {total_tests}")
-print(f"Estimated total duration: {total_duration_minutes} minutes")
 
 # Setup data directors for test to take place in
 # 1. Create directory
@@ -154,56 +130,58 @@ try:
 except Exception as e:
     print(f"Failed to save testing parameters: {e}")
 
-DOWNSAMPLING_FACTOR = 1
+DOWNSAMPLING_FACTOR = 2
 CAMERA_UPDATE_RATE = 20
 UPDATES_PER_DISPLAY = 1
 CRF = 23
-ENCODERING_SPEED = "slow"
+ENCODERING_SPEED = "fast"
 COMPRESSION_STANDARD = "h265"
-N_CAMERAS = 2
+N_CAMERAS = 4
 FPS = 60
 
 
-# Generate configurations for varying FPS and cameras
+# # Generate config files for varying FPS and cameras
+# for fps in testing_parameters["fps_range"]:
+#     for n_camera in testing_parameters["n_cameras"]:
+#         config_dir = (
+#             f"config_ncams_{n_camera}_downsample_{DOWNSAMPLING_FACTOR}_fps_{fps}_"
+#             f"update_{CAMERA_UPDATE_RATE}_upd_per_disp_{UPDATES_PER_DISPLAY}_"
+#             f"crf_{CRF}_speed_{ENCODERING_SPEED}_comp_{COMPRESSION_STANDARD}"
+#         )
+#         test_config_dir = test_directory / config_dir
+#         test_config_dir.mkdir(parents=True, exist_ok=True)
+
+#         test_config = generate_performance_test_config(
+#             fps=fps,
+#             n_camera=n_camera,
+#             downsampling_factor=DOWNSAMPLING_FACTOR,
+#             encoding_speed=ENCODERING_SPEED,
+#             compression_standard=COMPRESSION_STANDARD,
+#             updates_per_display=UPDATES_PER_DISPLAY,
+#         )
+#         save_config_file(test_config_dir, test_config)
+
+# Generate config files for fixed cameras and FPS
 for fps in testing_parameters["fps_range"]:
     for n_camera in testing_parameters["n_cameras"]:
-        config_dir = (
-            f"config_ncams_{n_camera}_downsample_{DOWNSAMPLING_FACTOR}_fps_{fps}_"
-            f"update_{CAMERA_UPDATE_RATE}_upd_per_disp_{UPDATES_PER_DISPLAY}_"
-            f"crf_{CRF}_speed_{ENCODERING_SPEED}_comp_{COMPRESSION_STANDARD}"
-        )
-        test_config_dir = test_directory / config_dir
-        test_config_dir.mkdir(parents=True, exist_ok=True)
+        for downsampling_factor in testing_parameters["downsample_range"]:
+            for encoding_speed in testing_parameters["encoding_speed_options"]:
+                for compression_standard in testing_parameters["compression_standard"]:
+                    for updates_per_display in testing_parameters["camera_updates_per_display_update"]:
+                        config_dir = (
+                            f"config_ncams_{n_camera}_downsample_{downsampling_factor}_fps_{fps}_"
+                            f"update_{CAMERA_UPDATE_RATE}_upd_per_disp_{updates_per_display}_"
+                            f"crf_{CRF}_speed_{encoding_speed}_comp_{compression_standard}"
+                        )
+                        test_config_dir = test_directory / config_dir
+                        test_config_dir.mkdir(parents=True, exist_ok=True)
 
-        test_config = generate_performance_test_config(
-            fps=fps,
-            n_camera=n_camera,
-            downsampling_factor=DOWNSAMPLING_FACTOR,
-            encoding_speed=ENCODERING_SPEED,
-            compression_standard=COMPRESSION_STANDARD,
-            updates_per_display=UPDATES_PER_DISPLAY,
-        )
-        save_config_file(test_config_dir, test_config)
-
-# Generate configurations for fixed cameras and FPS
-for downsampling_factor in testing_parameters["downsample_range"]:
-    for encoding_speed in testing_parameters["encoding_speed_options"]:
-        for compression_standard in testing_parameters["compression_standard"]:
-            for updates_per_display in testing_parameters["camera_updates_per_display_update"]:
-                config_dir = (
-                    f"config_ncams_{N_CAMERAS}_downsample_{downsampling_factor}_fps_{FPS}_"
-                    f"update_{CAMERA_UPDATE_RATE}_upd_per_disp_{updates_per_display}_"
-                    f"crf_{CRF}_speed_{encoding_speed}_comp_{compression_standard}"
-                )
-                test_config_dir = test_directory / config_dir
-                test_config_dir.mkdir(parents=True, exist_ok=True)
-
-                test_config = generate_performance_test_config(
-                    fps=FPS,
-                    n_camera=N_CAMERAS,
-                    downsampling_factor=downsampling_factor,
-                    encoding_speed=encoding_speed,
-                    compression_standard=compression_standard,
-                    updates_per_display=updates_per_display,
-                )
-                save_config_file(test_config_dir, test_config)
+                        test_config = generate_performance_test_config(
+                            fps=fps,
+                            n_camera=n_camera,
+                            downsampling_factor=downsampling_factor,
+                            encoding_speed=encoding_speed,
+                            compression_standard=compression_standard,
+                            updates_per_display=updates_per_display,
+                        )
+                        save_config_file(test_config_dir, test_config)

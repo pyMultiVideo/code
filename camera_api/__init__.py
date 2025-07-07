@@ -73,4 +73,4 @@ def init_camera_api_from_module(settings):
     """Initialise a camera API object given the camera ID and any camera settings."""
     _, module_name = settings.unique_id.split("-")
     camera_module = importlib.import_module(f"camera_api.{module_name}")
-    return camera_module.initialise_camera_api(CameraSettingsConfig=settings)
+    return camera_module.initialise_camera_api(CameraConfig=settings)

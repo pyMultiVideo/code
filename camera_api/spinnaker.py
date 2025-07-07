@@ -20,8 +20,8 @@ class SpinnakerCamera(GenericCamera):
         self.serial_number, self.api = self.unique_id.split("-")
         self.N_GPIO = 3  # Number of GPIO pins
         self.manual_control_enabled = True
-        self.trigger_line = 0  # Trigger line name
-
+        self.trigger_line = 2  # Trigger line name
+        self.previous_frame_number = 0
         # Initialise camera -------------------------------------------------------------
         self.cam_list = PYSPINSYSTEM.GetCameras()
         self.cam = next(
@@ -35,13 +35,13 @@ class SpinnakerCamera(GenericCamera):
         # Dictionaries for supporting colored cameras -----------------------------------
 
         # List of color formats pMV supports listed in order or priority. Prioritise Color.
-        self.supported_pixel_formats = OrderedDict(
+        self.pixel_format_map = OrderedDict(
             [
-                ("BayerRG8", "bayer_rggb8"),
-                ("Mono8", "gray"),
+                ("Mono", {"Internal": "Mono8", "ffmpeg": "gray", "cv2": cv2.COLOR_GRAY2BGR}),
+                ("Colour", {"Internal": "BayerRG8", "ffmpeg": "bayer_rggb8", "cv2": cv2.COLOR_BayerRG2BGR}),
             ]
         )
-        self.cv2_conversion = {"BayerRG8": cv2.COLOR_BayerRG2BGR, "Mono8": cv2.COLOR_GRAY2BGR}
+
         self.pixel_format = self.get_supported_pixel_formats()
         # Set the pixel format
         self.set_pixel_format(self.pixel_format)
@@ -53,7 +53,6 @@ class SpinnakerCamera(GenericCamera):
         bh_node.SetIntValue(bh_node.GetEntryByName("OldestFirst").GetValue())
         sbc_node = PySpin.CIntegerPtr(self.stream_nodemap.GetNode("StreamBufferCountManual"))
         sbc_node.SetValue(100)  # Set buffer size to 100 frames.
-
         # Configure ChunkData to include frame count and timestamp.
         chunk_selector = PySpin.CEnumerationPtr(self.nodemap.GetNode("ChunkSelector"))
         if self.device_model == "Chameleon3":
@@ -76,10 +75,104 @@ class SpinnakerCamera(GenericCamera):
         self.cam.ChunkEnable.SetValue(True)
         self.cam.ChunkModeActive.SetValue(True)
 
-        # Configure Camera differently if you want external triggering or not -
+        # Acqusition mode continuous
+        acq_mode = PySpin.CEnumerationPtr(self.nodemap.GetNode("AcquisitionMode"))
+        acq_mode.SetIntValue(acq_mode.GetEntryByName("Continuous").GetValue())
 
-        if CameraConfig.external_trigger:
-            print("Setting up camera in external_trigger mode")
+        # Set Exposure to manual
+        exc_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("ExposureAuto"))
+        exc_node.SetIntValue(PySpin.ExposureAuto_Off)
+        # Set Gain to manual
+        gnc_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("GainAuto"))
+        gnc_node.SetIntValue(PySpin.GainAuto_Off)
+
+        # Configure user settings.
+        if CameraConfig is not None:
+            self.configure_settings(CameraConfig)
+
+    # Functions to get the camera parameters ----------------------------------------------
+
+    def get_width(self) -> int:
+        """Get the width of the camera image in pixels."""
+        return PySpin.CIntegerPtr(self.nodemap.GetNode("Width")).GetValue()
+
+    def get_height(self) -> int:
+        """Get the height of the camera image in pixels."""
+        return PySpin.CIntegerPtr(self.nodemap.GetNode("Height")).GetValue()
+
+    def get_frame_rate(self) -> int:
+        """Get the camera frame rate in Hz."""
+        return PySpin.CFloatPtr(self.nodemap.GetNode("AcquisitionFrameRate")).GetValue()
+
+    def get_frame_rate_range(self, *exposure_time) -> tuple[int, int]:
+        """Get the min and max frame rate (Hz)."""
+        try:
+            node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("AcquisitionFrameRate"))
+            return ceil(node.GetMin()), floor(node.GetMax())
+        except PySpin.SpinnakerException:
+            if exposure_time:
+                max_frame_rate = 1e6 / exposure_time[0]  # Use the first value of the tuple
+                return ceil(1), floor(max_frame_rate)
+            else:
+                raise ValueError("Exposure time must be provided to calculate frame rate range.")
+
+    def get_exposure_time(self) -> float:
+        """Get exposure of camera"""
+        return float(PySpin.CFloatPtr(self.nodemap.GetNode("ExposureTime")).GetValue())
+
+    def get_exposure_time_range(self, *fps) -> tuple[int, int]:
+        """Get the min and max exposure time (us)"""
+        try:
+            node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("ExposureTime"))
+            return ceil(node.GetMin()), floor(node.GetMax())
+        except PySpin.SpinnakerException:
+            max_exposure_time = 1e6 / fps[0] + 8  # Systematically underestimate maximum since init will fail if too big
+            return ceil(7), floor(max_exposure_time)
+
+    def get_gain(self) -> int:
+        """Get camera gain setting in dB."""
+        return PySpin.CFloatPtr(self.nodemap.GetNode("Gain")).GetValue()
+
+    def get_gain_range(self) -> tuple[int, int]:
+        """Get range of gain"""
+        node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("Gain"))
+        return ceil(node.GetMin()), floor(node.GetMax())
+
+    def camera_pixel_format(self) -> str:
+        """Get string specifying camera pixel format"""
+        return PySpin.CEnumerationPtr(self.nodemap.GetNode("PixelFormat")).GetCurrentEntry().GetSymbolic()
+
+    def get_supported_pixel_formats(self):
+        """Gets a string of the pixel formats available to the camera"""
+
+        # Get available pixel formats
+        node_map = self.cam.GetNodeMap()
+        pixel_format_node = PySpin.CEnumerationPtr(node_map.GetNode("PixelFormat"))
+        pixel_format_entries = pixel_format_node.GetEntries()
+
+        # Convert to string and check if available
+        pxl_formats = []
+        for entry in pixel_format_entries:
+            entry = PySpin.CEnumEntryPtr(entry)
+            if PySpin.IsAvailable(entry) and PySpin.IsReadable(entry):
+                pxl_formats.append(str(entry.GetSymbolic()))
+
+        # Get the pixel format that we want the camera to use.
+        pixel_format = next(
+            (fmt["Internal"] for fmt in self.pixel_format_map.values() if fmt["Internal"] in pxl_formats),
+            None,
+        )
+
+        if pixel_format is None:
+            raise ValueError("No supported pixel format available.")
+
+        return pixel_format
+
+    # Configure Camera for external acqusition
+
+    def set_acqusition_mode(self, external_trigger: bool):
+
+        if external_trigger:
             # Ensure trigger mode is off before configuring
             trigger_mode = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerMode"))
             trigger_mode.SetIntValue(trigger_mode.GetEntryByName("Off").GetValue())
@@ -113,102 +206,6 @@ class SpinnakerCamera(GenericCamera):
                 fra_node = PySpin.CBooleanPtr(self.nodemap.GetNode("AcquisitionFrameRateEnable"))
                 fra_node.SetValue(True)
 
-        # Acqusition mode continuous
-        acq_mode = PySpin.CEnumerationPtr(self.nodemap.GetNode("AcquisitionMode"))
-        acq_mode.SetIntValue(acq_mode.GetEntryByName("Continuous").GetValue())
-
-        # Set Exposure to manual
-        exc_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("ExposureAuto"))
-        exc_node.SetIntValue(PySpin.ExposureAuto_Off)
-        # Set Gain to manual
-        gnc_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("GainAuto"))
-        gnc_node.SetIntValue(PySpin.GainAuto_Off)
-
-        # Configure user settings.
-        if CameraConfig is not None:
-            self.configure_settings(CameraConfig)
-
-    # Functions to get the camera parameters ----------------------------------------------
-
-    def get_width(self) -> int:
-        """Get the width of the camera image in pixels."""
-        return PySpin.CIntegerPtr(self.nodemap.GetNode("Width")).GetValue()
-
-    def get_height(self) -> int:
-        """Get the height of the camera image in pixels."""
-        return PySpin.CIntegerPtr(self.nodemap.GetNode("Height")).GetValue()
-
-    def get_frame_rate(self) -> int:
-        """Get the camera frame rate in Hz."""
-        return PySpin.CFloatPtr(self.nodemap.GetNode("AcquisitionFrameRate")).GetValue()
-
-    def get_frame_rate_range(self, exposure_time) -> tuple[int, int]:
-        """Get the min and max frame rate (Hz)."""
-        try:
-            node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("AcquisitionFrameRate"))
-            return ceil(node.GetMin()), floor(node.GetMax())
-        except PySpin.SpinnakerException:
-            max_frame_rate = 1e6 / exposure_time
-            return ceil(1), floor(max_frame_rate)
-
-    def get_exposure_time(self) -> float:
-        """Get exposure of camera"""
-        return float(PySpin.CFloatPtr(self.nodemap.GetNode("ExposureTime")).GetValue())
-
-    def get_exposure_time_range(self, fps) -> tuple[int, int]:
-        """Get the min and max exposure time (us)"""
-        try:
-            node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("ExposureTime"))
-            return ceil(node.GetMin()), floor(node.GetMax())
-        except PySpin.SpinnakerException:
-            max_exposure_time = 1e6 / fps + 8  # Systematically underestimate maximum since init will fail if too big
-            return ceil(7), floor(max_exposure_time)
-
-    def get_gain(self) -> int:
-        """Get camera gain setting in dB."""
-        return PySpin.CFloatPtr(self.nodemap.GetNode("Gain")).GetValue()
-
-    def get_gain_range(self) -> tuple[int, int]:
-        """Get range of gain"""
-        node = PySpin.CFloatPtr(self.cam.GetNodeMap().GetNode("Gain"))
-        return ceil(node.GetMin()), floor(node.GetMax())
-
-    def camera_pixel_format(self) -> str:
-        """Get string specifying camera pixel format"""
-        return PySpin.CEnumerationPtr(self.nodemap.GetNode("PixelFormat")).GetCurrentEntry().GetSymbolic()
-
-    def get_supported_pixel_formats(self):
-        """Gets a string of the pixel formats available to the camera"""
-
-        # Get available pixel formats
-        node_map = self.cam.GetNodeMap()
-        pixel_format_node = PySpin.CEnumerationPtr(node_map.GetNode("PixelFormat"))
-        pixel_format_entries = pixel_format_node.GetEntries()
-
-        # Convert to string and check if available
-        available_pxl_fmts = []
-        for entry in pixel_format_entries:
-            entry = PySpin.CEnumEntryPtr(entry)
-            if PySpin.IsAvailable(entry) and PySpin.IsReadable(entry):
-                available_pxl_fmts.append(str(entry.GetSymbolic()))
-
-        # Get the pixel format that we want the camera to use.
-        pixel_format = next(
-            (
-                fmt
-                for fmt in self.supported_pixel_formats.keys()
-                if fmt in available_pxl_fmts and fmt in self.supported_pixel_formats
-            ),
-            None,
-        )
-
-        if pixel_format is None:
-            raise ValueError("No supported pixel format available.")
-
-        return pixel_format
-
-    # Configure Camera for external acqusition
-
     def get_trigger_lines(self):
         """Get a list of the GPI lines that can be used to trigger frame acquisition"""
         trigger_lines = []
@@ -224,10 +221,11 @@ class SpinnakerCamera(GenericCamera):
             print(f"Error retrieving trigger lines: {e}")
         return trigger_lines
 
-    # Functions to set camera paramteters.
+    # Functions to set camera paramteters ------------------------------------------------------------------------
 
     def configure_settings(self, CameraConfig):
         """Configure all settings from CameraConfig."""
+        self.set_acqusition_mode(CameraConfig.external_trigger)
         if CameraConfig.external_trigger:
             pass
         else:
@@ -257,14 +255,6 @@ class SpinnakerCamera(GenericCamera):
         else:
             print(f"Current pixel format: {self.camera_pixel_format()}")
 
-    def set_external_trigger(self, active: bool):
-        """Enable or disable the external trigger."""
-        trigger_mode = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerMode"))
-        if active:
-            trigger_mode.SetIntValue(trigger_mode.GetEntryByName("On").GetValue())
-        else:
-            trigger_mode.SetIntValue(trigger_mode.GetEntryByName("Off").GetValue())
-
     # Functions to control the camera streaming and check status.
 
     def begin_capturing(self, CameraConfig=None) -> None:
@@ -277,6 +267,7 @@ class SpinnakerCamera(GenericCamera):
         if not self.cam.IsStreaming():
             self.cam.BeginAcquisition()
         self.frame_timestamp = 0
+        self.previous_frame_number = 0
 
         if CameraConfig:
             self.configure_settings(CameraConfig)
@@ -298,14 +289,10 @@ class SpinnakerCamera(GenericCamera):
         """Gets all available images from the buffer and return images GPIO pinstate data and timestamps."""
         img_buffer = []
         timestamps_buffer = []
+        framenumbers_buffer = []
         gpio_buffer = []
         dropped_frames = 0
-        # buffer_node = PySpin.CIntegerPtr(self.stream_nodemap.GetNode("StreamOutputBufferCount"))
-        # buffer_length = (
-        #     buffer_node.GetValue() if PySpin.IsAvailable(buffer_node) and PySpin.IsReadable(buffer_node) else 0
-        # )
-        # print(buffer_length)
-        # Get all available images from camera buffer.
+
         try:
             while True:
                 next_image = self.cam.GetNextImage(0)  # Raises exception if buffer empty.
@@ -315,6 +302,7 @@ class SpinnakerCamera(GenericCamera):
                 elapsed_frames = round((timestamps_buffer[-1] - self.frame_timestamp) / self.inter_frame_interval)
                 self.frame_timestamp = timestamps_buffer[-1]
                 dropped_frames += elapsed_frames - 1
+                framenumbers_buffer.append(self.previous_frame_number)
                 if self.device_model == "Chameleon3":
                     img_data = img_buffer[-1]
                     gpio_buffer.append([(img_data[32] >> 4) & 1, (img_data[32] >> 5) & 1, (img_data[32] >> 7) & 1])
@@ -323,7 +311,6 @@ class SpinnakerCamera(GenericCamera):
                     gpio_buffer.append([int(gpio_binary[3]), int(gpio_binary[1]), int(gpio_binary[0])])
                 next_image.Release()  # Clears image from buffer.
         except PySpin.SpinnakerException:  # Buffer is empty.
-            # print(len(img_buffer))
             if len(img_buffer) == 0:
                 return
             else:
@@ -367,6 +354,6 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
     return unique_id_list
 
 
-def initialise_camera_api(CameraSettingsConfig):
-    """Instantiate the SpinnakerCamera object based on the unique-id"""
-    return SpinnakerCamera(CameraConfig=CameraSettingsConfig)
+def initialise_camera_api(CameraConfig):
+    """Instantiate the SpinnakerCamera object"""
+    return SpinnakerCamera(CameraConfig=CameraConfig)

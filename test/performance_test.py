@@ -1,20 +1,31 @@
-import subprocess, time, signal
+import subprocess, time
 from pathlib import Path
 import json
 import sys
+from tqdm import tqdm
 
 # Get the path to the test folder
-test_dir = Path(".") / "data" / "test-small"
+test_dir = Path(".") / "data" / "test-large"
 script_path = Path(".") / "pyMultiVideo_GUI.pyw"
 # Get the path of the current Python executable
 # python_exe = sys.executable
 python_exe = r"C:/Users/alifa/miniconda3/envs/pyMultiCam_env/python.exe"
 
 # List files in the test directory
-directories = [d for d in test_dir.iterdir() if d.is_dir()]
+directories = [d.resolve() for d in test_dir.iterdir() if d.is_dir()]
 
-
+# Calculate the approximate run time of the test
+total_runtime = 0
 for dir in directories:
+    test_path = str(dir / "test_config.json")
+    with open(test_path, "r") as f:
+        config_data = json.load(f)
+    minutes, seconds = map(int, config_data["close_after"].split(":"))
+    total_runtime += int(config_data["close_after"].replace(":", ""))
+
+print(f"Approximate total runtime of the test: {total_runtime // 60} minutes and {total_runtime % 60} seconds")
+
+for dir in tqdm(directories, desc="Processing directories"):
     # Get the config file paths for the experiment
     test_path = str(dir / "test_config.json")
     with open(test_path, "r") as f:
