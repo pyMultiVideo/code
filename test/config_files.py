@@ -95,7 +95,7 @@ subject_ids = [f"subject_{i}" for i in range(len(get_camera_unique_ids()))]
 # The parameters which are varied
 testing_parameters = {
     # Folder test name
-    "test_name": f"test-large",
+    "test_name": f"test-photo-1",
     # "test_name": f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
     # Recording_length (s)
     "close_after": "00:30",  # MM:SS

@@ -10,17 +10,15 @@ import numpy as np
 sns.set_style("ticks")
 
 # Test name
-test_name = "test-encoding-optim"
+test_name = "test-photo-1"
 data_folder = Path(".") / "data"
 results_df = data_folder / test_name / "results.tsv"
 df = pd.read_csv(results_df.resolve(), sep="\t")
-# Convert 'duration' and 'real_duration' to datetime format
+# Convert 'duration' to datetime format
 df["duration"] = pd.to_timedelta(df["duration"])
-df["real_duration"] = pd.to_timedelta(df["real_duration"])
 
 # %% Fix since dropped frames not working correctly
 # Calculate percentage of dropped frames (Fix because pMV is not doing this correctly)
-df["dropped_frames"] = (df["FPS"] * df["duration"].dt.total_seconds()) - df["recorded_frames"]
 df["percent_dropped_frames"] = (df["dropped_frames"] / (df["FPS"] * df["duration"].dt.total_seconds())) * 100
 
 # Default Parameters (The parameters which are fixed if not specificed)
@@ -49,8 +47,6 @@ fig.text(
 
 # Adjust spacing between rows
 fig.subplots_adjust(hspace=0.5, wspace=0.5)
-# Replace negative percent_dropped_frames with 0 for plotting
-df["percent_dropped_frames"] = df["percent_dropped_frames"].clip(lower=0)
 # Camera Config Settings
 n_cameras_unique = df["experiment_config_n_cameras"].nunique()
 rainbow_palette_cameras = [cm.rainbow(i / max(n_cameras_unique - 1, 1)) for i in range(n_cameras_unique)]
