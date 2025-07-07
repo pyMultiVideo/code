@@ -80,6 +80,15 @@ class GUIMain(QMainWindow):
         full_screen_controls_action.setShortcut("Ctrl+F")
         full_screen_controls_action.triggered.connect(self.video_capture_tab.toggle_full_screen_mode)
         view_menu.addAction(full_screen_controls_action)
+        # Recording Shortcuts
+        self.start_recording_all_action = QAction("Start Recording", self)
+        self.start_recording_all_action.setShortcut("Ctrl+Shift+R")
+        self.start_recording_all_action.triggered.connect(self.video_capture_tab.start_recording)
+        self.stop_recording_all_action = QAction("Stop Recording", self)
+        self.stop_recording_all_action.setShortcut("Ctrl+Shift+E")
+        self.stop_recording_all_action.triggered.connect(self.video_capture_tab.stop_recording)
+        view_menu.addAction(self.start_recording_all_action)
+        view_menu.addAction(self.stop_recording_all_action)
 
         # Display main window.
         self.show()

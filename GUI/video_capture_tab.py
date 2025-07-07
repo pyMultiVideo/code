@@ -412,7 +412,9 @@ class VideoCaptureTab(QWidget):
         all_ready = all(c_w.start_recording_button.isEnabled() for c_w in self.camera_widgets)
         any_recording = any(camera_widget.recording for camera_widget in self.camera_widgets)
         self.start_recording_button.setEnabled(all_ready)
+        self.GUI.start_recording_all_action.setEnabled(all_ready)
         self.stop_recording_button.setEnabled(any_recording)
+        self.GUI.stop_recording_all_action.setEnabled(any_recording)
         # If any of the cameras are recording, disable certain buttons
         self.save_dir_button.setEnabled(not any_recording)
         self.load_button.setEnabled(not any_recording)
