@@ -1,7 +1,6 @@
 import os
 import cv2
 import numpy as np
-from math import isclose
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 from collections import deque
@@ -205,32 +204,7 @@ class CameraWidget(QGroupBox):
         self.latest_image = new_images["images"][-1]
         self.latest_GPIO = new_images["gpio_data"][-1]
         # Check for dropped frames based on expected interval between exposure timestamps
-        new_images["_newly_dropped_frames"] = 0
-        self._newly_dropped_frames = 0
-        expected_interval_ns = 1e9 / float(self.settings.fps)
-
-        # Convert nanosecond timestamps to datetime objects for comparison
-        timestamps_dt = [datetime.fromtimestamp(ts / 1e9) for ts in new_images["timestamps"]]
-        # If there is a previous timestamp, compare it to the first timestamp in this batch
-        if self._last_timestamp is not None and timestamps_dt:
-            if not isclose(
-                (timestamps_dt[0] - self._last_timestamp).total_seconds(), expected_interval_ns / 1e9, rel_tol=1e-2
-            ):
-                dropped = (
-                    round((timestamps_dt[0] - self._last_timestamp).total_seconds() / (expected_interval_ns / 1e9)) - 1
-                )  # Calculate the number of frames that would've been calculated in the interval between the frames
-                if dropped > 0:
-                    new_images["_newly_dropped_frames"] += dropped
-                    self._newly_dropped_frames += dropped
-
-        # Compare consecutive timestamps within this batch
-        for prev, curr in zip(timestamps_dt[:-1], timestamps_dt[1:]):
-            if not isclose((curr - prev).total_seconds(), expected_interval_ns / 1e9, rel_tol=1e-2):
-                new_images["_newly_dropped_frames"] += 1
-                self._newly_dropped_frames += 1
-
-        self._last_timestamp = timestamps_dt[-1]
-
+        self._newly_dropped_frames = new_images["dropped_frames"]
         self.frame_timestamps.extend(new_images["timestamps"])  # For displaying the calculated framerate
 
         # Record data to disk.

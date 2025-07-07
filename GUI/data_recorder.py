@@ -50,7 +50,7 @@ class Data_recorder:
         self.gpio_file = open(self.GPIO_filepath, mode="w", newline="")
         self.gpio_writer = csv.writer(self.gpio_file)
         self.gpio_writer.writerow(
-            [f"GPIO{pin}" for pin in range(1, self.camera_widget.camera_api.N_GPIO + 1)] + ["Timestamps"]
+            [f"GPIO{pin}" for pin in range(1, self.camera_widget.camera_api.N_GPIO + 1)] + ["Timestamp"]
         )
 
         # Create metadata file.
@@ -100,7 +100,6 @@ class Data_recorder:
                 f'"{self.video_filepath}"',  # Output file path
             ]
         )
-        print("FFMPEG_CONFIG", self.camera_widget.GUI.ffmpeg_config)
         self.ffmpeg_process = subprocess.Popen(ffmpeg_command, stdin=subprocess.PIPE)
 
     def stop_recording(self) -> None:
@@ -121,10 +120,14 @@ class Data_recorder:
 
     def record_new_images(self, new_images):
         """Record newly aquired images and GPIO pinstates."""
+        if not hasattr(self, "first_timestamp"):
+            self.first_timestamp = new_images["timestamps"][0]
+            self.timestamp_digit_count = len(str(self.first_timestamp))
         self.recorded_frames += len(new_images["images"])
-        self.dropped_frames += new_images["_newly_dropped_frames"]
+        self.dropped_frames += new_images["dropped_frames"]
         # Concatenate the list of numpy buffers into one bytestream
         frame = np.concatenate([img for img in new_images["images"]])
         self.ffmpeg_process.stdin.write(frame)
-        for gpio_pinstate in new_images["gpio_data"]:  # Write GPIO pinstate to file.
-            self.gpio_writer.writerow(gpio_pinstate)
+        for gpio_pinstate, timestamp in zip(new_images["gpio_data"], new_images["timestamps"]):
+            rel_timestamp = timestamp - self.first_timestamp
+            self.gpio_writer.writerow(list(gpio_pinstate) + [f"{rel_timestamp:0{self.timestamp_digit_count}d}"])

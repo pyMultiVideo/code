@@ -299,9 +299,9 @@ class SpinnakerCamera(GenericCamera):
                 img_buffer.append(next_image.GetData())  # Image pixels as bytes.
                 chunk_data = next_image.GetChunkData()  # Additional image data.
                 timestamps_buffer.append(chunk_data.GetTimestamp())  # Image timestamp (nanoseconds)
-                if self.previous_frame_number != (chunk_data.GetFrameID() - 1):  # Frame IDs
-                    dropped_frames += 1
-                self.previous_frame_number = chunk_data.GetFrameID()
+                elapsed_frames = round((timestamps_buffer[-1] - self.frame_timestamp) / self.inter_frame_interval)
+                self.frame_timestamp = timestamps_buffer[-1]
+                dropped_frames += elapsed_frames - 1
                 framenumbers_buffer.append(self.previous_frame_number)
                 if self.device_model == "Chameleon3":
                     img_data = img_buffer[-1]
@@ -318,6 +318,7 @@ class SpinnakerCamera(GenericCamera):
                     "images": img_buffer,
                     "gpio_data": gpio_buffer,
                     "timestamps": timestamps_buffer,
+                    "dropped_frames": dropped_frames,
                 }
 
 

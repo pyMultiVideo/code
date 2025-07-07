@@ -23,8 +23,8 @@ def check_module(module_name):
         sys.exit()
 
 
-# Error GUI Dialog
 def open_error_dialog():
+    """Startup error dialog"""
     app = QApplication(sys.argv)
     msg_box = QMessageBox()
     msg_box.setIcon(QMessageBox.Icon.Critical)
