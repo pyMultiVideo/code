@@ -75,16 +75,22 @@ class GUIMain(QMainWindow):
         self.setCentralWidget(self.tab_widget)
         # Initialise menu bar.
         main_menu = self.menuBar()
-        view_menu = main_menu.addMenu("View")
-        full_screen_controls_action = QAction("Toggle Fullscreen", self)
+        view_menu = main_menu.addMenu("Controls")
+        full_screen_controls_action = QAction(
+            QIcon(os.path.join(self.paths_config["icons_dir"], "fullscreen.svg")), "Toggle Fullscreen", self
+        )
         full_screen_controls_action.setShortcut("Ctrl+F")
         full_screen_controls_action.triggered.connect(self.video_capture_tab.toggle_full_screen_mode)
         view_menu.addAction(full_screen_controls_action)
         # Recording Shortcuts
-        self.start_recording_all_action = QAction("Start Recording", self)
+        self.start_recording_all_action = QAction(
+            QIcon(os.path.join(self.paths_config["icons_dir"], "record.svg")), "Start Recording", self
+        )
         self.start_recording_all_action.setShortcut("Ctrl+Shift+R")
         self.start_recording_all_action.triggered.connect(self.video_capture_tab.start_recording)
-        self.stop_recording_all_action = QAction("Stop Recording", self)
+        self.stop_recording_all_action = QAction(
+            QIcon(os.path.join(self.paths_config["icons_dir"], "stop.svg")), "Stop Recording", self
+        )
         self.stop_recording_all_action.setShortcut("Ctrl+Shift+E")
         self.stop_recording_all_action.triggered.connect(self.video_capture_tab.stop_recording)
         view_menu.addAction(self.start_recording_all_action)
