@@ -229,6 +229,8 @@ class CameraWidget(QGroupBox):
         # Start data recording.
         save_dir = self.GUI.video_capture_tab.data_dir
         self.data_recorder.start_recording(subject_id, save_dir, self.settings)
+        # Empty camera buffer before recording is started
+        self.camera_api.get_available_images()
         self.recording = True
         # Update GUI
         self.stop_recording_button.setEnabled(True)

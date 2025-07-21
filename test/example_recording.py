@@ -1,4 +1,4 @@
-"""Example of how to launch the pyMultiVideo application from a python subprocess with a configuration that you would like to use."""
+"""Example of how to launch the pyMultiVideo application using subprocess with a config specificed"""
 
 import subprocess, sys
 from pathlib import Path
@@ -49,7 +49,7 @@ config_data = {
             "fps": 60,
             "exposure_time": 10000,  # Ensure exposure time is between 1000 and 100000 microseconds
             "gain": 0,
-            "pixel_format": "Mono8",
+            "pixel_format": "Mono",
             "downsampling_factor": 2,
         }
     ],

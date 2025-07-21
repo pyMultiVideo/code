@@ -124,7 +124,6 @@ class Data_recorder:
             self.first_timestamp = new_images["timestamps"][0]
             self.timestamp_digit_count = len(str(self.first_timestamp))
         self.recorded_frames += len(new_images["images"])
-        print("record_new_images", self.dropped_frames)
         self.dropped_frames += new_images["dropped_frames"]
         # Concatenate the list of numpy buffers into one bytestream
         frame = np.concatenate([img for img in new_images["images"]])

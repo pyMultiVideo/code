@@ -61,4 +61,4 @@ for dir in tqdm(directories, desc="Processing directories"):
         print(f"An error occurred: {e}")
     # break
 
-    print("TEST END")
+    print(f"Finished processing directory: {dir.name}")
