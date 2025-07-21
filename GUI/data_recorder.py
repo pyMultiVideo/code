@@ -34,7 +34,7 @@ class Data_recorder:
         self.camera_widget = camera_widget
 
     def start_recording(self, subject_id, save_dir, settings):
-        """Open data files and FFMPEG process"""
+        """Open data files and launches FFMPEG process"""
         self.settings = settings
         self.recorded_frames = 0
         self.dropped_frames = 0
@@ -124,6 +124,7 @@ class Data_recorder:
             self.first_timestamp = new_images["timestamps"][0]
             self.timestamp_digit_count = len(str(self.first_timestamp))
         self.recorded_frames += len(new_images["images"])
+        print("record_new_images", self.dropped_frames)
         self.dropped_frames += new_images["dropped_frames"]
         # Concatenate the list of numpy buffers into one bytestream
         frame = np.concatenate([img for img in new_images["images"]])
