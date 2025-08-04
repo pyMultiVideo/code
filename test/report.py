@@ -20,6 +20,9 @@ df["duration"] = pd.to_timedelta(df["duration"])
 # %% Fix since dropped frames not working correctly
 # Calculate percentage of dropped frames (Fix because pMV is not doing this correctly)
 df["percent_dropped_frames"] = (df["dropped_frames"] / (df["FPS"] * df["duration"].dt.total_seconds())) * 100
+# df["percent_dropped_frames"] = np.where(
+#     df["dropped_frames"] == 1, 0, (df["dropped_frames"] - 1) / (df["FPS"] * df["duration"].dt.total_seconds()) * 100
+# )
 
 # Default Parameters (The parameters which are fixed if not specificed)
 DOWNSAMPLING_FACTOR = 2
@@ -28,7 +31,7 @@ UPDATES_PER_DISPLAY = 1
 CRF = 23
 ENCODERING_SPEED = "fast"
 COMPRESSION_STANDARD = "h265"
-N_CAMERAS = 3
+N_CAMERAS = 7
 FPS = 60
 
 # %% Create a figure

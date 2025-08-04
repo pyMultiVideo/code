@@ -105,7 +105,7 @@ testing_parameters = {
     "test_name": f"test-photo-1",
     # "test_name": f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
     # Recording_length (s)
-    "close_after": "00:30",  # MM:SS
+    "close_after": "02:00",  # MM:SS
     # Config
     "n_cameras": list(range(1, len(get_camera_unique_ids()) + 1)),
     "downsample_range": [1, 2, 4],
@@ -146,7 +146,8 @@ COMPRESSION_STANDARD = "h265"
 N_CAMERAS = 4
 FPS = 60
 
-# For all paramter combinations
+
+# Generate config files for fixed cameras and FPS
 for fps in testing_parameters["fps_range"]:
     for n_camera in testing_parameters["n_cameras"]:
         for downsampling_factor in testing_parameters["downsample_range"]:
@@ -162,14 +163,14 @@ for fps in testing_parameters["fps_range"]:
                             test_config_dir = test_directory / config_dir
                             test_config_dir.mkdir(parents=True, exist_ok=True)
 
-                            test_config = generate_performance_test_config(
+                        save_config_file(
+                            test_config_dir,
+                            test_config=generate_performance_test_config(
                                 fps=fps,
                                 n_camera=n_camera,
                                 downsampling_factor=downsampling_factor,
-                                crf=crf,
-                                camera_update_rate=CAMERA_UPDATE_RATE,
                                 encoding_speed=encoding_speed,
                                 compression_standard=compression_standard,
                                 updates_per_display=updates_per_display,
-                            )
-                            save_config_file(test_config_dir, test_config)
+                            ),
+                        )
