@@ -3,9 +3,11 @@ import json
 import subprocess
 from pathlib import Path
 from tqdm import tqdm
+import csv
+
 
 # Get the path to the test folder
-test_dir = Path(".") / "data" / "test-large"
+test_dir = Path(".") / "data" / "test-photo-1"
 script_path = Path(".") / "pyMultiVideo_GUI.pyw"
 
 directories = [d.resolve() for d in test_dir.iterdir() if d.is_dir()]
@@ -42,10 +44,21 @@ for dir in tqdm(directories, desc="Processing directories"):
         frame_count = get_video_frame_count(str(mp4))
         file_name = mp4.name
         # Get the corresponding metadata (json) file
-        metadata_file = mp4.with_suffix(".json")
+        metadata_file = mp4.with_suffix("").with_name(mp4.stem + "_metadata.json")
         if metadata_file.exists():
             with open(metadata_file, "r") as f:
                 metadata = json.load(f)
 
-        recorded_frame_count = metadata.get("frames_recorded", "N/A")
-        print(f"File: {mp4} | Frame count: {frame_count} | Recorded frame count: {recorded_frame_count}")
+        recorded_frame_count = metadata.get("recorded_frames", "N/A")
+        if frame_count != recorded_frame_count:
+            print(
+                f"Mismatch detected for {mp4}: Frame count ({frame_count}) != Recorded frame count ({recorded_frame_count})"
+            )
+            # Write mismatch info to a CSV file
+            mismatch_log_path = Path("mismatches.csv")
+            write_header = not mismatch_log_path.exists()
+            with open(mismatch_log_path, "a", newline="") as csvfile:
+                writer = csv.writer(csvfile)
+                if write_header:
+                    writer.writerow(["file", "frame_count", "recorded_frame_count"])
+                writer.writerow([str(mp4), frame_count, recorded_frame_count])
