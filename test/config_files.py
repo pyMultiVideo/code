@@ -98,7 +98,7 @@ testing_parameters = {
     "test_name": f"test-photo-1",
     # "test_name": f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
     # Recording_length (s)
-    "close_after": "00:30",  # MM:SS
+    "close_after": "02:00",  # MM:SS
     # Config
     "n_cameras": list(range(1, len(get_camera_unique_ids()) + 1)),
     "downsample_range": [1, 2, 4],
@@ -140,27 +140,6 @@ N_CAMERAS = 4
 FPS = 60
 
 
-# # Generate config files for varying FPS and cameras
-# for fps in testing_parameters["fps_range"]:
-#     for n_camera in testing_parameters["n_cameras"]:
-#         config_dir = (
-#             f"config_ncams_{n_camera}_downsample_{DOWNSAMPLING_FACTOR}_fps_{fps}_"
-#             f"update_{CAMERA_UPDATE_RATE}_upd_per_disp_{UPDATES_PER_DISPLAY}_"
-#             f"crf_{CRF}_speed_{ENCODERING_SPEED}_comp_{COMPRESSION_STANDARD}"
-#         )
-#         test_config_dir = test_directory / config_dir
-#         test_config_dir.mkdir(parents=True, exist_ok=True)
-
-#         test_config = generate_performance_test_config(
-#             fps=fps,
-#             n_camera=n_camera,
-#             downsampling_factor=DOWNSAMPLING_FACTOR,
-#             encoding_speed=ENCODERING_SPEED,
-#             compression_standard=COMPRESSION_STANDARD,
-#             updates_per_display=UPDATES_PER_DISPLAY,
-#         )
-#         save_config_file(test_config_dir, test_config)
-
 # Generate config files for fixed cameras and FPS
 for fps in testing_parameters["fps_range"]:
     for n_camera in testing_parameters["n_cameras"]:
@@ -176,12 +155,14 @@ for fps in testing_parameters["fps_range"]:
                         test_config_dir = test_directory / config_dir
                         test_config_dir.mkdir(parents=True, exist_ok=True)
 
-                        test_config = generate_performance_test_config(
-                            fps=fps,
-                            n_camera=n_camera,
-                            downsampling_factor=downsampling_factor,
-                            encoding_speed=encoding_speed,
-                            compression_standard=compression_standard,
-                            updates_per_display=updates_per_display,
+                        save_config_file(
+                            test_config_dir,
+                            test_config=generate_performance_test_config(
+                                fps=fps,
+                                n_camera=n_camera,
+                                downsampling_factor=downsampling_factor,
+                                encoding_speed=encoding_speed,
+                                compression_standard=compression_standard,
+                                updates_per_display=updates_per_display,
+                            ),
                         )
-                        save_config_file(test_config_dir, test_config)
