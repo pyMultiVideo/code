@@ -34,30 +34,6 @@ class ExperimentConfig:
     cameras: list[CameraWidgetConfig]
 
 
-class MonitoringThreadPoolExecutor(ThreadPoolExecutor):
-    def __init__(self, *args, debug=False, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.active = 0
-        self.lock = threading.Lock()
-        self.debug = debug
-
-    def submit(self, fn, *args, **kwargs):
-        def wrapper(*args, **kwargs):
-            with self.lock:
-                self.active += 1
-                if self.debug:
-                    print(f"Active workers: {self.active}")
-            try:
-                return fn(*args, **kwargs)
-            finally:
-                with self.lock:
-                    self.active -= 1
-                    if self.debug:
-                        print(f"Active workers: {self.active}")
-
-        return super().submit(wrapper, *args, **kwargs)
-
-
 class VideoCaptureTab(QWidget):
     """Tab used to display the viewfinder and control the cameras"""
 
@@ -70,7 +46,7 @@ class VideoCaptureTab(QWidget):
         self.config_save_path = None
 
         # Initalise Threadpool
-        self.threadpool = MonitoringThreadPoolExecutor(max_workers=32)
+        self.threadpool = ThreadPoolExecutor(max_workers=32)
 
         # GUI Layout
         self.camera_layout = QGridLayout()
