@@ -45,8 +45,9 @@ class VideoCaptureTab(QWidget):
         self.saved_config = None
         self.config_save_path = None
 
-        # Initalise Threadpool
+        # Initalise Threadpool & futures
         self.threadpool = ThreadPoolExecutor(max_workers=32)
+        self.futures = []
 
         # GUI Layout
         self.camera_layout = QGridLayout()

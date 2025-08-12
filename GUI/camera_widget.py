@@ -209,13 +209,18 @@ class CameraWidget(QGroupBox):
 
         # Record data to disk.
         if self.recording:
-            self.video_capture_tab.threadpool.submit(self.data_recorder.record_new_images, new_images)
+            self.video_capture_tab.futures.append(
+                self.video_capture_tab.threadpool.submit(self.data_recorder.record_new_images, new_images)
+            )
 
     def update(self, update_video_display=True):
         """Called regularly by timer to fetch new images and optionally update video display."""
         self.fetch_image_data()
         if update_video_display:
             self.update_video_display()
+        # Remove completed futures from the list
+        if self.video_capture_tab.futures:
+            self.video_capture_tab.futures = [f for f in self.video_capture_tab.futures if not f.done()]
 
     # Recording controls --------------------------------------------------------------
 
@@ -242,7 +247,6 @@ class CameraWidget(QGroupBox):
 
     def stop_recording(self):
         """Stop recording video data to disk."""
-        print("running camera widget stop recording")
         self.data_recorder.stop_recording()
         self.recording = False
         # Update GUI
