@@ -9,22 +9,25 @@ test_dir = Path(".") / "data" / "test-photo-1"
 directories = [d for d in test_dir.resolve().iterdir() if d.is_dir()]
 
 camera_rows = []
+
+
+# Flatten the testing_params dictionary
+def flatten_dict(d, parent_key="", sep="_"):
+    items = []
+    for k, v in d.items():
+        new_key = f"{parent_key}{sep}{k}" if parent_key else k
+        if isinstance(v, dict):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
+
+
 for directory in tqdm(directories, desc="Processing directories"):
     # Load testing parameters
     testing_params_path = directory / "test_config.json"
     with open(testing_params_path, "r") as f:
         testing_params = json.load(f)
-
-    # Flatten the testing_params dictionary
-    def flatten_dict(d, parent_key="", sep="_"):
-        items = []
-        for k, v in d.items():
-            new_key = f"{parent_key}{sep}{k}" if parent_key else k
-            if isinstance(v, dict):
-                items.extend(flatten_dict(v, new_key, sep=sep).items())
-            else:
-                items.append((new_key, v))
-        return dict(items)
 
     testing_params = flatten_dict(testing_params)
     # Add test ID for each row
