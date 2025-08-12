@@ -26,10 +26,10 @@ class GUIMain(QMainWindow):
         super().__init__()
 
         # Deal with arguments parsed to application
-        self.parsed_args = parsed_args
+        self.CLI_args = parsed_args
         # config arguments
-        if self.parsed_args.application_config:
-            config_data = json.loads(self.parsed_args.application_config)
+        if self.CLI_args.application_config:
+            config_data = json.loads(self.CLI_args.application_config)
             self.paths_config = config_data.get("paths_config")
             self.ffmpeg_config = config_data.get("ffmpeg_config")
             self.gui_config = config_data.get("gui_config")
@@ -39,9 +39,9 @@ class GUIMain(QMainWindow):
             self.gui_config = gui_config
 
         # close-after argument
-        if self.parsed_args.close_after:
+        if self.CLI_args.close_after:
             # Parse time in HH:SS format
-            time_parts = self.parsed_args.close_after.split(":")
+            time_parts = self.CLI_args.close_after.split(":")
             hours = int(time_parts[0])
             seconds = int(time_parts[1])
             total_seconds = hours * 3600 + seconds
@@ -100,7 +100,7 @@ class GUIMain(QMainWindow):
         self.show()
         self.video_capture_tab.tab_selected()
         # Recording Options
-        if self.parsed_args.record_on_startup:
+        if self.CLI_args.record_on_startup:
             for c_w in self.video_capture_tab.camera_widgets:
                 c_w.start_recording()
 

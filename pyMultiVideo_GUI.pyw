@@ -28,7 +28,7 @@ def open_error_dialog():
     app = QApplication(sys.argv)
     msg_box = QMessageBox()
     msg_box.setIcon(QMessageBox.Icon.Critical)
-    msg_box.setWindowTitle("Application Startup Error")
+    msg_box.setWindowTitle("pyMutliVideo Startup Error")
     msg_box.setTextFormat(Qt.TextFormat.RichText)
     msg_box.setText(
         "An error occurred while starting the application.<br>"

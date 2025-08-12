@@ -161,7 +161,7 @@ class VideoCaptureTab(QWidget):
         self.page_layout.addLayout(self.camera_layout)
         self.setLayout(self.page_layout)
         # Handle if the parsed args are send via the command line
-        if self.GUI.parsed_args.experiment_config is None:
+        if self.GUI.CLI_args.experiment_config is None:
             available_cameras = sorted(list(self.camera_setup_tab.get_camera_labels()), key=str.lower)
             for camera_label in available_cameras[:1]:  # One camera by default
                 self.initialise_camera_widget(
@@ -169,7 +169,7 @@ class VideoCaptureTab(QWidget):
                 )
         else:
             # Load the default config file
-            config_data = json.loads(self.GUI.parsed_args.experiment_config)
+            config_data = json.loads(self.GUI.CLI_args.experiment_config)
             config_data["cameras"] = [CameraWidgetConfig(**camera) for camera in config_data["cameras"]]
             experiment_config = ExperimentConfig(**config_data)
             self.configure_tab_from_config(experiment_config)

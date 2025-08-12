@@ -67,7 +67,7 @@ class CameraSetupTab(QWidget):
         self.setups = {}  # Dict of setups: {Unique_id: Camera_table_item}
         self.preview_showing = False
         self.camera_preview = None  # Place holder for camera preview widget
-        self.setups_changed = False  # Flag that is checked for handleing the camera setups being changed
+        self.setups_changed = False  # Flag that is checked for handling camera setups being changed
 
         # Check if any cameras are connected
         _, CAMERAS_CONNECTED = get_camera_ids()
@@ -102,7 +102,7 @@ class CameraSetupTab(QWidget):
         self.page_layout.addWidget(self.camera_table_groupbox)
         self.setLayout(self.page_layout)
 
-        if self.GUI.parsed_args.camera_config is None:
+        if self.GUI.CLI_args.camera_config is None:
             # Load saved setup info.
             if not os.path.exists(self.saved_setups_filepath):
                 self.saved_setups = []
@@ -114,7 +114,7 @@ class CameraSetupTab(QWidget):
                 ]
         else:
             # Load saved setups from JSON formatted string
-            cams_list = json.loads(self.GUI.parsed_args.camera_config)
+            cams_list = json.loads(self.GUI.CLI_args.camera_config)
             self.saved_setups = [
                 CameraSettingsConfig(**{**default_camera_config, **cam_dict}) for cam_dict in cams_list
             ]
@@ -127,8 +127,8 @@ class CameraSetupTab(QWidget):
         self.refresh()
 
     def tab_deselected(self):
-        """Called when tab deselected."""
-        # Deinitialise all camera APIs on tab being deselected
+        """Called when tab deselected.
+        Deinitialise all camera APIs on tab being deselected"""
         for unique_id in self.setups:
             if self.preview_showing:
                 self.setups[unique_id].close_preview_camera()
@@ -152,13 +152,10 @@ class CameraSetupTab(QWidget):
     def update_saved_setups(self, setup):
         """Updates the saved setups"""
         saved_setup = self.get_saved_setup(unique_id=setup.settings.unique_id)
-        # if saved_setup == setup.settings:
-        #     return
+        # Remove the saved setup if it is present
         if saved_setup:
             self.saved_setups.remove(saved_setup)
-        # if the setup has a name
-        # if setup.settings.label:
-        # add the setup config to the saved setups list
+        # Add the setup config to the saved setups list
         self.saved_setups.append(setup.settings)
         # Save any setups in the list of setups
         if self.saved_setups:
@@ -200,19 +197,13 @@ class CameraSetupTab(QWidget):
             elif setup.settings.unique_id == camera_label:
                 return setup.settings.unique_id
         raise ValueError(f"No camera unique_id found for label: {camera_label}")
-        return None
 
     def get_camera_settings_from_label(self, label: str) -> CameraSettingsConfig:
         """Get the camera settings config datastruct from the setups table."""
         for setup in self.setups.values():
-            # if setup.settings.name is None:
-            #     query_label = setup.settings.unique_id
-            # else:
-            #     query_label = setup.settings.name
             if label in [setup.settings.name, setup.settings.unique_id]:
                 return setup.settings
         raise ValueError(f"No camera settings found for label: {label}")
-        return None
 
 
 class CameraOverviewTable(QTableWidget):
@@ -358,7 +349,7 @@ class Camera_table_item:
             return self.setups_tab.camera_preview.label == self.get_label()
         return False
 
-    ################### Attribute Changed Functions ##################################
+    # Attribute Changed Functions -----------------------------------------------------------------
 
     def camera_name_changed(self):
         """Called when name text of setup is edited."""
@@ -383,7 +374,7 @@ class Camera_table_item:
         """Return name if defined else unique ID."""
         return self.settings.name if self.settings.name else self.settings.unique_id
 
-    # Camera Parameters --------------------------------------------------------------------------
+    # Camera Parameters Changed--------------------------------------------------------------------
 
     def camera_fps_changed(self):
         """Called when fps text of setup is edited."""
@@ -426,14 +417,14 @@ class Camera_table_item:
         # FPS spin box only enabled if external trigger not enabled.
         self.fps_edit.setEnabled(not self.settings.external_trigger)
 
-    # FFMPEG Parameters -----------------------------------------------------------------------
+    # FFMPEG Parameters ---------------------------------------------------------------------------
 
     def camera_downsampling_factor_changed(self):
         """Called when the downsampling factor of the seutp is edited"""
         self.settings.downsampling_factor = int(self.downsampling_factor_edit.currentText())
         self.setups_tab.update_saved_setups(setup=self)
 
-    # Camera preview functions -----------------------------------------------------------------------
+    # Camera preview functions --------------------------------------------------------------------
 
     def open_preview_camera(self):
         """Button to preview the camera in the row"""
