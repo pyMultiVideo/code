@@ -121,7 +121,7 @@ class Data_recorder:
 
     def record_new_images(self, new_images):
         """Record newly aquired images and GPIO pinstates."""
-        if self.timestamp is None:
+        if self.first_timestamp is None:
             self.first_timestamp = new_images["timestamps"][0]
             self.timestamp_digit_count = len(str(self.first_timestamp))
         self.recorded_frames += len(new_images["images"])
