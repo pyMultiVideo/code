@@ -38,6 +38,7 @@ class Data_recorder:
         self.settings = settings
         self.recorded_frames = 0
         self.dropped_frames = 0
+        self.first_timestamp = None
         # Create Filepaths_config.
         self.subject_id = subject_id
         self.record_start_time = datetime.now()
@@ -120,7 +121,7 @@ class Data_recorder:
 
     def record_new_images(self, new_images):
         """Record newly aquired images and GPIO pinstates."""
-        if not hasattr(self, "first_timestamp"):
+        if self.timestamp is None:
             self.first_timestamp = new_images["timestamps"][0]
             self.timestamp_digit_count = len(str(self.first_timestamp))
         self.recorded_frames += len(new_images["images"])
