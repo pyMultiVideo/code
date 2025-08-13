@@ -116,15 +116,14 @@ class GUIMain(QMainWindow):
     def closeEvent(self, event):
         """Close the GUI"""
         # Close open camera widgets
+        while self.video_capture_tab.futures:
+            future = self.video_capture_tab.futures.pop()
+            future.result()
         for c_w in self.video_capture_tab.camera_widgets:
             if c_w.recording:
                 c_w.stop_recording()
             c_w.closeEvent(event)
             c_w.deleteLater()
-        # Ensure all threadpool futures are complete
-        while self.video_capture_tab.futures:
-            future = self.video_capture_tab.futures.pop()
-            future.result()
         # Close Camera preview
         if self.camera_setup_tab.camera_preview:
             self.camera_setup_tab.camera_preview.closeEvent(event)
@@ -132,7 +131,6 @@ class GUIMain(QMainWindow):
 
         event.accept()
         sys.exit(0)
-
     def exception_hook(self, exctype, value, traceback):
         """Hook for uncaught exceptions"""
         print("Using the except hook to close the application")
@@ -141,5 +139,6 @@ class GUIMain(QMainWindow):
             print("KeyboardInterrupt detected. Closing GUI.")
             self.close()
         else:
-            print("Uncaught exception", exc_info=(exctype, value, traceback))
+            print("Uncaught exception:", exctype, value, traceback)
+        sys.__excepthook__(exctype, value, traceback)
         sys.__excepthook__(exctype, value, traceback)

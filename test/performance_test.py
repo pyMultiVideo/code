@@ -21,7 +21,10 @@ for dir in directories:
     minutes, seconds = map(int, config_data["close_after"].split(":"))
     total_runtime += int(config_data["close_after"].replace(":", ""))
 
-print(f"Approximate total runtime of the test: {total_runtime // 60} minutes and {total_runtime % 60} seconds")
+hours = total_runtime // 3600
+minutes = (total_runtime % 3600) // 60
+seconds = total_runtime % 60
+print(f"Approximate total runtime of the test: {hours} hours, {minutes} minutes, and {seconds} seconds")
 
 for dir in tqdm(directories, desc="Processing directories"):
     # Get the config file paths for the experiment
