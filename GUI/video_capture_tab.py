@@ -200,6 +200,9 @@ class VideoCaptureTab(QWidget):
             self.handle_camera_setups_modified()
         # Update button states
         self.update_button_states()
+        # Update the Spinbox vales
+        self.n_cameras_spinbox.setRange(1, self.camera_setup_tab.n_setups)
+        self.n_columns_spinbox.setRange(1, self.camera_setup_tab.n_setups)
 
     # Camera acquisition and recording control ----------------------------------------
 
