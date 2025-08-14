@@ -1,10 +1,10 @@
 import os
 import csv
 import json
-import shutil
+import math
 import subprocess
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Check GPU availibility for video encode and set which encoders to use.
 
@@ -34,10 +34,11 @@ class Data_recorder:
         self.camera_widget = camera_widget
 
     def start_recording(self, subject_id, save_dir, settings):
-        """Open data files and FFMPEG process"""
+        """Open data files and launches FFMPEG process"""
         self.settings = settings
         self.recorded_frames = 0
         self.dropped_frames = 0
+        self.first_timestamp = None
         # Create Filepaths_config.
         self.subject_id = subject_id
         self.record_start_time = datetime.now()
@@ -49,7 +50,9 @@ class Data_recorder:
         # Open GPIO file and write header data.
         self.gpio_file = open(self.GPIO_filepath, mode="w", newline="")
         self.gpio_writer = csv.writer(self.gpio_file)
-        self.gpio_writer.writerow([f"GPIO{pin}" for pin in range(1, self.camera_widget.camera_api.N_GPIO + 1)])
+        self.gpio_writer.writerow(
+            [f"GPIO{pin}" for pin in range(1, self.camera_widget.camera_api.N_GPIO + 1)] + ["Timestamp"]
+        )
 
         # Create metadata file.
         self.metadata = {
@@ -65,11 +68,11 @@ class Data_recorder:
             "device_model": self.camera_widget.camera_api.device_model,
             "device_serial_number": self.camera_widget.camera_api.serial_number,
             # Recording information
-            "recorded_frames": 0,
-            "dropped_frames": None,
             "start_time": self.record_start_time.isoformat(timespec="milliseconds"),
             "end_time": None,
             "duration": None,
+            "recorded_frames": 0,
+            "dropped_frames": None,
         }
         with open(self.metadata_filepath, "w") as meta_data_file:
             json.dump(self.metadata, meta_data_file, indent=4)
@@ -98,7 +101,6 @@ class Data_recorder:
                 f'"{self.video_filepath}"',  # Output file path
             ]
         )
-        print("FFMPEG_CONFIG", self.camera_widget.GUI.ffmpeg_config)
         self.ffmpeg_process = subprocess.Popen(ffmpeg_command, stdin=subprocess.PIPE)
 
     def stop_recording(self) -> None:
@@ -110,6 +112,7 @@ class Data_recorder:
         self.metadata["duration"] = str(end_time - self.record_start_time)[:-3]
         self.metadata["recorded_frames"] = self.recorded_frames
         self.metadata["dropped_frames"] = self.dropped_frames
+
         with open(self.metadata_filepath, "w") as self.meta_data_file:
             json.dump(self.metadata, self.meta_data_file, indent=4)
         # Close FFMPEG process
@@ -118,16 +121,14 @@ class Data_recorder:
 
     def record_new_images(self, new_images):
         """Record newly aquired images and GPIO pinstates."""
+        if self.first_timestamp is None:
+            self.first_timestamp = new_images["timestamps"][0]
+            self.timestamp_digit_count = len(str(self.first_timestamp))
         self.recorded_frames += len(new_images["images"])
+        self.dropped_frames += new_images["dropped_frames"]
         # Concatenate the list of numpy buffers into one bytestream
         frame = np.concatenate([img for img in new_images["images"]])
         self.ffmpeg_process.stdin.write(frame)
-        for gpio_pinstate in new_images["gpio_data"]:  # Write GPIO pinstate to file.
-            self.gpio_writer.writerow(gpio_pinstate)
-
-    def submit_work(self, new_images):
-        """Submit a job to the video encoding ThreadPool"""
-        # Submit encoding tasks to the thread pool executor for parallel processing
-        self.camera_widget.video_capture_tab.threadpool_futures.append(
-            self.camera_widget.video_capture_tab.threadpool.submit(self.record_new_images, new_images)
-        )
+        for gpio_pinstate, timestamp in zip(new_images["gpio_data"], new_images["timestamps"]):
+            rel_timestamp = timestamp - self.first_timestamp
+            self.gpio_writer.writerow(list(gpio_pinstate) + [f"{rel_timestamp:0{self.timestamp_digit_count}d}"])

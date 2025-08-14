@@ -2,7 +2,8 @@ import os
 import json
 from typing import List
 from dataclasses import dataclass, asdict
-import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
+import threading
 
 from PyQt6.QtWidgets import (
     QVBoxLayout,
@@ -41,10 +42,12 @@ class VideoCaptureTab(QWidget):
         self.GUI = parent
         self.camera_setup_tab = self.GUI.camera_setup_tab
         self.camera_widgets = []
+        self.saved_config = None
+        self.config_save_path = None
 
-        # Initalise Threadpool
-        self.threadpool = concurrent.futures.ThreadPoolExecutor(max_workers=32)
-        self.threadpool_futures = []
+        # Initalise Threadpool & futures
+        self.threadpool = ThreadPoolExecutor(max_workers=32)
+        self.futures = []
 
         # GUI Layout
         self.camera_layout = QGridLayout()
@@ -64,23 +67,31 @@ class VideoCaptureTab(QWidget):
         self.n_columns_spinbox.valueChanged.connect(self.set_number_of_columns)
         self.n_columns_spinbox.setValue(1)
 
-        # Save layout button
-        self.save_camera_config_button = QPushButton("Save")
-        self.save_camera_config_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "save.svg")))
-        self.save_camera_config_button.setFixedHeight(30)
-        self.save_camera_config_button.clicked.connect(self.save_experiment_config)
-        self.save_camera_config_button.setToolTip("Save the current camera configuration")
+        # Save button
+        self.save_button = QPushButton("Save")
+        self.save_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "save.svg")))
+        self.save_button.setFixedHeight(30)
+        self.save_button.clicked.connect(self.save_config)
+        self.save_button.setToolTip("Save the current camera configuration")
 
-        # Load layout button
-        self.load_experiment_config_button = QPushButton("Load")
-        self.load_experiment_config_button.setFixedHeight(30)
-        self.load_experiment_config_button.clicked.connect(self.load_experiment_config)
-        self.load_experiment_config_button.setToolTip("Load a saved camera configuration")
+        # Save as button
+        self.save_as_button = QPushButton("Save as")
+        self.save_as_button.setIcon(QIcon("GUI/icons/save_as.svg"))
+        self.save_as_button.setFixedHeight(30)
+        self.save_as_button.setToolTip("Save the current camera configuration as a new file")
+        self.save_as_button.clicked.connect(self.save_config_as)
+
+        # Load button
+        self.load_button = QPushButton("Load")
+        self.load_button.setFixedHeight(30)
+        self.load_button.clicked.connect(self.load_config)
+        self.load_button.setToolTip("Load a saved camera configuration")
 
         # Config layout
         self.config_hlayout = QHBoxLayout()
-        self.config_hlayout.addWidget(self.save_camera_config_button)
-        self.config_hlayout.addWidget(self.load_experiment_config_button)
+        self.config_hlayout.addWidget(self.save_button)
+        self.config_hlayout.addWidget(self.save_as_button)
+        self.config_hlayout.addWidget(self.load_button)
         self.config_hlayout.addWidget(self.n_cameras_label)
         self.config_hlayout.addWidget(self.n_cameras_spinbox)
         self.config_hlayout.addWidget(self.n_columns_label)
@@ -151,7 +162,7 @@ class VideoCaptureTab(QWidget):
         self.page_layout.addLayout(self.camera_layout)
         self.setLayout(self.page_layout)
         # Handle if the parsed args are send via the command line
-        if self.GUI.parsed_args.experiment_config is None:
+        if self.GUI.CLI_args.experiment_config is None:
             available_cameras = sorted(list(self.camera_setup_tab.get_camera_labels()), key=str.lower)
             for camera_label in available_cameras[:1]:  # One camera by default
                 self.initialise_camera_widget(
@@ -159,7 +170,7 @@ class VideoCaptureTab(QWidget):
                 )
         else:
             # Load the default config file
-            config_data = json.loads(self.GUI.parsed_args.experiment_config)
+            config_data = json.loads(self.GUI.CLI_args.experiment_config)
             config_data["cameras"] = [CameraWidgetConfig(**camera) for camera in config_data["cameras"]]
             experiment_config = ExperimentConfig(**config_data)
             self.configure_tab_from_config(experiment_config)
@@ -174,11 +185,9 @@ class VideoCaptureTab(QWidget):
     def update_camera_widgets(self):
         """Fetches new images from all cameras, updates video displays every n calls."""
         self.update_counter = (self.update_counter + 1) % self.GUI.gui_config["camera_updates_per_display_update"]
-        video_display_update = self.update_counter == 0
+        update_video_display = self.update_counter == 0
         for camera_widget in self.camera_widgets:
-            camera_widget.update(video_display_update)
-        # Wait till all threads have been processed before re-running the function.
-        concurrent.futures.wait(self.threadpool_futures)
+            camera_widget.update(update_video_display)
 
     def refresh(self):
         """Refresh tab"""
@@ -190,7 +199,7 @@ class VideoCaptureTab(QWidget):
             # Handle the renamed cameras
             self.handle_camera_setups_modified()
         # Update button states
-        self.update_global_recording_button_states()
+        self.update_button_states()
 
     # Camera acquisition and recording control ----------------------------------------
 
@@ -283,23 +292,40 @@ class VideoCaptureTab(QWidget):
 
     # Saving and loading experiment configs -------------------------------------------
 
-    def save_experiment_config(self):
-        """Save the tab configuration to a json file"""
-        default_name = os.path.join("experiments", "experiment_config.json")
-        file_path = QFileDialog.getSaveFileName(self, "Save File", default_name, "JSON Files (*.json)")
-        experiment_config = ExperimentConfig(
+    def get_config(self):
+        """Get tab configuration as an ExperimentConfig object."""
+        return ExperimentConfig(
             data_dir=self.data_dir,
             n_cameras=self.n_cameras_spinbox.value(),
             n_columns=self.n_columns_spinbox.value(),
             cameras=[camera_widget.get_camera_config() for camera_widget in self.camera_widgets],
         )
-        with open(file_path[0], "w") as config_file:
-            config_file.write(json.dumps(asdict(experiment_config), indent=4))
 
-    def load_experiment_config(self):
+    def save_config_as(self):
+        """Save the tab configuration to a json file"""
+        default_name = os.path.join("experiments", "experiment_config.json")
+        file_path = QFileDialog.getSaveFileName(self, "Save File", default_name, "JSON Files (*.json)")[0]
+        if not file_path:
+            return
+        self.config_save_path = file_path
+        self.saved_config = self.get_config()
+        with open(self.config_save_path, "w") as config_file:
+            config_file.write(json.dumps(asdict(self.saved_config), indent=4))
+        self.save_button.setEnabled(False)
+
+    def save_config(self):
+        self.saved_config = self.get_config()
+        with open(self.config_save_path, "w") as config_file:
+            config_file.write(json.dumps(asdict(self.saved_config), indent=4))
+        self.save_button.setEnabled(False)
+
+    def load_config(self):
         """Load tab configuration from a json file"""
         file_path = QFileDialog.getOpenFileName(self, "Open File", "experiments", "JSON Files (*.json)")[0]
-        with open(file_path, "r") as config_file:
+        if not file_path:
+            return
+        self.config_save_path = file_path
+        with open(self.config_save_path, "r") as config_file:
             config_data = json.load(config_file)
         config_data["cameras"] = [CameraWidgetConfig(**cam_config) for cam_config in config_data["cameras"]]
         experiment_config = ExperimentConfig(**config_data)
@@ -310,6 +336,8 @@ class VideoCaptureTab(QWidget):
                 return
         # Configure tab.
         self.configure_tab_from_config(experiment_config)
+        self.saved_config = self.get_config()
+        self.update_button_states()
 
     def configure_tab_from_config(self, experiment_config: ExperimentConfig):
         """Configure tab to match settings in experiment config."""
@@ -321,6 +349,7 @@ class VideoCaptureTab(QWidget):
         self.n_cameras_spinbox.setValue(experiment_config.n_cameras)
         self.n_columns_spinbox.setValue(experiment_config.n_columns)
         self.data_dir = experiment_config.data_dir
+        self.save_dir_textbox.setText(self.data_dir)
 
     def handle_camera_setups_modified(self):
         """Handle the renamed cameras by renaming the relevent attributes of the camera groupboxes"""
@@ -355,15 +384,22 @@ class VideoCaptureTab(QWidget):
             for camera_widget in self.camera_widgets
         ]
 
-    def update_global_recording_button_states(self):
-        """Update the states of global recording buttons based on the readiness and recording status of cameras."""
+    def update_button_states(self):
+        """Update the states of global recording buttons based on the readiness and
+        recording status of cameras. Update save button state."""
         all_ready = all(c_w.start_recording_button.isEnabled() for c_w in self.camera_widgets)
         any_recording = any(camera_widget.recording for camera_widget in self.camera_widgets)
         self.start_recording_button.setEnabled(all_ready)
+        self.GUI.start_recording_all_action.setEnabled(all_ready)
         self.stop_recording_button.setEnabled(any_recording)
+        self.GUI.stop_recording_all_action.setEnabled(any_recording)
         # If any of the cameras are recording, disable certain buttons
-        disable_controls = any_recording
-        self.save_dir_button.setEnabled(not disable_controls)
-        self.load_experiment_config_button.setEnabled(not disable_controls)
-        self.n_cameras_spinbox.setEnabled(not disable_controls)
-        self.n_columns_spinbox.setEnabled(not disable_controls)
+        self.save_dir_button.setEnabled(not any_recording)
+        self.load_button.setEnabled(not any_recording)
+        self.save_as_button.setEnabled(not any_recording)
+        self.n_cameras_spinbox.setEnabled(not any_recording)
+        self.n_columns_spinbox.setEnabled(not any_recording)
+        if not any_recording and self.saved_config != self.get_config() and self.config_save_path:
+            self.save_button.setEnabled(True)
+        else:
+            self.save_button.setEnabled(False)
