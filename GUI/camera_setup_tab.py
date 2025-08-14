@@ -71,7 +71,7 @@ class CameraSetupTab(QWidget):
 
         # Check if any cameras are connected
         _, CAMERAS_CONNECTED = get_camera_ids()
-        if CAMERAS_CONNECTED:
+        if not CAMERAS_CONNECTED:
             warning_box = QMessageBox()
             warning_box.setIcon(QMessageBox.Icon.Warning)
             warning_box.setText("No cameras connected.")

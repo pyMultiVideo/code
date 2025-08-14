@@ -188,6 +188,9 @@ class VideoCaptureTab(QWidget):
         update_video_display = self.update_counter == 0
         for camera_widget in self.camera_widgets:
             camera_widget.update(update_video_display)
+        # Remove completed futures from the list
+        if self.futures:
+            self.futures = [f for f in self.futures if not f.done()]
 
     def refresh(self):
         """Refresh tab"""
