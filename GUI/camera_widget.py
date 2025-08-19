@@ -403,7 +403,10 @@ class CameraWidget(QGroupBox):
             self.graphics_view.addItem(gpio_indicator)
         # Update Frame triggered text
         self.recording_status_item.setText("NOT RECORDING", color="r")
-
+        # Update other camera widget dropdowns
+        for c_w in self.video_capture_tab.camera_widgets: 
+            c_w.update_camera_dropdown()
+            
     def closeEvent(self, event):
         """Handle the close event to stop the timer and release resources"""
         self.stop_capturing()
