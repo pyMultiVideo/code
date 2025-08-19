@@ -115,6 +115,10 @@ class GUIMain(QMainWindow):
 
     def closeEvent(self, event):
         """Close the GUI"""
+        # Ensure all threadpool futures are complete
+        while self.video_capture_tab.futures:
+            future = self.video_capture_tab.futures.pop()
+            future.result()
         # Close open camera widgets
         while self.video_capture_tab.futures:
             future = self.video_capture_tab.futures.pop()

@@ -48,6 +48,10 @@ class VideoCaptureTab(QWidget):
         # Initalise Threadpool & futures
         self.threadpool = ThreadPoolExecutor(max_workers=32)
         self.futures = []
+        # Flag to supress alerts after one warning has been given
+        self.suppress_alert = False
+        self._warning_box_open = False
+        self.warning_thread_length = 100
 
         # GUI Layout
         self.camera_layout = QGridLayout()
@@ -188,6 +192,31 @@ class VideoCaptureTab(QWidget):
         update_video_display = self.update_counter == 0
         for camera_widget in self.camera_widgets:
             camera_widget.update(update_video_display)
+        # Remove completed futures from the list
+        if self.futures:
+            self.futures = [f for f in self.futures if not f.done()]
+            if len(self.futures) > self.warning_thread_length:
+                # Show warning only if not suppressed and not already showing
+                if not self.suppress_alert and not self._warning_box_open:
+                    self._warning_box_open = True
+
+                    def show_warning():
+                        msg_box = QMessageBox(self)
+                        msg_box.setIcon(QMessageBox.Icon.Warning)
+                        msg_box.setWindowTitle("Warning")
+                        msg_box.setText(
+                            "pyMuliVideo buffer's is starting to overflow. Video recording might be affected."
+                        )
+                        msg_box.setInformativeText("Do you want to suppress this warning in the future?")
+                        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+                        ret = msg_box.exec()
+                        if ret == QMessageBox.StandardButton.Yes:
+                            self.suppress_alert = True
+                        self._warning_box_open = False
+
+                    QTimer.singleShot(0, show_warning)
+        # To implement: if the length of the futures becomes wayy to big, then i will stop collecting frames from the cameras an accept dropped frames.
 
     def refresh(self):
         """Refresh tab"""
@@ -200,6 +229,9 @@ class VideoCaptureTab(QWidget):
             self.handle_camera_setups_modified()
         # Update button states
         self.update_button_states()
+        # Update the Spinbox vales
+        self.n_cameras_spinbox.setRange(1, self.camera_setup_tab.n_setups)
+        self.n_columns_spinbox.setRange(1, self.camera_setup_tab.n_setups)
 
     # Camera acquisition and recording control ----------------------------------------
 
