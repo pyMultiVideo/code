@@ -102,10 +102,10 @@ subject_ids = [f"subject_{i}" for i in range(len(get_camera_unique_ids()))]
 # The parameters which are varied
 testing_parameters = {
     # Folder test name
-    "test_name": f"test-photo-1",
+    "test_name": f"maze-r-2",
     # "test_name": f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
     # Recording_length (s)
-    "close_after": "02:00",  # MM:SS
+    "close_after": "00:45",  # MM:SS
     # Config
     "n_cameras": list(range(1, len(get_camera_unique_ids()) + 1)),
     "downsample_range": [1, 2, 4],
@@ -114,7 +114,7 @@ testing_parameters = {
     "camera_update_range": [10, 20, 40],
     "camera_updates_per_display_update": [1, 2, 4],
     # FFMPEG
-    "crf_range": [1, 23, 51],
+    "crf_range": [23],
     "encoding_speed_options": ["fast", "medium", "slow"],
     "compression_standard": ["h264", "h265"],
 }
@@ -163,14 +163,16 @@ for fps in testing_parameters["fps_range"]:
                             test_config_dir = test_directory / config_dir
                             test_config_dir.mkdir(parents=True, exist_ok=True)
 
-                        save_config_file(
-                            test_config_dir,
-                            test_config=generate_performance_test_config(
-                                fps=fps,
-                                n_camera=n_camera,
-                                downsampling_factor=downsampling_factor,
-                                encoding_speed=encoding_speed,
-                                compression_standard=compression_standard,
-                                updates_per_display=updates_per_display,
-                            ),
-                        )
+                            save_config_file(
+                                test_config_dir,
+                                test_config=generate_performance_test_config(
+                                    fps=fps,
+                                    n_camera=n_camera,
+                                    crf=crf,
+                                    camera_update_rate=CAMERA_UPDATE_RATE,
+                                    downsampling_factor=downsampling_factor,
+                                    encoding_speed=encoding_speed,
+                                    compression_standard=compression_standard,
+                                    updates_per_display=updates_per_display,
+                                ),
+                            )

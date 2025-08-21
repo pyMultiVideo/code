@@ -42,9 +42,9 @@ class GUIMain(QMainWindow):
         if self.CLI_args.close_after:
             # Parse time in HH:SS format
             time_parts = self.CLI_args.close_after.split(":")
-            hours = int(time_parts[0])
+            mins = int(time_parts[0])
             seconds = int(time_parts[1])
-            total_seconds = hours * 3600 + seconds
+            total_seconds = mins * 60 + seconds
             close_timer = QTimer(self)
             close_timer.setInterval(total_seconds * 1000)
             close_timer.setSingleShot(True)

@@ -5,7 +5,7 @@ import sys
 from tqdm import tqdm
 
 # Get the path to the test folder
-test_dir = Path(".") / "data" / "test-large"
+test_dir = Path(".") / "data" / "maze-r-2"
 script_path = Path(".") / "pyMultiVideo_GUI.pyw"
 pmv_env = r"C:/Users/alifa/miniconda3/envs/pyMultiCam_env/python.exe"  # Location of pyMultiVideo Environment
 
