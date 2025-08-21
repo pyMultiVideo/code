@@ -1,4 +1,7 @@
-import PySpin
+try: 
+    import PySpin
+except ImportError:  
+    import pyspin as PySpin
 import cv2
 from collections import OrderedDict
 from math import floor, ceil
