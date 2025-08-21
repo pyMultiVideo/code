@@ -3,6 +3,7 @@ PyQt6
 pyqtgraph 
 opencv-python 
 
+fire
 tqdm 
 matplotlib
 seaborn
