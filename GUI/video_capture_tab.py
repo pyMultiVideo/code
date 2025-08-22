@@ -48,7 +48,7 @@ class VideoCaptureTab(QWidget):
         # Initalise Threadpool & futures
         self.threadpool = ThreadPoolExecutor(max_workers=32)
         self.futures = []
-        # Flag to supress alerts after one warning has been given
+        # Flags for alert if futures length is growing
         self.suppress_alert = False
         self._warning_box_open = False
         self.warning_thread_length = 100
@@ -196,27 +196,24 @@ class VideoCaptureTab(QWidget):
         if self.futures:
             self.futures = [f for f in self.futures if not f.done()]
             if len(self.futures) > self.warning_thread_length:
-                # Show warning only if not suppressed and not already showing
+                # Show warning only if is it not suppressed and isn't already showing
                 if not self.suppress_alert and not self._warning_box_open:
                     self._warning_box_open = True
-
-                    def show_warning():
-                        msg_box = QMessageBox(self)
-                        msg_box.setIcon(QMessageBox.Icon.Warning)
-                        msg_box.setWindowTitle("Warning")
-                        msg_box.setText(
-                            "pyMuliVideo buffer's is starting to overflow. Video recording might be affected."
-                        )
-                        msg_box.setInformativeText("Do you want to suppress this warning in the future?")
-                        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-                        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
-                        ret = msg_box.exec()
-                        if ret == QMessageBox.StandardButton.Yes:
-                            self.suppress_alert = True
-                        self._warning_box_open = False
-
-                    QTimer.singleShot(0, show_warning)
+                    QTimer.singleShot(0, self.warn_buffer_overflow)
         # To implement: if the length of the futures becomes wayy to big, then i will stop collecting frames from the cameras an accept dropped frames.
+
+    def warn_buffer_overflow(self):
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Warning)
+        msg_box.setWindowTitle("Warning")
+        msg_box.setText("pyMuliVideo buffer's is starting to overflow. Video recording might be affected.")
+        msg_box.setInformativeText("Do you want to suppress this warning in the future?")
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        ret = msg_box.exec()
+        if ret == QMessageBox.StandardButton.Yes:
+            self.suppress_alert = True
+        self._warning_box_open = False
 
     def refresh(self):
         """Refresh tab"""

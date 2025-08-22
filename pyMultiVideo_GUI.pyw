@@ -6,7 +6,7 @@ from config.config import gui_config
 # Dependancy Mangement
 import importlib.util
 
-# Set up logging
+# Set up logging  ---------------------------------------------------------------------------------
 logging.basicConfig(
     level=logging.ERROR,
     handlers=[
@@ -16,7 +16,7 @@ logging.basicConfig(
 )
 
 
-# Dependency Mangement
+# Dependency Mangement  ---------------------------------------------------------------------------
 def check_module(module_name):
     if importlib.util.find_spec(module_name) is None:
         logging.error(f"Unable to import dependency: {module_name}")
@@ -38,7 +38,7 @@ def open_error_dialog():
     msg_box.exec()
 
 
-### Terminal Commands -----------------------------------------------------------------------
+### Terminal Commands -----------------------------------------------------------------------------
 
 
 def valid_time(value):
@@ -71,11 +71,11 @@ def parse_args():
         help="Amount of time the application will be open for (Specific time in HH:MM)",
         type=valid_time,
     )
-    # return the arguments to the main function
+    # Return the arguments to the main function
     return parser.parse_known_args()
 
 
-# Running Application ----------------------------------------------------------------
+# Running Application -----------------------------------------------------------------------------
 
 check_module("PyQt6")
 check_module("pyqtgraph")
@@ -100,7 +100,6 @@ def main(parsed_args, unparsed_args):
     app.exec()
 
 
-# Run the main function if this script is run
 if __name__ == "__main__":
     try:
         parsed_args, unparsed_args = parse_args()
