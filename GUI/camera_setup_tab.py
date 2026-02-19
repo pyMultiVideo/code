@@ -120,7 +120,7 @@ class CameraSetupTab(QWidget):
             ]
         self.refresh()
 
-    # Refresh timer / tab changing logic -------------------------------------------------------------------------------
+    # Tab changing logic -------------------------------------------------------------------------------
 
     def tab_selected(self):
         """Called when tab selected."""

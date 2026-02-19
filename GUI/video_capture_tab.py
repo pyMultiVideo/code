@@ -3,7 +3,6 @@ import json
 from typing import List
 from dataclasses import dataclass, asdict
 from concurrent.futures import ThreadPoolExecutor
-import threading
 
 from PyQt6.QtWidgets import (
     QVBoxLayout,
@@ -249,7 +248,7 @@ class VideoCaptureTab(QWidget):
         for camera_widget in self.camera_widgets:
             camera_widget.stop_recording()
 
-    # GUI element update functions ----------------------------------------------------
+    # Tab select / deselect ----------------------------------------------------
 
     def tab_selected(self):
         """Called when tab deselected to start aqusition of the camera video streams."""

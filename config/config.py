@@ -14,7 +14,7 @@ gui_config = {
 
 ffmpeg_config = {
     "crf": 23,  # Controls video quality vs file size, range [1 - 51], lower is higher quality and larger files.
-    "encoding_speed": "fast",  # Controls encoding speed vs file size, value values ["fast", "medium", "slow"]
+    "encoding_speed": "fast",  # Controls encoding speed vs file size, valid values ["fast", "medium", "slow"]
     "compression_standard": "h264",  # ["h265" , "h264"]
 }
 

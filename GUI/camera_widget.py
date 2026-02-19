@@ -1,7 +1,7 @@
 import os
 import cv2
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime
 from dataclasses import dataclass
 from collections import deque
 
@@ -218,7 +218,6 @@ class CameraWidget(QGroupBox):
         self.fetch_image_data()
         if update_video_display:
             self.update_video_display()
-        
 
     # Recording controls --------------------------------------------------------------
 
@@ -402,9 +401,9 @@ class CameraWidget(QGroupBox):
         # Update Frame triggered text
         self.recording_status_item.setText("NOT RECORDING", color="r")
         # Update other camera widget dropdowns
-        for c_w in self.video_capture_tab.camera_widgets: 
+        for c_w in self.video_capture_tab.camera_widgets:
             c_w.update_camera_dropdown()
-            
+
     def closeEvent(self, event):
         """Handle the close event to stop the timer and release resources"""
         self.stop_capturing()

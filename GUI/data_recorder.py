@@ -1,10 +1,9 @@
 import os
 import csv
 import json
-import math
 import subprocess
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # Check GPU availibility for video encode and set which encoders to use.
 
@@ -92,7 +91,7 @@ class Data_recorder:
                 f"-s {self.downsampled_width}x{self.downsampled_height}",  # Output frame size after any downsampling.
                 "-pix_fmt yuv420p",  # Output pixel format
                 f"-preset {self.camera_widget.GUI.ffmpeg_config['encoding_speed']}",  # Encoding speed [fast, medium, slow]
-                f"-b:v 0 ",  # Encoder uses variable bit rate https://superuser.com/questions/1236275/how-can-i-use-crf-encoding-with-nvenc-in-ffmpeg
+                "-b:v 0 ",  # Encoder uses variable bit rate https://superuser.com/questions/1236275/how-can-i-use-crf-encoding-with-nvenc-in-ffmpeg
                 (
                     f"-cq {self.camera_widget.GUI.ffmpeg_config['crf']}"
                     if GPU_AVAILABLE
