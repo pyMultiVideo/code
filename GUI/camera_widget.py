@@ -57,7 +57,6 @@ class CameraWidget(QGroupBox):
         self.camera_width = self.camera_api.get_width()
         self.latest_image = None
         self.frame_timestamps = deque([0], maxlen=10)
-        self.framenumbers = deque([0], maxlen=10)
         self.controls_visible = True
 
         # Video display ---------------------------------------------------------------
@@ -185,7 +184,6 @@ class CameraWidget(QGroupBox):
     def begin_capturing(self):
         """Start streaming video from camera."""
         self.recording = False
-        self._last_timestamp = None
         # Begin capturing using the camera API
         self.camera_api.begin_capturing(self.settings)
 

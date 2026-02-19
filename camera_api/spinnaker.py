@@ -171,7 +171,6 @@ class SpinnakerCamera(GenericCamera):
     # Configure Camera for external acqusition
 
     def set_acqusition_mode(self, external_trigger: bool):
-
         if external_trigger:
             # Ensure trigger mode is off before configuring
             trigger_mode = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerMode"))
@@ -226,9 +225,7 @@ class SpinnakerCamera(GenericCamera):
     def configure_settings(self, CameraConfig):
         """Configure all settings from CameraConfig."""
         self.set_acqusition_mode(CameraConfig.external_trigger)
-        if CameraConfig.external_trigger:
-            pass
-        else:
+        if not CameraConfig.external_trigger:
             self.set_frame_rate(CameraConfig.fps)
         self.set_gain(CameraConfig.gain)
         self.set_exposure_time(CameraConfig.exposure_time)
