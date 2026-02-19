@@ -218,9 +218,7 @@ class CameraWidget(QGroupBox):
         self.fetch_image_data()
         if update_video_display:
             self.update_video_display()
-        # Remove completed futures from the list
-        if self.video_capture_tab.futures:
-            self.video_capture_tab.futures = [f for f in self.video_capture_tab.futures if not f.done()]
+        
 
     # Recording controls --------------------------------------------------------------
 

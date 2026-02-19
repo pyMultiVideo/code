@@ -42,9 +42,9 @@ class GUIMain(QMainWindow):
         if self.CLI_args.close_after:
             # Parse time in HH:SS format
             time_parts = self.CLI_args.close_after.split(":")
-            hours = int(time_parts[0])
+            mins = int(time_parts[0])
             seconds = int(time_parts[1])
-            total_seconds = hours * 3600 + seconds
+            total_seconds = mins * 60 + seconds
             close_timer = QTimer(self)
             close_timer.setInterval(total_seconds * 1000)
             close_timer.setSingleShot(True)
@@ -120,6 +120,9 @@ class GUIMain(QMainWindow):
             future = self.video_capture_tab.futures.pop()
             future.result()
         # Close open camera widgets
+        while self.video_capture_tab.futures:
+            future = self.video_capture_tab.futures.pop()
+            future.result()
         for c_w in self.video_capture_tab.camera_widgets:
             if c_w.recording:
                 c_w.stop_recording()
@@ -132,7 +135,6 @@ class GUIMain(QMainWindow):
 
         event.accept()
         sys.exit(0)
-
     def exception_hook(self, exctype, value, traceback):
         """Hook for uncaught exceptions"""
         print("Using the except hook to close the application")
@@ -141,5 +143,6 @@ class GUIMain(QMainWindow):
             print("KeyboardInterrupt detected. Closing GUI.")
             self.close()
         else:
-            print("Uncaught exception", exc_info=(exctype, value, traceback))
+            print("Uncaught exception:", exctype, value, traceback)
+        sys.__excepthook__(exctype, value, traceback)
         sys.__excepthook__(exctype, value, traceback)
