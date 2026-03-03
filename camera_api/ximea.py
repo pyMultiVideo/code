@@ -59,10 +59,6 @@ class XimeaCamera(GenericCamera):
         """Get the height of the camera image in pixels."""
         return self.cam.get_height()
 
-    def get_frame_rate(self) -> int:
-        """Get the camera frame rate in Hz."""
-        return self.cam.get_framerate()
-
     def get_frame_rate_range(self, *exposure_time) -> tuple[int, int]:
         """Get the min and max frame rate (Hz)."""
         try:
@@ -186,7 +182,7 @@ class XimeaCamera(GenericCamera):
                     np.frombuffer(next_image.get_image_data_raw(), dtype=np.uint8)
                 )  # Add the data as numpy buffer arrays
                 timestamps_buffer.append(
-                    next_image.tsSec * 1000000000 + next_image.tsUSec * 1000  # Padded to nanosecond resolution
+                    next_image.tsSec * 1000000 + next_image.tsUSec  # Microseconds.
                 )  # Create timestamp for the image
                 if self.previous_frame_number != (next_image.acq_nframe - 1):
                     dropped_frames += next_image.acq_nframe - self.previous_frame_number - 1

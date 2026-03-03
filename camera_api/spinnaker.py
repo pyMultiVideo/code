@@ -22,7 +22,8 @@ class SpinnakerCamera(GenericCamera):
         self.manual_control_enabled = True
         self.trigger_line = 2  # Trigger line name
         self.previous_frame_number = 0
-        # Initialise camera -------------------------------------------------------------
+
+        # Initialise camera -------------------------------------------------------------------------------------------
         self.cam_list = PYSPINSYSTEM.GetCameras()
         self.cam = next(
             (cam for cam in self.cam_list if cam.TLDevice.DeviceSerialNumber.GetValue() == self.serial_number), None
@@ -32,7 +33,7 @@ class SpinnakerCamera(GenericCamera):
         self.nodemap = self.cam.GetNodeMap()
         self.stream_nodemap = self.cam.GetTLStreamNodeMap()
 
-        # Dictionaries for supporting colored cameras -----------------------------------
+        # Dictionaries for supporting colored cameras -----------------------------------------------------------------
 
         # List of color formats pMV supports listed in order or priority. Prioritise Color.
         self.pixel_format_map = OrderedDict(
@@ -46,19 +47,20 @@ class SpinnakerCamera(GenericCamera):
         # Set the pixel format
         self.set_pixel_format(self.pixel_format)
 
-        # Configure camera settings -----------------------------------------------------
+        # Configure camera settings -----------------------------------------------------------------------------------
 
         # Set Buffer handling mode to OldestFirst and buffer size to 100 frames.
         bh_node = PySpin.CEnumerationPtr(self.stream_nodemap.GetNode("StreamBufferHandlingMode"))
         bh_node.SetIntValue(bh_node.GetEntryByName("OldestFirst").GetValue())
         sbc_node = PySpin.CIntegerPtr(self.stream_nodemap.GetNode("StreamBufferCountManual"))
-        sbc_node.SetValue(100)  # Set buffer size to 100 frames.
+        sbc_node.SetValue(100)
+
         # Configure ChunkData to include frame count and timestamp.
         chunk_selector = PySpin.CEnumerationPtr(self.nodemap.GetNode("ChunkSelector"))
         if self.device_model == "Chameleon3":
             chunk_selector.SetIntValue(chunk_selector.GetEntryByName("FrameCounter").GetValue())
             self.cam.ChunkEnable.SetValue(True)
-            # Configure camera to embed GPIO pinstate in image data.
+            # Config to embed GPIO pinstate in image data as getting pinstates from ChunkData does not work for this camera.
             FRAME_INFO_REG = 0xFFFFF0F012F8
             reg_read = self.cam.ReadPort(FRAME_INFO_REG)
             reg_write = (reg_read & 0xFFFFFC00) + 0x3FF
@@ -82,6 +84,7 @@ class SpinnakerCamera(GenericCamera):
         # Set Exposure to manual
         exc_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("ExposureAuto"))
         exc_node.SetIntValue(PySpin.ExposureAuto_Off)
+
         # Set Gain to manual
         gnc_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("GainAuto"))
         gnc_node.SetIntValue(PySpin.GainAuto_Off)
@@ -90,7 +93,7 @@ class SpinnakerCamera(GenericCamera):
         if CameraConfig is not None:
             self.configure_settings(CameraConfig)
 
-    # Functions to get the camera parameters ----------------------------------------------
+    # Functions to get the camera parameters --------------------------------------------------------------------------
 
     def get_width(self) -> int:
         """Get the width of the camera image in pixels."""
@@ -99,10 +102,6 @@ class SpinnakerCamera(GenericCamera):
     def get_height(self) -> int:
         """Get the height of the camera image in pixels."""
         return PySpin.CIntegerPtr(self.nodemap.GetNode("Height")).GetValue()
-
-    def get_frame_rate(self) -> int:
-        """Get the camera frame rate in Hz."""
-        return PySpin.CFloatPtr(self.nodemap.GetNode("AcquisitionFrameRate")).GetValue()
 
     def get_frame_rate_range(self, *exposure_time) -> tuple[int, int]:
         """Get the min and max frame rate (Hz)."""
@@ -220,7 +219,7 @@ class SpinnakerCamera(GenericCamera):
             print(f"Error retrieving trigger lines: {e}")
         return trigger_lines
 
-    # Functions to set camera paramteters ------------------------------------------------------------------------
+    # Functions to set camera paramteters -----------------------------------------------------------------------------
 
     def configure_settings(self, CameraConfig):
         """Configure all settings from CameraConfig."""
@@ -233,7 +232,7 @@ class SpinnakerCamera(GenericCamera):
     def set_frame_rate(self, frame_rate):
         """Set the frame rate of the camera in Hz."""
         PySpin.CFloatPtr(self.nodemap.GetNode("AcquisitionFrameRate")).SetValue(int(frame_rate))
-        self.inter_frame_interval = int(1e9 // int(frame_rate))  # (nanoseconds)
+        self.inter_frame_interval = int(1e6 // int(frame_rate))  # Microsecconds.
 
     def set_exposure_time(self, exposure_time: float) -> None:
         """Set the exposure time of the camera in microseconds."""
@@ -252,7 +251,7 @@ class SpinnakerCamera(GenericCamera):
         else:
             print(f"Current pixel format: {self.camera_pixel_format()}")
 
-    # Functions to control the camera streaming and check status.
+    # Functions to control the camera streaming and check status. -----------------------------------------------------
 
     def begin_capturing(self, CameraConfig=None) -> None:
         """Start camera streaming images."""
@@ -294,7 +293,7 @@ class SpinnakerCamera(GenericCamera):
                 next_image = self.cam.GetNextImage(0)  # Raises exception if buffer empty.
                 img_buffer.append(next_image.GetData())  # Image pixels as bytes.
                 chunk_data = next_image.GetChunkData()  # Additional image data.
-                timestamps_buffer.append(chunk_data.GetTimestamp())  # Image timestamp (nanoseconds)
+                timestamps_buffer.append(chunk_data.GetTimestamp() // 1000)  # Image timestamp (microseconds)
                 # Frame timestamps
                 if self.frame_timestamp is None:
                     self.frame_timestamp = timestamps_buffer[-1]

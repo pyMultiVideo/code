@@ -50,7 +50,7 @@ class Data_recorder:
         self.gpio_file = open(self.GPIO_filepath, mode="w", newline="")
         self.gpio_writer = csv.writer(self.gpio_file)
         self.gpio_writer.writerow(
-            [f"GPIO{pin}" for pin in range(1, self.camera_widget.camera_api.N_GPIO + 1)] + ["Timestamp"]
+            [f"GPIO{pin}" for pin in range(1, self.camera_widget.camera_api.N_GPIO + 1)] + ["timestamp"]
         )
 
         # Create metadata file.
@@ -130,4 +130,4 @@ class Data_recorder:
         self.ffmpeg_process.stdin.write(frame)
         for gpio_pinstate, timestamp in zip(new_images["gpio_data"], new_images["timestamps"]):
             rel_timestamp = timestamp - self.first_timestamp
-            self.gpio_writer.writerow(list(gpio_pinstate) + [f"{rel_timestamp:0{self.timestamp_digit_count}d}"])
+            self.gpio_writer.writerow(list(gpio_pinstate) + [rel_timestamp])
