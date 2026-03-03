@@ -2,7 +2,6 @@
 Generic API defining functionality needed for for camera system to interact with the GUI.
 """
 
-from collections import OrderedDict
 import cv2
 
 # GenericCamera class -------------------------------------------------------------------
@@ -27,12 +26,18 @@ class GenericCamera:
         # 'Internal' refers to the camera's internal name for the pixel format.
         # 'ffmpeg' specifies the corresponding pixel format name used by ffmpeg.
         # 'cv2' specifices the OpenCV conversion code for the pixel format.
-        self.pixel_format_map = OrderedDict(
-            [
-                ("Colour", {"Internal": "BayerRG8", "ffmpeg": "bayer_rggb8", "cv2": cv2.COLOR_BayerRG2BGR}),
-                ("Mono", {"Internal": "Mono8", "ffmpeg": "gray", "cv2": cv2.COLOR_GRAY2BGR}),
-            ]
-        )
+        self.pixel_format_map = {
+            "Colour": {
+                "Internal": "BayerRG8",
+                "ffmpeg": "bayer_rggb8",
+                "cv2": cv2.COLOR_BayerRG2BGR,
+            },
+            "Mono": {
+                "Internal": "Mono8",
+                "ffmpeg": "gray",
+                "cv2": cv2.COLOR_GRAY2BGR,
+            },
+        }
 
         # Configure camera settings -----------------------------------------------------
 

@@ -2,7 +2,6 @@ from ximea import xiapi
 
 import cv2
 import numpy as np
-from collections import OrderedDict
 from math import floor, ceil
 
 from . import GenericCamera
@@ -28,12 +27,18 @@ class XimeaCamera(GenericCamera):
         self.device_model = self.cam.get_device_model_id()
         # Dictionaries for supporting colored cameras -----------------------------------
         # List of color formats Ximea supports
-        self.pixel_format_map = OrderedDict(
-            [
-                ("Colour", {"Internal": "BayerRG8", "ffmpeg": "bayer_rggb8", "cv2": cv2.COLOR_BayerRG2BGR}),
-                ("Mono", {"Internal": "Mono8", "ffmpeg": "gray", "cv2": cv2.COLOR_GRAY2BGR}),
-            ]
-        )
+        self.pixel_format_map = {
+            "Colour": {
+                "Internal": "BayerRG8",
+                "ffmpeg": "bayer_rggb8",
+                "cv2": cv2.COLOR_BayerRG2BGR,
+            },
+            "Mono": {
+                "Internal": "Mono8",
+                "ffmpeg": "gray",
+                "cv2": cv2.COLOR_GRAY2BGR,
+            },
+        }
         # Get the pixel format
         self.pixel_format = self.get_camera_pixel_format()
 
