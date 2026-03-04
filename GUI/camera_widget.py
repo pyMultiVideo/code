@@ -56,6 +56,7 @@ class CameraWidget(QGroupBox):
         self.camera_height = self.camera_api.get_height()
         self.camera_width = self.camera_api.get_width()
         self.latest_image = None
+        self.last_video_update_timestamp = 0
         self.frame_timestamps = deque([0], maxlen=10)
         self.controls_visible = True
 
@@ -93,11 +94,11 @@ class CameraWidget(QGroupBox):
         self.frame_rate_text.setText("FPS:", color="r")
 
         # GPIO state overlay
-        self.gpio_state_smoothed = np.zeros(self.camera_api.N_GPIO)
+        self.gpio_smoothed = np.zeros(self.camera_api.N_GPIO)
         self.gpio_status_item = pg.TextItem()
         self.gpio_status_item.setPos(10, 4 * text_spacing)
         self.graphics_view.addItem(self.gpio_status_item)
-        self.gpio_status_item.setText("GPIO state", color="blue")
+        self.gpio_status_item.setText("GPIO state", color="yellow")
         self.gpio_status_indicators = [pg.TextItem() for _ in range(self.camera_api.N_GPIO)]
         for i, gpio_indicator in enumerate(self.gpio_status_indicators):
             gpio_indicator.setPos((5 + i) * text_spacing, 4 * text_spacing)
@@ -255,7 +256,7 @@ class CameraWidget(QGroupBox):
 
     # Video display -------------------------------------------------------------------
 
-    def update_video_display(self, gpio_smoothing_decay=0.5):
+    def update_video_display(self, gpio_smoothing_tau=0.1):
         """Display most recent image and update information overlays."""
         if self.latest_image is None:
             return
@@ -269,10 +270,13 @@ class CameraWidget(QGroupBox):
         color = "r" if (abs(calculated_framerate - int(self.settings.fps)) > 1) else "g"
         self.frame_rate_text.setText(f"FPS: {calculated_framerate:.2f}", color=color)
         # Update GPIO status indicators.
-        self.gpio_state_smoothed = gpio_smoothing_decay * self.gpio_state_smoothed
-        self.gpio_state_smoothed[np.array(self.latest_GPIO) > 0] = 1
+        inter_update_interval = (self.frame_timestamps[-1] - self.last_video_update_timestamp) / 1e6  # in seconds
+        self.last_video_update_timestamp = self.frame_timestamps[-1]
+        self.gpio_smoothed = self.gpio_smoothed * np.exp(-inter_update_interval / gpio_smoothing_tau)
+        self.gpio_smoothed[np.array(self.latest_GPIO) > 0] = 1
         for i, gpio_indicator in enumerate(self.gpio_status_indicators):
-            gpio_indicator.setText("\u2b24", color=[0, 0, self.gpio_state_smoothed[i] * 255])
+            color = [255 * self.gpio_smoothed[i], 255 * self.gpio_smoothed[i], 150 * (1 - self.gpio_smoothed[i])]
+            gpio_indicator.setText("\u2b24", color=color)
         # Display the current recording duration over image.
         if self.recording:
             elapsed_time = datetime.now() - self.data_recorder.record_start_time
@@ -387,7 +391,7 @@ class CameraWidget(QGroupBox):
             f"{self.settings.name if self.settings.name is not None else self.settings.unique_id}", color="white"
         )
         # Update GPIO elements
-        self.gpio_state_smoothed = np.zeros(self.camera_api.N_GPIO)
+        self.gpio_smoothed = np.zeros(self.camera_api.N_GPIO)
         for gpio_indicator in self.gpio_status_indicators:
             self.graphics_view.removeItem(gpio_indicator)
         self.gpio_status_indicators = [pg.TextItem() for _ in range(self.camera_api.N_GPIO)]
