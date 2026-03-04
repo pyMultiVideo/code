@@ -44,13 +44,14 @@ class VideoCaptureTab(QWidget):
         self.saved_config = None
         self.config_save_path = None
 
-        # Initalise Threadpool & futures
+        # Initalise Threadpool used to pipe data to ffmpeg processes.
         self.threadpool = ThreadPoolExecutor(max_workers=32)
-        self.futures = []
+        self.futures = []  # List to keep track of jobs waiting to be processed by the threadpool.
         # Flags for alert if futures length is growing
         self.suppress_alert = False
         self._warning_box_open = False
-        self.warning_thread_length = 100
+        self.warning_futures_length = 100  # Warn user if more than this many jobs waiting.
+        self.pause_future_length = 200  # Pause accepting new frames if more than this many jobs waiting.
 
         # GUI Layout
         self.camera_layout = QGridLayout()
@@ -189,17 +190,15 @@ class VideoCaptureTab(QWidget):
         """Fetches new images from all cameras, updates video displays every n calls."""
         self.update_counter = (self.update_counter + 1) % self.GUI.gui_config["camera_updates_per_display_update"]
         update_video_display = self.update_counter == 0
-        for camera_widget in self.camera_widgets:
-            camera_widget.update(update_video_display)
-        # Remove completed futures from the list
-        if self.futures:
-            self.futures = [f for f in self.futures if not f.done()]
-            if len(self.futures) > self.warning_thread_length:
-                # Show warning only if is it not suppressed and isn't already showing
-                if not self.suppress_alert and not self._warning_box_open:
-                    self._warning_box_open = True
-                    QTimer.singleShot(0, self.warn_buffer_overflow)
-        # To implement: if the length of the futures becomes wayy to big, then i will stop collecting frames from the cameras an accept dropped frames.
+        # Track number of jobs waiting to be processed by the threadpool.
+        self.futures = [f for f in self.futures if not f.done()]
+        if (len(self.futures) > self.warning_futures_length) and not self.suppress_alert and not self._warning_box_open:
+            self._warning_box_open = True
+            QTimer.singleShot(0, self.warn_buffer_overflow)
+        # Update camera widgets
+        if len(self.futures) < self.pause_future_length:
+            for camera_widget in self.camera_widgets:
+                camera_widget.update(update_video_display)
 
     def warn_buffer_overflow(self):
         msg_box = QMessageBox(self)
