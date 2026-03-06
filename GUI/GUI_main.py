@@ -120,21 +120,19 @@ class GUIMain(QMainWindow):
             future = self.video_capture_tab.futures.pop()
             future.result()
         # Close open camera widgets
-        while self.video_capture_tab.futures:
-            future = self.video_capture_tab.futures.pop()
-            future.result()
         for c_w in self.video_capture_tab.camera_widgets:
             if c_w.recording:
                 c_w.stop_recording()
             c_w.closeEvent(event)
             c_w.deleteLater()
         # Close Camera preview
-        if self.camera_setup_tab.camera_preview:
+        if self.camera_setup_tab.preview_showing:
             self.camera_setup_tab.camera_preview.closeEvent(event)
             self.camera_setup_tab.camera_preview.deleteLater()
 
         event.accept()
         sys.exit(0)
+
     def exception_hook(self, exctype, value, traceback):
         """Hook for uncaught exceptions"""
         print("Using the except hook to close the application")

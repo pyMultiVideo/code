@@ -392,6 +392,7 @@ class CameraWidget(QGroupBox):
         )
         # Update GPIO elements
         self.gpio_smoothed = np.zeros(self.camera_api.N_GPIO)
+        self.last_video_update_timestamp = 0
         for gpio_indicator in self.gpio_status_indicators:
             self.graphics_view.removeItem(gpio_indicator)
         self.gpio_status_indicators = [pg.TextItem() for _ in range(self.camera_api.N_GPIO)]

@@ -60,21 +60,18 @@ class SpinnakerCamera(GenericCamera):
         sbc_node = PySpin.CIntegerPtr(self.stream_nodemap.GetNode("StreamBufferCountManual"))
         sbc_node.SetValue(100)
 
-        # Configure ChunkData to include frame count and timestamp.
+        # Configure image metadata to include GPIO pinstate and image timestamp.
+
         chunk_selector = PySpin.CEnumerationPtr(self.nodemap.GetNode("ChunkSelector"))
+
         if self.device_model == "Chameleon3":
-            chunk_selector.SetIntValue(chunk_selector.GetEntryByName("FrameCounter").GetValue())
-            self.cam.ChunkEnable.SetValue(True)
-            # Config to embed GPIO pinstate in image data as getting pinstates from ChunkData does not work for this camera.
+            # Config to embed GPIO pinstate in image data, as getting pinstates from ChunkData not implemented.
             FRAME_INFO_REG = 0xFFFFF0F012F8
             reg_read = self.cam.ReadPort(FRAME_INFO_REG)
             reg_write = (reg_read & 0xFFFFFC00) + 0x3FF
             self.cam.WritePort(FRAME_INFO_REG, reg_write)
         else:
-            # Frame Counter
-            chunk_selector.SetIntValue(chunk_selector.GetEntryByName("FrameID").GetValue())
-            self.cam.ChunkEnable.SetValue(True)
-            # GPIO Pin state
+            # Inlcude GPIO pinstate in ChunkData.
             chunk_selector.SetIntValue(chunk_selector.GetEntryByName("ExposureEndLineStatusAll").GetValue())
             self.cam.ChunkEnable.SetValue(True)
 
