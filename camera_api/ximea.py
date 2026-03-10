@@ -46,10 +46,6 @@ class XimeaCamera(GenericCamera):
         # Manual Control of camera
         self.cam.disable_aeag()  # Automatic exposure gain disabled
         self.cam.set_acq_timing_mode("XI_ACQ_TIMING_MODE_FRAME_RATE")  # Manual Framerate control
-        if not self.cam.CAM_OPEN:  # Set the buffer size. Requires the camera to be open to set.
-            self.cam.open_device_by_SN(self.serial_number)
-            self.previous_frame_number = 0
-            self.cam.set_acq_buffer_size(self.BUFFER_SIZE)
 
         # Configure user settings.
         self.begin_capturing(CameraConfig)
@@ -183,18 +179,15 @@ class XimeaCamera(GenericCamera):
             while True:
                 next_image = xiapi.Image()  # img class to put data into
                 self.cam.get_image(next_image, timeout=0)  # Raise an exception if buffer is empty.
-                img_buffer.append(
-                    np.frombuffer(next_image.get_image_data_raw(), dtype=np.uint8)
-                )  # Add the data as numpy buffer arrays
-                timestamps_buffer.append(
-                    next_image.tsSec * 1000000 + next_image.tsUSec  # Microseconds.
-                )  # Create timestamp for the image
-                if self.previous_frame_number != (next_image.acq_nframe - 1):
-                    dropped_frames += next_image.acq_nframe - self.previous_frame_number - 1
+                # Add the image data to the image buffer.
+                img_buffer.append(np.frombuffer(next_image.get_image_data_raw(), dtype=np.uint8))
+                # Add image timestamp to timestamp buffer.
+                timestamps_buffer.append(next_image.tsSec * 1000000 + next_image.tsUSec)  # Microseconds.
+                # Calcuate number of dropped frames.
+                dropped_frames += next_image.acq_nframe - self.previous_frame_number - 1
                 self.previous_frame_number = next_image.acq_nframe
-                gpio_data.append(
-                    [int(self.cam.get_gpi_level())]
-                )  # UNTESTED: function that returns GPI level of the single pin input
+                # Get state of GPIO pin and add to GPIIO data buffer [UNTESTED].
+                gpio_data.append([int(self.cam.get_gpi_level())])
         except xiapi.Xi_error:  # Buffer is empty.
             if len(img_buffer) == 0:
                 return
