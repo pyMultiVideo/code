@@ -22,7 +22,7 @@ from PyQt6.QtWidgets import (
 
 from config.config import default_camera_config
 from .camera_widget import CameraWidget
-from camera_api import get_camera_ids, init_camera_api_from_module
+from camera_api import get_camera_ids
 
 
 @dataclass
@@ -183,6 +183,7 @@ class CameraSetupTab(QWidget):
                 # Sequence for removed a setup from the table (and deleting it)
                 self.setups.pop(unique_id)
                 self.camera_table.remove(unique_id)
+                self.GUI.camera_manager.close(unique_id)
         self.n_setups = len(self.setups.keys())
 
     def get_camera_labels(self) -> list[str]:
@@ -248,7 +249,7 @@ class Camera_table_item:
         self.setups_table = setups_table
         self.setups_tab = setups_table.setups_tab
         self.setups_tab.preview_showing = False
-        self.camera_api = init_camera_api_from_module(settings=self.settings)
+        self.camera_api = self.setups_tab.GUI.camera_manager.get_or_create(self.settings)
 
         # Name edit
         self.name_edit = QLineEdit()

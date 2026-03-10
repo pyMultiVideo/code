@@ -25,6 +25,8 @@ class XimeaCamera(GenericCamera):
         self.cam.open_device_by_SN(self.serial_number)
         self.previous_frame_number = 0
         self.device_model = self.cam.get_device_model_id()
+        self.image_width = self.cam.get_width()
+        self.image_height = self.cam.get_height()
         # Dictionaries for supporting colored cameras -----------------------------------
         # List of color formats Ximea supports
         self.pixel_format_map = {
@@ -48,17 +50,11 @@ class XimeaCamera(GenericCamera):
         self.cam.set_acq_timing_mode("XI_ACQ_TIMING_MODE_FRAME_RATE")  # Manual Framerate control
 
         # Configure user settings.
-        self.begin_capturing(CameraConfig)
+        # self.begin_capturing(CameraConfig)
+
+        print(f"Ximea camera {self.serial_number} initialised")
 
     # Functions to get the camera parameters ----------------------------------------------
-
-    def get_width(self) -> int:
-        """Get the width of the camera image in pixels."""
-        return self.cam.get_width()
-
-    def get_height(self) -> int:
-        """Get the height of the camera image in pixels."""
-        return self.cam.get_height()
 
     def get_frame_rate_range(self, *exposure_time) -> tuple[int, int]:
         """Get the min and max frame rate (Hz)."""
@@ -161,12 +157,19 @@ class XimeaCamera(GenericCamera):
 
     def stop_capturing(self) -> None:
         """Stop the camera from streaming"""
-        self.cam.stop_acquisition()
-        self.cam.close_device()
+        try:
+            self.cam.stop_acquisition()
+        except xiapi.Xi_error:
+            pass
 
     def close_api(self):
         """Close the Ximea API and release resources."""
         self.stop_capturing()
+        try:
+            if self.cam.CAM_OPEN:
+                self.cam.close_device()
+        except xiapi.Xi_error:
+            pass
 
     def get_available_images(self):
         """Gets all available images from the buffer and return images GPIO pinstate data and timestamps."""

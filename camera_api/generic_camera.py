@@ -17,6 +17,8 @@ class GenericCamera:
         self.serial_number = None  # To be replaced with device serial number.
         self.device_model = "GenericCameraModel"  # Replace with the camera model name to be recorded in metadata.
         self.N_GPIO = 3  # Number of pins that the camera records each frame.
+        self.image_width = None
+        self.image_height = None
         self.BUFFER_SIZE = 100
         self.trigger_line = None  # Name of the line which will be used to trigger external acqusition
         self.manual_control_enabled = (
@@ -46,14 +48,6 @@ class GenericCamera:
         #     self.configure_acqusition_mode(CameraConfig.external_trigger)
 
     # Functions to get the camera parameters -----------------------------------------------------------------
-
-    def get_width(self) -> int:
-        """Get the width of the camera image in pixels."""
-        pass
-
-    def get_height(self) -> int:
-        """Get the height of the camera image in pixels."""
-        pass
 
     def get_frame_rate_range(self) -> tuple[int, int]:
         """Get the min and max frame rate in Hz."""

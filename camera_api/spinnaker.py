@@ -31,6 +31,8 @@ class SpinnakerCamera(GenericCamera):
         self.cam.Init()
         self.nodemap = self.cam.GetNodeMap()
         self.stream_nodemap = self.cam.GetTLStreamNodeMap()
+        self.image_width = PySpin.CIntegerPtr(self.nodemap.GetNode("Width")).GetValue()
+        self.image_height = PySpin.CIntegerPtr(self.nodemap.GetNode("Height")).GetValue()
 
         # Dictionaries for supporting colored cameras -----------------------------------------------------------------
 
@@ -95,15 +97,9 @@ class SpinnakerCamera(GenericCamera):
         if CameraConfig is not None:
             self.configure_settings(CameraConfig)
 
+        print(f"Spinnaker camera {self.serial_number} initialised")
+
     # Functions to get the camera parameters --------------------------------------------------------------------------
-
-    def get_width(self) -> int:
-        """Get the width of the camera image in pixels."""
-        return PySpin.CIntegerPtr(self.nodemap.GetNode("Width")).GetValue()
-
-    def get_height(self) -> int:
-        """Get the height of the camera image in pixels."""
-        return PySpin.CIntegerPtr(self.nodemap.GetNode("Height")).GetValue()
 
     def get_frame_rate_range(self, *exposure_time) -> tuple[int, int]:
         """Get the min and max frame rate (Hz)."""
@@ -274,12 +270,14 @@ class SpinnakerCamera(GenericCamera):
         """Stop the camera from streaming"""
         if self.cam.IsStreaming():
             self.cam.EndAcquisition()
-        if self.cam.IsInitialized():
-            self.cam.DeInit()
 
     def close_api(self):
         """Close the PySpin API and release resources."""
-        self.stop_capturing()
+        if self.cam is not None:
+            if self.cam.IsStreaming():
+                self.cam.EndAcquisition()
+            if self.cam.IsInitialized():
+                self.cam.DeInit()
         self.cam = None
         self.cam_list.Clear()
 

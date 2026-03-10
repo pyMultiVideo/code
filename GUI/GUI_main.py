@@ -10,6 +10,7 @@ import json
 # import tab classes
 from .video_capture_tab import VideoCaptureTab
 from .camera_setup_tab import CameraSetupTab
+from .camera_manager import CameraManager
 
 from config.config import __version__, gui_config, ffmpeg_config, paths_config
 
@@ -65,6 +66,7 @@ class GUIMain(QMainWindow):
         self.setWindowTitle(f"pyMultiVideo v{__version__}")  # default window title
         self.setWindowIcon(QIcon(os.path.join(self.paths_config["icons_dir"], "logo.svg")))
         # Initialise the tabs and tab widget.
+        self.camera_manager = CameraManager()
         self.camera_setup_tab = CameraSetupTab(parent=self)
         self.camera_setup_tab.tab_deselected()
         self.video_capture_tab = VideoCaptureTab(parent=self)
@@ -129,6 +131,8 @@ class GUIMain(QMainWindow):
         if self.camera_setup_tab.preview_showing:
             self.camera_setup_tab.camera_preview.closeEvent(event)
             self.camera_setup_tab.camera_preview.deleteLater()
+
+        self.camera_manager.close_all()
 
         event.accept()
         sys.exit(0)

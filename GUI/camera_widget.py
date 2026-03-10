@@ -11,7 +11,6 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QComboBox, QGroupBox, QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLayout, QMessageBox
 
 from .data_recorder import Data_recorder
-from camera_api import init_camera_api_from_module
 
 
 @dataclass
@@ -52,9 +51,9 @@ class CameraWidget(QGroupBox):
         self.subject_id = subject_id
         self.label = label
         self.settings = self.GUI.camera_setup_tab.get_camera_settings_from_label(label)
-        self.camera_api = init_camera_api_from_module(settings=self.settings)
-        self.camera_height = self.camera_api.get_height()
-        self.camera_width = self.camera_api.get_width()
+        self.camera_api = self.GUI.camera_manager.get_or_create(self.settings)
+        self.image_height = self.camera_api.image_height
+        self.image_width = self.camera_api.image_width
         self.latest_image = None
         self.last_video_update_timestamp = 0
         self.frame_timestamps = deque([0], maxlen=10)
@@ -260,7 +259,7 @@ class CameraWidget(QGroupBox):
         """Display most recent image and update information overlays."""
         if self.latest_image is None:
             return
-        image = np.frombuffer(self.latest_image, dtype=np.uint8).reshape(self.camera_height, self.camera_width)
+        image = np.frombuffer(self.latest_image, dtype=np.uint8).reshape(self.image_height, self.image_width)
         if self.settings.pixel_format != "Mono":
             image = cv2.cvtColor(image, self.camera_api.pixel_format_map[self.settings.pixel_format]["cv2"])
         self.video_image_item.setImage(image)
@@ -373,19 +372,18 @@ class CameraWidget(QGroupBox):
         """Get the camera configuration"""
         return CameraWidgetConfig(label=self.label, subject_id=self.subject_id)
 
-    def change_camera(self) -> None:
+    def change_camera(self):
         # shut down old camera
         if self.camera_api is not None:
-            self.camera_api.close_api()
-            del self.camera_api
+            self.camera_api.stop_capturing()
         self.latest_image = None
         # Initialise the new camera
         self.label = str(self.camera_dropdown.currentText())
         self.settings = self.GUI.camera_setup_tab.get_camera_settings_from_label(self.label)
-        self.camera_api = init_camera_api_from_module(self.settings)
+        self.camera_api = self.GUI.camera_manager.get_or_create(self.settings)
         self.camera_api.begin_capturing(self.settings)
-        self.camera_height = self.camera_api.get_height()
-        self.camera_width = self.camera_api.get_width()
+        self.image_height = self.camera_api.image_height
+        self.image_width = self.camera_api.image_width
         # Rename pyqtgraph element
         self.camera_name_item.setText(
             f"{self.settings.name if self.settings.name is not None else self.settings.unique_id}", color="white"
@@ -412,7 +410,6 @@ class CameraWidget(QGroupBox):
         self.stop_capturing()
         if self.preview_mode:
             self.update_timer.stop()
-        self.close()
         super().closeEvent(event)
         event.accept()
 
