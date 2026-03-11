@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from math import floor, ceil
 
-from . import GenericCamera
+from .generic_camera import GenericCamera
 
 # Look at the multiple camera example. There is a set_limit_bandwidth method that could cause problems.
 

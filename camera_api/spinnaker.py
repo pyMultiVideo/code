@@ -1,7 +1,7 @@
 import PySpin
 import cv2
 from math import floor, ceil
-from . import GenericCamera
+from .generic_camera import GenericCamera
 
 
 PYSPINSYSTEM = PySpin.System.GetInstance()  # One PySpin system instance per pMV

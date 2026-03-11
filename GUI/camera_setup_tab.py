@@ -22,7 +22,7 @@ from PyQt6.QtWidgets import (
 
 from config.config import default_camera_config
 from .camera_widget import CameraWidget
-from camera_api import get_camera_ids
+from .camera_manager import get_camera_ids
 
 
 @dataclass
