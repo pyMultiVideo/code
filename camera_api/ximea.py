@@ -28,8 +28,8 @@ class XimeaCamera(GenericCamera):
         self.image_width = self.cam.get_width()
         self.image_height = self.cam.get_height()
         # Dictionaries for supporting colored cameras -----------------------------------
-        # List of color formats Ximea supports
-        self.pixel_format_map = {
+
+        self.pixel_format_map = {  # List of color formats Ximea supports
             "Colour": {
                 "Internal": "BayerRG8",
                 "ffmpeg": "bayer_rggb8",
@@ -182,7 +182,7 @@ class XimeaCamera(GenericCamera):
             while True:
                 next_image = xiapi.Image()  # img class to put data into
                 self.cam.get_image(next_image, timeout=0)  # Raise an exception if buffer is empty.
-                # Add the image data to the image buffer.
+                # Add the image data to the image buffer as a 1D numpy array of bytes.
                 img_buffer.append(np.frombuffer(next_image.get_image_data_raw(), dtype=np.uint8))
                 # Add image timestamp to timestamp buffer.
                 timestamps_buffer.append(next_image.tsSec * 1000000 + next_image.tsUSec)  # Microseconds.

@@ -68,6 +68,7 @@ class CameraWidget(QGroupBox):
         self.graphics_view.setCentralItem(self.video_view_box)
         pg.setConfigOption("imageAxisOrder", "row-major")
         self.video_image_item = pg.ImageItem()
+        self.video_image_item.setLevels((0, 255))
         self.video_view_box.addItem(self.video_image_item)
         self.video_view_box.setAspectLocked()
 
@@ -262,7 +263,7 @@ class CameraWidget(QGroupBox):
         image = np.frombuffer(self.latest_image, dtype=np.uint8).reshape(self.image_height, self.image_width)
         if self.settings.pixel_format != "Mono":
             image = cv2.cvtColor(image, self.camera_api.pixel_format_map[self.settings.pixel_format]["cv2"])
-        self.video_image_item.setImage(image)
+        self.video_image_item.setImage(image, autoLevels=False)
         # Compute average framerate and display over image.
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
         calculated_framerate = 1e6 / avg_time_diff

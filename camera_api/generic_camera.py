@@ -116,7 +116,7 @@ class GenericCamera:
 
         Returns:
             {
-            'images' : img_buffer - a list of images (as numpy byte arrays)
+            'images' : img_buffer - a list of images (as 1D numpy byte arrays).
             'gpio_data' : gpio_buffer - a corresponding list of gpio data for each of the frames
             'timestamps : timestamps_buffer - a corresponding list of timestampes for each frame
             'dropped_frames': the number of dropped frames found (can be calculayted or a camera attributed)

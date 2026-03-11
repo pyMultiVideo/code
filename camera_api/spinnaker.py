@@ -291,7 +291,7 @@ class SpinnakerCamera(GenericCamera):
         try:
             while True:
                 next_image = self.cam.GetNextImage(0)  # Raises exception if buffer empty.
-                img_buffer.append(next_image.GetData())  # Image pixels as bytes.
+                img_buffer.append(next_image.GetData())  # Image pixels as 1D numpy array of image bytes.
                 chunk_data = next_image.GetChunkData()  # Additional image data.
                 timestamps_buffer.append(chunk_data.GetTimestamp() // 1000)  # Image timestamp (microseconds)
                 # Frame timestamps
