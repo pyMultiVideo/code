@@ -10,11 +10,11 @@ PYSPINSYSTEM = PySpin.System.GetInstance()  # One PySpin system instance per pMV
 class SpinnakerCamera(GenericCamera):
     """Inherits from the camera class and adds the spinnaker specific functions from the PySpin library"""
 
-    def __init__(self, CameraConfig):
+    def __init__(self, unique_id):
 
         # Options for camera -----------------------------------------------------------
-        self.unique_id = CameraConfig.unique_id
-        self.serial_number, self._api = self.unique_id.split("-")
+        self.unique_id = unique_id
+        self.serial_number, self._api = self.unique_id.rsplit("-", 1)
         self.N_GPIO = 3  # Number of GPIO pins
         self.manual_control_enabled = True
         
@@ -51,9 +51,8 @@ class SpinnakerCamera(GenericCamera):
             },
         }
 
-        self._pixel_format = self._get_supported_pixel_formats()
-        # Set the pixel format
-        self.set_pixel_format(self._pixel_format)
+        # Get the pixel format
+        self._pixel_format = self._get_camera_pixel_format()
 
         # Configure camera settings -----------------------------------------------------------------------------------
 
@@ -94,10 +93,6 @@ class SpinnakerCamera(GenericCamera):
         gnc_node = PySpin.CEnumerationPtr(self._nodemap.GetNode("GainAuto"))
         gnc_node.SetIntValue(PySpin.GainAuto_Off)
 
-        # Configure user settings.
-        if CameraConfig is not None:
-            self.configure_settings(CameraConfig)
-
         print(f"Spinnaker camera {self.serial_number} initialised")
 
     # Functions to get the camera parameters --------------------------------------------------------------------------
@@ -136,7 +131,7 @@ class SpinnakerCamera(GenericCamera):
         node = PySpin.CFloatPtr(self._cam.GetNodeMap().GetNode("Gain"))
         return ceil(node.GetMin()), floor(node.GetMax())
 
-    def _camera_pixel_format(self) -> str:
+    def _get_camera_pixel_format(self) -> str:
         """Get string specifying camera pixel format"""
         return PySpin.CEnumerationPtr(self._nodemap.GetNode("PixelFormat")).GetCurrentEntry().GetSymbolic()
 
@@ -240,7 +235,7 @@ class SpinnakerCamera(GenericCamera):
         if PySpin.IsAvailable(pxf_node) and PySpin.IsWritable(pxf_node):
             pxf_node.SetIntValue(pxf_node.GetEntryByName(internal_pixel_format).GetValue())
         else:
-            print(f"Current pixel format: {self._camera_pixel_format()}")
+            print(f"Current pixel format: {self._get_camera_pixel_format()}")
 
     # Functions to control the camera streaming and check status. -----------------------------------------------------
 
@@ -340,6 +335,6 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
     return unique_id_list
 
 
-def initialise_camera_api(CameraConfig):
+def initialise_camera_api(unique_id):
     """Instantiate the SpinnakerCamera object"""
-    return SpinnakerCamera(CameraConfig=CameraConfig)
+    return SpinnakerCamera(unique_id=unique_id)

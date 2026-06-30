@@ -12,13 +12,13 @@ from .generic_camera import GenericCamera
 class XimeaCamera(GenericCamera):
     """Inherits from the camera class and adds the Ximea specific functions from the xiAPI library"""
 
-    def __init__(self, CameraConfig):
+    def __init__(self, unique_id):
 
         # super().__init__(CameraConfig)
-        self.unique_id = CameraConfig.unique_id
+        self.unique_id = unique_id
         # Initialise camera -------------------------------------------------------------
         # pMV Information
-        self.serial_number, self._api = self.unique_id.split("-")
+        self.serial_number, self._api = self.unique_id.rsplit("-", 1)
         self.N_GPIO = 1  # Number of GPIO pins
         self.manual_control_enabled = True
         # Open camera by serial number
@@ -28,6 +28,7 @@ class XimeaCamera(GenericCamera):
         self.device_model = self._cam.get_device_model_id()
         self.image_width = self._cam.get_width()
         self.image_height = self._cam.get_height()
+        
         # Dictionaries for supporting colored cameras -----------------------------------
 
         self.pixel_format_map = {  # List of color formats Ximea supports
@@ -46,13 +47,9 @@ class XimeaCamera(GenericCamera):
         self._pixel_format = self._get_camera_pixel_format()
 
         # Configure camera settings -----------------------------------------------------
-        # Manual Control of camera
+
         self._cam.disable_aeag()  # Automatic exposure gain disabled
         self._cam.set_acq_timing_mode("XI_ACQ_TIMING_MODE_FRAME_RATE")  # Manual Framerate control
-
-        # Configure user settings.
-        if CameraConfig is not None:
-            self.configure_settings(CameraConfig)
 
         print(f"Ximea camera {self.serial_number} initialised")
 
@@ -229,6 +226,6 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
     return unique_id_list
 
 
-def initialise_camera_api(CameraConfig):
+def initialise_camera_api(unique_id):
     """Instantiate the XimeaCamera object"""
-    return XimeaCamera(CameraConfig=CameraConfig)
+    return XimeaCamera(unique_id=unique_id)

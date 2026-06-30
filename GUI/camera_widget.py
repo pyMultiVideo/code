@@ -51,7 +51,7 @@ class CameraWidget(QGroupBox):
         self.subject_id = subject_id
         self.label = label
         self.settings = self.GUI.camera_setup_tab.get_camera_settings_from_label(label)
-        self.camera_api = self.GUI.camera_manager.get_or_create(self.settings)
+        self.camera_api = self.GUI.camera_manager.get_or_create(self.settings.unique_id)
         self.image_height = self.camera_api.image_height
         self.image_width = self.camera_api.image_width
         self.latest_image = None
@@ -177,9 +177,6 @@ class CameraWidget(QGroupBox):
             self.update_timer.start(int(1000 / self.GUI.gui_config["camera_update_rate"]))
         else:
             self.data_recorder = Data_recorder(self)
-
-        self.begin_capturing()  # After init, start capturing from the widget
-        self.camera_api.configure_settings(self.settings)
 
     # Camera control ----------------------------------------------------
 
@@ -381,7 +378,7 @@ class CameraWidget(QGroupBox):
         # Initialise the new camera
         self.label = str(self.camera_dropdown.currentText())
         self.settings = self.GUI.camera_setup_tab.get_camera_settings_from_label(self.label)
-        self.camera_api = self.GUI.camera_manager.get_or_create(self.settings)
+        self.camera_api = self.GUI.camera_manager.get_or_create(self.settings.unique_id)
         self.camera_api.begin_capturing()
         self.camera_api.configure_settings(self.settings)
         self.image_height = self.camera_api.image_height

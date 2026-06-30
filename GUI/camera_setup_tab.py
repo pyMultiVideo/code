@@ -249,7 +249,7 @@ class Camera_table_item:
         self.setups_table = setups_table
         self.setups_tab = setups_table.setups_tab
         self.setups_tab.preview_showing = False
-        self.camera_api = self.setups_tab.GUI.camera_manager.get_or_create(self.settings)
+        self.camera_api = self.setups_tab.GUI.camera_manager.get_or_create(self.settings.unique_id)
 
         # Name edit
         self.name_edit = QLineEdit()

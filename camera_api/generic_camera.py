@@ -11,10 +11,10 @@ from typing import Optional
 class GenericCamera:
     """Template class for representing a camera. Defines functionallity that must be implemented for interaction with the GUI."""
 
-    def __init__(self, _CameraConfig):
+    def __init__(self, unique_id: str):
         # Options for camera -----------------------------------------------------------
 
-        self.unique_id = None
+        self.unique_id = unique_id
         self.serial_number = None  # To be replaced with device serial number.
         self.device_model = "GenericCameraModel"  # Replace with the camera model name to be recorded in metadata.
         self.N_GPIO = 3  # Number of pins that the camera records each frame.
@@ -38,11 +38,6 @@ class GenericCamera:
                 "cv2": cv2.COLOR_GRAY2BGR,
             },
         }
-
-        # Configure camera settings -----------------------------------------------------
-
-        # if _CameraConfig is not None:
-        #     self.configure_acqusition_mode(_CameraConfig.external_trigger)
 
     # Functions to get the camera parameters -----------------------------------------------------------------
 
@@ -143,6 +138,6 @@ def list_available_cameras() -> list[str]:
     return unique_id_list
 
 
-def initialise_camera_api(CameraConfig=None):
+def initialise_camera_api(unique_id: str):
     """Returns a GenricCamera object"""
-    return GenericCamera(CameraConfig)
+    return GenericCamera(unique_id=unique_id)
