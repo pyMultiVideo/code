@@ -108,18 +108,15 @@ class CameraManager:
     def close(self, unique_id):
         """Close and remove a managed camera API instance by unique ID."""
         camera_api = self._instances.pop(unique_id, None)
-
         if camera_api is None:
             return
-
         try:
-            camera_api.close_api()
+            camera_api.close()
         except Exception:
             pass  # Best-effort cleanup: continue closing other cameras.
 
     def close_all(self):
         """Close and clear all managed camera API instances."""
         camera_ids = list(self._instances.keys())
-
         for unique_id in camera_ids:
             self.close(unique_id)
