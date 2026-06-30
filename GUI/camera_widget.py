@@ -179,14 +179,14 @@ class CameraWidget(QGroupBox):
             self.data_recorder = Data_recorder(self)
 
         self.begin_capturing()  # After init, start capturing from the widget
+        self.camera_api.configure_settings(self.settings)
 
     # Camera control ----------------------------------------------------
 
     def begin_capturing(self):
         """Start streaming video from camera."""
         self.recording = False
-        # Begin capturing using the camera API
-        self.camera_api.begin_capturing(self.settings)
+        self.camera_api.begin_capturing()
 
     def stop_capturing(self):
         """Stop streaming video from camera."""
@@ -382,7 +382,8 @@ class CameraWidget(QGroupBox):
         self.label = str(self.camera_dropdown.currentText())
         self.settings = self.GUI.camera_setup_tab.get_camera_settings_from_label(self.label)
         self.camera_api = self.GUI.camera_manager.get_or_create(self.settings)
-        self.camera_api.begin_capturing(self.settings)
+        self.camera_api.begin_capturing()
+        self.camera_api.configure_settings(self.settings)
         self.image_height = self.camera_api.image_height
         self.image_width = self.camera_api.image_width
         # Rename pyqtgraph element

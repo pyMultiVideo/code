@@ -253,6 +253,7 @@ class VideoCaptureTab(QWidget):
         """Called when tab deselected to start aqusition of the camera video streams."""
         for camera_widget in self.camera_widgets:
             camera_widget.begin_capturing()
+            camera_widget.camera_api.configure_settings(camera_widget.settings)
         self.camera_widget_update_timer.start(int(1000 / self.GUI.gui_config["camera_update_rate"]))
         self.refresh()
 

@@ -11,7 +11,7 @@ from typing import Optional
 class GenericCamera:
     """Template class for representing a camera. Defines functionallity that must be implemented for interaction with the GUI."""
 
-    def __init__(self, _CameraConfig=None):
+    def __init__(self, _CameraConfig):
         # Options for camera -----------------------------------------------------------
 
         self.unique_id = None
@@ -90,10 +90,19 @@ class GenericCamera:
         """Configuriung the acqusition mode of the camera"""
         raise NotImplementedError
 
+    def configure_settings(self, CameraConfig) -> None:
+        """Apply settings from a CameraConfig-like object using the backend setters."""
+        self.set_acqusition_mode(CameraConfig.external_trigger)
+        if not CameraConfig.external_trigger:
+            self.set_frame_rate(CameraConfig.fps)
+        self.set_gain(CameraConfig.gain)
+        self.set_exposure_time(CameraConfig.exposure_time)
+        self.set_pixel_format(CameraConfig.pixel_format)
+
     #  Functions to control the camera streaming and check status ---------------------------------------------
 
-    def begin_capturing(self, CameraConfig=None) -> None:
-        """Start aquiruing images from the camera"""
+    def begin_capturing(self) -> None:
+        """Start aquiruing images from the camera."""
         raise NotImplementedError
 
     def stop_capturing(self) -> None:

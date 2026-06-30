@@ -10,18 +10,14 @@ PYSPINSYSTEM = PySpin.System.GetInstance()  # One PySpin system instance per pMV
 class SpinnakerCamera(GenericCamera):
     """Inherits from the camera class and adds the spinnaker specific functions from the PySpin library"""
 
-    def __init__(self, CameraConfig=None):
-        if CameraConfig is None:
-            raise ValueError("CameraConfig is required to initialize SpinnakerCamera")
-
-        super().__init__(CameraConfig)
-        self.unique_id = CameraConfig.unique_id
+    def __init__(self, CameraConfig):
 
         # Options for camera -----------------------------------------------------------
-
+        self.unique_id = CameraConfig.unique_id
         self.serial_number, self._api = self.unique_id.split("-")
         self.N_GPIO = 3  # Number of GPIO pins
         self.manual_control_enabled = True
+        
         self._trigger_line = 2  # Trigger line name
         self._previous_frame_number = 0
         self._inter_frame_interval = 1
@@ -100,7 +96,7 @@ class SpinnakerCamera(GenericCamera):
 
         # Configure user settings.
         if CameraConfig is not None:
-            self._configure_settings(CameraConfig)
+            self.configure_settings(CameraConfig)
 
         print(f"Spinnaker camera {self.serial_number} initialised")
 
@@ -224,14 +220,6 @@ class SpinnakerCamera(GenericCamera):
 
     # Functions to set camera paramteters -----------------------------------------------------------------------------
 
-    def _configure_settings(self, CameraConfig):
-        """Configure all settings from CameraConfig."""
-        self.set_acqusition_mode(CameraConfig.external_trigger)
-        if not CameraConfig.external_trigger:
-            self.set_frame_rate(CameraConfig.fps)
-        self.set_gain(CameraConfig.gain)
-        self.set_exposure_time(CameraConfig.exposure_time)
-
     def set_frame_rate(self, frame_rate):
         """Set the frame rate of the camera in Hz."""
         PySpin.CFloatPtr(self._nodemap.GetNode("AcquisitionFrameRate")).SetValue(int(frame_rate))
@@ -247,28 +235,23 @@ class SpinnakerCamera(GenericCamera):
 
     def set_pixel_format(self, pixel_format: str):
         """Set the pixel format."""
+        internal_pixel_format = self.pixel_format_map.get(pixel_format, {}).get("Internal", pixel_format)
         pxf_node = PySpin.CEnumerationPtr(self._nodemap.GetNode("PixelFormat"))
         if PySpin.IsAvailable(pxf_node) and PySpin.IsWritable(pxf_node):
-            pxf_node.SetIntValue(pxf_node.GetEntryByName(pixel_format).GetValue())
+            pxf_node.SetIntValue(pxf_node.GetEntryByName(internal_pixel_format).GetValue())
         else:
             print(f"Current pixel format: {self._camera_pixel_format()}")
 
     # Functions to control the camera streaming and check status. -----------------------------------------------------
 
-    def begin_capturing(self, CameraConfig=None) -> None:
+    def begin_capturing(self) -> None:
         """Start camera streaming images."""
-        # If the camera need be set for external trigger do it here.
-        # It should only happen if it needs to.
-
         if not self._cam.IsInitialized():
             self._cam.Init()
         if not self._cam.IsStreaming():
             self._cam.BeginAcquisition()
         self._frame_timestamp = None
         self._previous_frame_number = 0
-
-        if CameraConfig:
-            self._configure_settings(CameraConfig)
 
     def stop_capturing(self) -> None:
         """Stop the camera from streaming"""
