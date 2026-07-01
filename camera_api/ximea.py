@@ -1,6 +1,5 @@
 from ximea import xiapi
 
-import cv2
 import numpy as np
 from math import floor, ceil
 
@@ -13,14 +12,17 @@ class XimeaCamera(GenericCamera):
     """Inherits from the camera class and adds the Ximea specific functions from the xiAPI library"""
 
     def __init__(self, unique_id):
+        super().__init__(unique_id)
 
-        # super().__init__(CameraConfig)
-        self.unique_id = unique_id
         # Initialise camera -------------------------------------------------------------
         # pMV Information
         self.serial_number, self._api = self.unique_id.rsplit("-", 1)
         self.N_GPIO = 1  # Number of GPIO pins
         self.manual_control_enabled = True
+        self.pixel_format_aliases = {
+            "bayer_rggb8": "XI_RAW8",
+            "gray": "XI_MONO8",
+        }
         # Open camera by serial number
         self._cam = xiapi.Camera()
         self._cam.open_device_by_SN(self.serial_number)
@@ -29,21 +31,9 @@ class XimeaCamera(GenericCamera):
         self.image_width = self._cam.get_width()
         self.image_height = self._cam.get_height()
         
-        # Dictionaries for supporting colored cameras -----------------------------------
-
-        self.pixel_format_map = {  # List of color formats Ximea supports
-            "Colour": {
-                "Internal": "BayerRG8",
-                "ffmpeg": "bayer_rggb8",
-                "cv2": cv2.COLOR_BayerRG2BGR,
-            },
-            "Mono": {
-                "Internal": "XI_GenTL_Image_Format_Mono8",
-                "ffmpeg": "gray",
-                "cv2": cv2.COLOR_GRAY2BGR,
-            },
-        }
-        # Get the pixel format
+        # Select the first supported pixel format from the shared priority list.
+        self.pixel_format_key = self.resolve_preferred_pixel_format(self._get_supported_pixel_formats())
+        self.set_pixel_format(self.pixel_format_key)
         self._pixel_format = self._get_camera_pixel_format()
 
         # Configure camera settings -----------------------------------------------------
@@ -88,7 +78,18 @@ class XimeaCamera(GenericCamera):
 
     def _get_camera_pixel_format(self) -> str:
         """Get string specifying camera pixel format"""
-        return self._cam.get_transport_pixel_format()
+        return self._cam.get_imgdataformat()
+
+    def _get_supported_pixel_formats(self) -> list[str]:
+        """Return the internal pixel formats supported by the camera."""
+        supported_pixel_formats = []
+        for pixel_format in self.pixel_format_aliases.values():
+            try:
+                self._cam.set_imgdataformat(pixel_format)
+                supported_pixel_formats.append(pixel_format)
+            except xiapi.Xi_error:
+                continue
+        return supported_pixel_formats
 
     # Functions to set camera parameters --------------------------------------------------------
 
@@ -106,7 +107,9 @@ class XimeaCamera(GenericCamera):
 
     def set_pixel_format(self, pixel_format: str):
         """Set pixel format if backend supports it; otherwise keep current format."""
-        print("Setting pixel format not implemented for Ximea cameras. Current pixel format:", self._pixel_format)
+        internal_pixel_format = self.pixel_format_aliases.get(pixel_format, pixel_format)
+        self._cam.set_imgdataformat(internal_pixel_format)
+        self.pixel_format_key = pixel_format if pixel_format in self.pixel_format_aliases else None
 
     # Configuring Acqusition mode -----------------------------------------------------------------
 

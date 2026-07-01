@@ -1,5 +1,4 @@
 import PySpin
-import cv2
 from math import floor, ceil
 from .generic_camera import GenericCamera
 
@@ -11,12 +10,16 @@ class SpinnakerCamera(GenericCamera):
     """Inherits from the camera class and adds the spinnaker specific functions from the PySpin library"""
 
     def __init__(self, unique_id):
+        super().__init__(unique_id)
 
         # Options for camera -----------------------------------------------------------
-        self.unique_id = unique_id
         self.serial_number, self._api = self.unique_id.rsplit("-", 1)
         self.N_GPIO = 3  # Number of GPIO pins
         self.manual_control_enabled = True
+        self.pixel_format_aliases = {
+            "bayer_rggb8": "BayerRG8",
+            "gray": "Mono8",
+        }
         
         self._trigger_line = 2  # Trigger line name
         self._previous_frame_number = 0
@@ -35,23 +38,9 @@ class SpinnakerCamera(GenericCamera):
         self.image_width = PySpin.CIntegerPtr(self._nodemap.GetNode("Width")).GetValue()
         self.image_height = PySpin.CIntegerPtr(self._nodemap.GetNode("Height")).GetValue()
 
-        # Dictionaries for supporting colored cameras -----------------------------------------------------------------
-
-        # List of color formats pMV supports listed in order or priority. Prioritise Color.
-        self.pixel_format_map = {
-            "Colour": {
-                "Internal": "BayerRG8",
-                "ffmpeg": "bayer_rggb8",
-                "cv2": cv2.COLOR_BayerRG2BGR,
-            },
-            "Mono": {
-                "Internal": "Mono8",
-                "ffmpeg": "gray",
-                "cv2": cv2.COLOR_GRAY2BGR,
-            },
-        }
-
-        # Get the pixel format
+        # Select the first supported pixel format from the shared priority list.
+        self.pixel_format_key = self.resolve_preferred_pixel_format(self._get_supported_pixel_formats())
+        self.set_pixel_format(self.pixel_format_key)
         self._pixel_format = self._get_camera_pixel_format()
 
         # Configure camera settings -----------------------------------------------------------------------------------
@@ -135,8 +124,8 @@ class SpinnakerCamera(GenericCamera):
         """Get string specifying camera pixel format"""
         return PySpin.CEnumerationPtr(self._nodemap.GetNode("PixelFormat")).GetCurrentEntry().GetSymbolic()
 
-    def _get_supported_pixel_formats(self):
-        """Gets a string of the pixel formats available to the camera"""
+    def _get_supported_pixel_formats(self) -> list[str]:
+        """Return the internal pixel formats available to the camera."""
 
         # Get available pixel formats
         node_map = self._cam.GetNodeMap()
@@ -149,17 +138,7 @@ class SpinnakerCamera(GenericCamera):
             entry = PySpin.CEnumEntryPtr(entry)
             if PySpin.IsAvailable(entry) and PySpin.IsReadable(entry):
                 pxl_formats.append(str(entry.GetSymbolic()))
-
-        # Get the pixel format that we want the camera to use.
-        pixel_format = next(
-            (fmt["Internal"] for fmt in self.pixel_format_map.values() if fmt["Internal"] in pxl_formats),
-            None,
-        )
-
-        if pixel_format is None:
-            raise ValueError("No supported pixel format available.")
-
-        return pixel_format
+        return pxl_formats
 
     # Configure Camera for external acqusition
 
@@ -230,10 +209,11 @@ class SpinnakerCamera(GenericCamera):
 
     def set_pixel_format(self, pixel_format: str):
         """Set the pixel format."""
-        internal_pixel_format = self.pixel_format_map.get(pixel_format, {}).get("Internal", pixel_format)
+        internal_pixel_format = self.pixel_format_aliases.get(pixel_format, pixel_format)
         pxf_node = PySpin.CEnumerationPtr(self._nodemap.GetNode("PixelFormat"))
         if PySpin.IsAvailable(pxf_node) and PySpin.IsWritable(pxf_node):
             pxf_node.SetIntValue(pxf_node.GetEntryByName(internal_pixel_format).GetValue())
+            self.pixel_format_key = pixel_format if pixel_format in self.pixel_format_aliases else None
         else:
             print(f"Current pixel format: {self._get_camera_pixel_format()}")
 

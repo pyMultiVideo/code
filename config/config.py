@@ -18,6 +18,13 @@ ffmpeg_config = {
     "compression_standard": "h264",  # ["h265" , "h264"]
 }
 
+# Camera pixel format preferences -----------------------------------------------
+
+camera_pixel_format_priority = [
+    "bayer_rggb8",
+    "gray",
+]
+
 # Paths -------------------------------------------------------------------------------
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # pyMV code folder.
@@ -40,5 +47,5 @@ default_camera_config = {
     "exposure_time": 15000,
     "gain": 0,
     "external_trigger": False,
-    "pixel_format": "Mono",
+    "pixel_format": "gray",
 }

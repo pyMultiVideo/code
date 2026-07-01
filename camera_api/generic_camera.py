@@ -2,8 +2,10 @@
 Generic API defining functionality needed for for camera system to interact with the GUI.
 """
 
-import cv2
 from typing import Optional
+
+from config.config import camera_pixel_format_priority
+from GUI.pixel_formats import get_pixel_format_info
 
 # GenericCamera class -------------------------------------------------------------------
 
@@ -21,23 +23,10 @@ class GenericCamera:
         self.image_width = None
         self.image_height = None
         self.manual_control_enabled = False  # Whether camera supports manual gain / exposure controls.
-
-        # This ordered dictionary represents the metadata that the camera class requires for handling different pixel formats.
-        # 'Internal' refers to the camera's internal name for the pixel format.
-        # 'ffmpeg' specifies the corresponding pixel format name used by ffmpeg.
-        # 'cv2' specifices the OpenCV conversion code for the pixel format.
-        self.pixel_format_map = {
-            "Colour": {
-                "Internal": "BayerRG8",
-                "ffmpeg": "bayer_rggb8",
-                "cv2": cv2.COLOR_BayerRG2BGR,
-            },
-            "Mono": {
-                "Internal": "Mono8",
-                "ffmpeg": "gray",
-                "cv2": cv2.COLOR_GRAY2BGR,
-            },
-        }
+        self.pixel_format_priority = tuple(camera_pixel_format_priority)
+        self.pixel_format_key = None
+        self.pixel_format_aliases = {}
+        self._pixel_format = None
 
     # Functions to get the camera parameters -----------------------------------------------------------------
 
@@ -79,6 +68,34 @@ class GenericCamera:
         """Set the camera pixel format."""
         raise NotImplementedError
 
+    def _get_supported_pixel_formats(self) -> list[str]:
+        """Return the internal pixel-format names supported by the camera."""
+        raise NotImplementedError
+
+    def resolve_preferred_pixel_format(self, supported_pixel_formats: list[str] | None = None) -> str:
+        """Return the first preferred canonical pixel-format key supported by the camera."""
+        supported_pixel_formats = supported_pixel_formats or self._get_supported_pixel_formats()
+        supported_canonical_formats = set()
+        native_to_canonical = {native_name: canonical_name for canonical_name, native_name in self.pixel_format_aliases.items()}
+        for native_pixel_format in supported_pixel_formats:
+            canonical_pixel_format = native_to_canonical.get(native_pixel_format)
+            if canonical_pixel_format:
+                supported_canonical_formats.add(canonical_pixel_format)
+        for pixel_format_key in self.pixel_format_priority:
+            if pixel_format_key in supported_canonical_formats:
+                return pixel_format_key
+        raise ValueError("No supported pixel format available.")
+
+    def get_selected_pixel_format(self) -> str:
+        """Return the selected canonical pixel-format key."""
+        if self.pixel_format_key is None:
+            raise ValueError("Pixel format has not been selected yet.")
+        return self.pixel_format_key
+
+    def get_selected_pixel_format_metadata(self) -> dict:
+        """Return metadata for the selected pixel format."""
+        return get_pixel_format_info(self.get_selected_pixel_format())
+
     # Configure Acqusition Mode -------------------------------------------------------------------------------
 
     def set_acqusition_mode(self, external_trigger: bool):
@@ -92,7 +109,6 @@ class GenericCamera:
             self.set_frame_rate(CameraConfig.fps)
         self.set_gain(CameraConfig.gain)
         self.set_exposure_time(CameraConfig.exposure_time)
-        self.set_pixel_format(CameraConfig.pixel_format)
 
     #  Functions to control the camera streaming and check status ---------------------------------------------
 

@@ -219,7 +219,6 @@ class CameraOverviewTable(QTableWidget):
             "FPS",
             "Exposure (μs)",
             "Gain (dB)",
-            "Pixel Format",
             "Downsample Factor",
             "External Trigger",
             "Camera Preview",
@@ -291,23 +290,17 @@ class Camera_table_item:
             self.gain_edit.setValue(int(self.settings.gain))
 
         self.gain_edit.setEnabled(self.camera_api.manual_control_enabled)
-        # Pixel format edit
-        self.pixel_format_edit = QComboBox()
-        self.pixel_format_edit.addItems(list(self.camera_api.pixel_format_map.keys()))
-        if self.settings.pixel_format:
-            self.pixel_format_edit.setCurrentText(self.settings.pixel_format)
+        self.settings.pixel_format = self.camera_api.get_selected_pixel_format()
 
         # Configure what settings are available manual camera control is not enabled
         if self.camera_api.manual_control_enabled:
             # Connect functions is camera control enabled
-            self.pixel_format_edit.activated.connect(self.camera_pixel_format_changed)
             self.exposure_time_edit.valueChanged.connect(self.camera_exposure_time_changed)
             self.gain_edit.valueChanged.connect(self.camera_gain_changed)
             # Connect the Set range functions
             self.exposure_time_edit.setRange(*self.camera_api.get_exposure_time_range(self.settings.fps))
             self.gain_edit.setRange(*self.camera_api.get_gain_range())
         else:  # The edit boxes are not enabled if no function is connected
-            self.pixel_format_edit.setEnabled(False)
             self.exposure_time_edit.setEnabled(False)
             self.gain_edit.setEnabled(False)
 
@@ -337,10 +330,9 @@ class Camera_table_item:
         self.setups_table.setCellWidget(0, 2, self.fps_edit)
         self.setups_table.setCellWidget(0, 3, self.exposure_time_edit)
         self.setups_table.setCellWidget(0, 4, self.gain_edit)
-        self.setups_table.setCellWidget(0, 5, self.pixel_format_edit)
-        self.setups_table.setCellWidget(0, 6, self.downsampling_factor_edit)
-        self.setups_table.setCellWidget(0, 7, self.external_trigger_checkbox)
-        self.setups_table.setCellWidget(0, 8, self.preview_camera_button)
+        self.setups_table.setCellWidget(0, 5, self.downsampling_factor_edit)
+        self.setups_table.setCellWidget(0, 6, self.external_trigger_checkbox)
+        self.setups_table.setCellWidget(0, 7, self.preview_camera_button)
 
     # Helper function
 
@@ -399,13 +391,6 @@ class Camera_table_item:
         self.setups_tab.update_saved_setups(setup=self)
         if self.current_camera_preview_showing():
             self.setups_tab.camera_preview.camera_api.set_gain(self.settings.gain)
-
-    def camera_pixel_format_changed(self):
-        """Change the pixel format"""
-        self.settings.pixel_format = self.pixel_format_edit.currentText()
-        self.setups_tab.update_saved_setups(setup=self)
-        if self.current_camera_preview_showing():
-            self.setups_tab.camera_preview.camera_api.set_pixel_format(self.settings.pixel_format)
 
     def camera_external_trigger_changed(self):
         """Change if the camera is"""
