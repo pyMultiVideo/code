@@ -14,41 +14,54 @@ class GenericCamera:
     """Template class for representing a camera. Defines functionallity that must be implemented for interaction with the GUI."""
 
     def __init__(self, unique_id: str):
+
         # Options for camera -----------------------------------------------------------
 
         self.unique_id = unique_id
         self.serial_number = None
-        self.device_model = "GenericCameraModel"
-        self.N_GPIO = 0
+        self.device_model = "GenericCamera"
+        self.N_GPIO = 0  # Number of GPIO pins used as inputs for sync pulses.
         self.image_width = None
         self.image_height = None
         self.manual_control_enabled = False  # Whether camera supports manual gain / exposure controls.
         self.pixel_format_aliases = {}  # Maps GUI pixel format names to backend pixel format names.
         self.pixel_format: PixelFormat | None = None
 
-    # Functions to get the camera parameters -----------------------------------------------------------------
+    # ======================================================================================================
+    # Methods to implement in subclasses (backend/API-specific overrides required)
+    # ======================================================================================================
+
+    # Get camera parameters -------------------------------------------------------------------------------
 
     def get_frame_rate_range(self, *exposure_time: float) -> tuple[int, int]:
         """Get the min and max frame rate in Hz."""
         raise NotImplementedError
 
     def get_exposure_time(self) -> Optional[float]:
-        """Get exposure of camera"""
-        raise NotImplementedError
+        """Get exposure of camera (optional, used only in camera_preview)."""
+        return None
 
     def get_exposure_time_range(self, *fps: int) -> tuple[int, int]:
         """Get exposure time range of camera"""
         raise NotImplementedError
 
     def get_gain(self) -> Optional[float]:
-        """Get camera gain setting in dB."""
+        """Get camera gain setting in dB (optional, used only in camera_preview)."""
         return None
 
     def get_gain_range(self) -> tuple[int, int]:
         """Get range of gain"""
         raise NotImplementedError
 
-    # Functions to set the camera parameters -----------------------------------------------------------------
+    def _get_supported_pixel_formats(self) -> list[str]:
+        """Return the backend-native pixel format names supported by the camera."""
+        raise NotImplementedError
+
+    def _get_camera_pixel_format(self) -> str:
+        """Return the currently active backend-native pixel format name."""
+        raise NotImplementedError
+
+    # Write camera parameters --------------------------------------------------------------------------------
 
     def set_frame_rate(self, *frame_rate: int) -> None:
         """Set the aquisition frame rate of the camera"""
@@ -62,46 +75,15 @@ class GenericCamera:
         """Set the gain of the camera"""
         raise NotImplementedError
 
+    def set_acqusition_mode(self, external_trigger: bool):
+        """Configure the acqusition mode of the camera"""
+        raise NotImplementedError
+
     def _set_pixel_format(self, pixel_format: str) -> None:
         """Set the camera pixel format using the backend-native name."""
         raise NotImplementedError
 
-    def _get_supported_pixel_formats(self) -> list[str]:
-        """Return the backend-native pixel format names supported by the camera."""
-        raise NotImplementedError
-
-    def _get_camera_pixel_format(self) -> str:
-        """Return the currently active backend-native pixel format name."""
-        raise NotImplementedError
-
-    def initialize_preferred_pixel_format(self) -> None:
-        """Resolve, apply, and store the preferred pixel format for this camera."""
-        supported_native_formats = self._get_supported_pixel_formats()
-        supported_formats = [
-            fmt for fmt, native_name in self.pixel_format_aliases.items() if native_name in supported_native_formats
-        ]
-        preferred_format = next((fmt for fmt in camera_pixel_format_priority if fmt in supported_formats), None)
-        if preferred_format is None:
-            raise ValueError("No supported pixel format available.")
-        preferred_native_format = self.pixel_format_aliases[preferred_format]
-        self._set_pixel_format(preferred_native_format)
-        self.pixel_format = PIXEL_FORMAT_REGISTRY[preferred_format]
-
-    # Configure Acqusition Mode -------------------------------------------------------------------------------
-
-    def set_acqusition_mode(self, external_trigger: bool):
-        """Configuriung the acqusition mode of the camera"""
-        raise NotImplementedError
-
-    def configure_settings(self, CameraConfig) -> None:
-        """Apply settings from a CameraConfig-like object using the backend setters."""
-        self.set_acqusition_mode(CameraConfig.external_trigger)
-        if not CameraConfig.external_trigger:
-            self.set_frame_rate(CameraConfig.fps)
-        self.set_gain(CameraConfig.gain)
-        self.set_exposure_time(CameraConfig.exposure_time)
-
-    #  Functions to control the camera streaming and check status ---------------------------------------------
+    # Camera control methods --------------------------------------------------------------------------------
 
     def begin_capturing(self) -> None:
         """Start aquiruing images from the camera."""
@@ -131,6 +113,31 @@ class GenericCamera:
     def close(self):
         """Close the camera API and release any assoicated resources."""
         raise NotImplementedError
+
+    # ======================================================================================================
+    # Fully implemented GenericCamera methods (shared logic; usually not overridden)
+    # ======================================================================================================
+
+    def configure_settings(self, CameraConfig) -> None:
+        """Apply settings from a CameraConfig object using the backend setters."""
+        self.set_acqusition_mode(CameraConfig.external_trigger)
+        if not CameraConfig.external_trigger:
+            self.set_frame_rate(CameraConfig.fps)
+        self.set_gain(CameraConfig.gain)
+        self.set_exposure_time(CameraConfig.exposure_time)
+
+    def initialize_preferred_pixel_format(self) -> None:
+        """Resolve, apply, and store the preferred pixel format for this camera."""
+        supported_native_formats = self._get_supported_pixel_formats()
+        supported_formats = [
+            fmt for fmt, native_name in self.pixel_format_aliases.items() if native_name in supported_native_formats
+        ]
+        preferred_format = next((fmt for fmt in camera_pixel_format_priority if fmt in supported_formats), None)
+        if preferred_format is None:
+            raise ValueError("No supported pixel format available.")
+        preferred_native_format = self.pixel_format_aliases[preferred_format]
+        self._set_pixel_format(preferred_native_format)
+        self.pixel_format = PIXEL_FORMAT_REGISTRY[preferred_format]
 
 
 # Camera system utility functions -------------------------------------------------------
