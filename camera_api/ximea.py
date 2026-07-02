@@ -21,7 +21,7 @@ class XimeaCamera(GenericCamera):
         self.manual_control_enabled = True
         self.pixel_format_aliases = {
             "bayer_rggb8": "XI_RAW8",
-            "gray": "XI_MONO8",
+            "mono8": "XI_MONO8",
         }
         # Open camera by serial number
         self._cam = xiapi.Camera()
@@ -30,11 +30,9 @@ class XimeaCamera(GenericCamera):
         self.device_model = self._cam.get_device_model_id()
         self.image_width = self._cam.get_width()
         self.image_height = self._cam.get_height()
-        
-        # Select the first supported pixel format from the shared priority list.
-        self.pixel_format_key = self.resolve_preferred_pixel_format(self._get_supported_pixel_formats())
-        self.set_pixel_format(self.pixel_format_key)
-        self._pixel_format = self._get_camera_pixel_format()
+
+        # Select and apply the first supported pixel format from the shared priority list.
+        self.initialize_preferred_pixel_format()
 
         # Configure camera settings -----------------------------------------------------
 

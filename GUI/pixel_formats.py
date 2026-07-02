@@ -3,22 +3,20 @@
 import cv2
 
 
-PIXEL_FORMAT_REGISTRY = {
+PIXEL_FORMAT_REGISTRY = {  # Mapping of canonical pixel-format keys to their metadata.
     "bayer_rggb8": {
-        "display_name": "Bayer RG8",
         "ffmpeg": "bayer_rggb8",
         "cv2_code": getattr(cv2, "COLOR_BayerRG2BGR"),
     },
-    "gray": {
-        "display_name": "Mono 8",
-        "ffmpeg": "gray",
+    "mono8": {
+        "ffmpeg": "mono8",
         "cv2_code": None,
     },
 }
 
 DEFAULT_PIXEL_FORMAT_PRIORITY = [
     "bayer_rggb8",
-    "gray",
+    "mono8",
 ]
 
 

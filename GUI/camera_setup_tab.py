@@ -338,7 +338,7 @@ class Camera_table_item:
 
     def current_camera_preview_showing(self):
         """Check if the preview is currently showing for this camera."""
-        if self.setups_tab.camera_preview:
+        if self.setups_tab.preview_showing:
             return self.setups_tab.camera_preview.label == self.get_label()
         return False
 
@@ -419,6 +419,7 @@ class Camera_table_item:
             self.close_preview_camera()
         self.setups_tab.camera_preview = CameraWidget(self.setups_tab, label=self.get_label(), preview_mode=True)
         self.setups_tab.camera_preview.begin_capturing()
+        self.setups_tab.camera_preview.configure_camera_settings()
         self.setups_tab.page_layout.addWidget(self.setups_tab.camera_preview)
         self.setups_tab.preview_showing = True
 

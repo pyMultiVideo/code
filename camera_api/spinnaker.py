@@ -18,9 +18,9 @@ class SpinnakerCamera(GenericCamera):
         self.manual_control_enabled = True
         self.pixel_format_aliases = {
             "bayer_rggb8": "BayerRG8",
-            "gray": "Mono8",
+            "mono8": "Mono8",
         }
-        
+
         self._trigger_line = 2  # Trigger line name
         self._previous_frame_number = 0
         self._inter_frame_interval = 1
@@ -38,10 +38,8 @@ class SpinnakerCamera(GenericCamera):
         self.image_width = PySpin.CIntegerPtr(self._nodemap.GetNode("Width")).GetValue()
         self.image_height = PySpin.CIntegerPtr(self._nodemap.GetNode("Height")).GetValue()
 
-        # Select the first supported pixel format from the shared priority list.
-        self.pixel_format_key = self.resolve_preferred_pixel_format(self._get_supported_pixel_formats())
-        self.set_pixel_format(self.pixel_format_key)
-        self._pixel_format = self._get_camera_pixel_format()
+        # Select and apply the first supported pixel format from the shared priority list.
+        self.initialize_preferred_pixel_format()
 
         # Configure camera settings -----------------------------------------------------------------------------------
 

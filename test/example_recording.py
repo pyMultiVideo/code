@@ -33,7 +33,7 @@ config_data = {
             "downsampling_factor": 1,
             "exposure_time": 15000,
             "gain": 0,
-            "pixel_format": "gray",
+            "pixel_format": "mono8",
         },
     },
     "experiment_config": {
@@ -49,7 +49,7 @@ config_data = {
             "fps": 60,
             "exposure_time": 10000,  # Ensure exposure time is between 1000 and 100000 microseconds
             "gain": 0,
-            "pixel_format": "gray",
+            "pixel_format": "mono8",
             "downsampling_factor": 2,
         }
     ],

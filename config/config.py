@@ -22,7 +22,7 @@ ffmpeg_config = {
 
 camera_pixel_format_priority = [
     "bayer_rggb8",
-    "gray",
+    "mono8",
 ]
 
 # Paths -------------------------------------------------------------------------------
@@ -47,5 +47,5 @@ default_camera_config = {
     "exposure_time": 15000,
     "gain": 0,
     "external_trigger": False,
-    "pixel_format": "gray",
+    "pixel_format": "mono8",
 }

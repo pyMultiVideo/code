@@ -192,6 +192,10 @@ class CameraWidget(QGroupBox):
             self.stop_recording()
         self.camera_api.stop_capturing()
 
+    def configure_camera_settings(self):
+        """Update camera settings to match those currently specified in the setups tab."""
+        self.camera_api.configure_settings(self.settings)
+
     def fetch_image_data(self):
         """Get images and associated data from camera and save to disk if recording."""
         new_images = self.camera_api.get_available_images()
