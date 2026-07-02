@@ -11,7 +11,6 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QComboBox, QGroupBox, QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLayout, QMessageBox
 
 from .data_recorder import Data_recorder
-from .pixel_formats import get_pixel_format_info
 
 
 @dataclass
@@ -263,10 +262,8 @@ class CameraWidget(QGroupBox):
         if self.latest_image is None:
             return
         image = np.frombuffer(self.latest_image, dtype=np.uint8).reshape(self.image_height, self.image_width)
-        selected_pixel_format = self.camera_api.get_selected_pixel_format()
-        pixel_format_info = get_pixel_format_info(selected_pixel_format)
-        if pixel_format_info["cv2_code"] is not None:
-            image = cv2.cvtColor(image, pixel_format_info["cv2_code"])
+        if self.camera_api.pixel_format.cv2_code is not None:
+            image = cv2.cvtColor(image, self.camera_api.pixel_format.cv2_code)
         self.video_image_item.setImage(image, autoLevels=False)
         # Compute average framerate and display over image.
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)

@@ -5,7 +5,7 @@ Generic API defining functionality needed for for camera system to interact with
 from typing import Optional
 
 from config.config import camera_pixel_format_priority
-from GUI.pixel_formats import get_pixel_format_info
+from GUI.pixel_formats import PIXEL_FORMAT_REGISTRY, PixelFormat
 
 # GenericCamera class -------------------------------------------------------------------
 
@@ -23,9 +23,8 @@ class GenericCamera:
         self.image_width = None
         self.image_height = None
         self.manual_control_enabled = False  # Whether camera supports manual gain / exposure controls.
-        self.pixel_format_key = None
-        self.pixel_format_aliases = {}
-        self._pixel_format = None
+        self.pixel_format_aliases = {}  # Maps GUI pixel format names to backend pixel format names.
+        self.pixel_format: PixelFormat | None = None
 
     # Functions to get the camera parameters -----------------------------------------------------------------
 
@@ -35,7 +34,7 @@ class GenericCamera:
 
     def get_exposure_time(self) -> Optional[float]:
         """Get exposure of camera"""
-        return None
+        raise NotImplementedError
 
     def get_exposure_time_range(self, *fps: int) -> tuple[int, int]:
         """Get exposure time range of camera"""
@@ -63,49 +62,30 @@ class GenericCamera:
         """Set the gain of the camera"""
         raise NotImplementedError
 
-    def set_pixel_format(self, pixel_format: str) -> None:
-        """Set the camera pixel format."""
+    def _set_pixel_format(self, pixel_format: str) -> None:
+        """Set the camera pixel format using the backend-native name."""
         raise NotImplementedError
 
     def _get_supported_pixel_formats(self) -> list[str]:
-        """Return the internal pixel-format names supported by the camera."""
+        """Return the backend-native pixel format names supported by the camera."""
         raise NotImplementedError
 
     def _get_camera_pixel_format(self) -> str:
         """Return the currently active backend-native pixel format name."""
         raise NotImplementedError
 
-    def resolve_preferred_pixel_format(self, supported_pixel_formats: list[str] | None = None) -> str:
-        """Return the first preferred canonical pixel-format key supported by the camera."""
-        supported_pixel_formats = supported_pixel_formats or self._get_supported_pixel_formats()
-        supported_canonical_formats = set()
-        native_to_canonical = {
-            native_name: canonical_name for canonical_name, native_name in self.pixel_format_aliases.items()
-        }
-        for native_pixel_format in supported_pixel_formats:
-            canonical_pixel_format = native_to_canonical.get(native_pixel_format)
-            if canonical_pixel_format:
-                supported_canonical_formats.add(canonical_pixel_format)
-        for pixel_format_key in camera_pixel_format_priority:
-            if pixel_format_key in supported_canonical_formats:
-                return pixel_format_key
-        raise ValueError("No supported pixel format available.")
-
-    def get_selected_pixel_format(self) -> str:
-        """Return the selected canonical pixel-format key."""
-        if self.pixel_format_key is None:
-            raise ValueError("Pixel format has not been selected yet.")
-        return self.pixel_format_key
-
-    def get_selected_pixel_format_metadata(self) -> dict:
-        """Return metadata for the selected pixel format."""
-        return get_pixel_format_info(self.get_selected_pixel_format())
-
     def initialize_preferred_pixel_format(self) -> None:
         """Resolve, apply, and store the preferred pixel format for this camera."""
-        self.pixel_format_key = self.resolve_preferred_pixel_format(self._get_supported_pixel_formats())
-        self.set_pixel_format(self.pixel_format_key)
-        self._pixel_format = self._get_camera_pixel_format()
+        supported_native_formats = self._get_supported_pixel_formats()
+        supported_formats = [
+            fmt for fmt, native_name in self.pixel_format_aliases.items() if native_name in supported_native_formats
+        ]
+        preferred_format = next((fmt for fmt in camera_pixel_format_priority if fmt in supported_formats), None)
+        if preferred_format is None:
+            raise ValueError("No supported pixel format available.")
+        preferred_native_format = self.pixel_format_aliases[preferred_format]
+        self._set_pixel_format(preferred_native_format)
+        self.pixel_format = PIXEL_FORMAT_REGISTRY[preferred_format]
 
     # Configure Acqusition Mode -------------------------------------------------------------------------------
 

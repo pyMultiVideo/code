@@ -2,7 +2,6 @@ import PySpin
 from math import floor, ceil
 from .generic_camera import GenericCamera
 
-
 PYSPINSYSTEM = PySpin.System.GetInstance()  # One PySpin system instance per pMV
 
 
@@ -16,7 +15,7 @@ class SpinnakerCamera(GenericCamera):
         self.serial_number, self._api = self.unique_id.rsplit("-", 1)
         self.N_GPIO = 3  # Number of GPIO pins
         self.manual_control_enabled = True
-        self.pixel_format_aliases = {
+        self.pixel_format_aliases = {  # Maps GUI pixel format names to spinnaker pixel format names.
             "bayer_rggb8": "BayerRG8",
             "mono8": "Mono8",
         }
@@ -106,7 +105,7 @@ class SpinnakerCamera(GenericCamera):
             node = PySpin.CFloatPtr(self._cam.GetNodeMap().GetNode("ExposureTime"))
             return ceil(node.GetMin()), floor(node.GetMax())
         except PySpin.SpinnakerException:
-            max_exposure_time = 1e6 / fps[0] + 8  # Systematically underestimate maximum since init will fail if too big
+            max_exposure_time = 1e6 / fps[0] + 8  # Underestimate maximum since init will fail if too big
             return ceil(7), floor(max_exposure_time)
 
     def get_gain(self) -> int:
@@ -119,17 +118,15 @@ class SpinnakerCamera(GenericCamera):
         return ceil(node.GetMin()), floor(node.GetMax())
 
     def _get_camera_pixel_format(self) -> str:
-        """Get string specifying camera pixel format"""
+        """Get string specifying camera pixel format using its spinnaker-native name."""
         return PySpin.CEnumerationPtr(self._nodemap.GetNode("PixelFormat")).GetCurrentEntry().GetSymbolic()
 
     def _get_supported_pixel_formats(self) -> list[str]:
-        """Return the internal pixel formats available to the camera."""
-
+        """Return the spinnaker-native pixel formats available to the camera."""
         # Get available pixel formats
         node_map = self._cam.GetNodeMap()
         pixel_format_node = PySpin.CEnumerationPtr(node_map.GetNode("PixelFormat"))
         pixel_format_entries = pixel_format_node.GetEntries()
-
         # Convert to string and check if available
         pxl_formats = []
         for entry in pixel_format_entries:
@@ -205,15 +202,13 @@ class SpinnakerCamera(GenericCamera):
         """Set gain (dB)"""
         PySpin.CFloatPtr(self._nodemap.GetNode("Gain")).SetValue(float(gain))
 
-    def set_pixel_format(self, pixel_format: str):
-        """Set the pixel format."""
-        internal_pixel_format = self.pixel_format_aliases.get(pixel_format, pixel_format)
+    def _set_pixel_format(self, pixel_format: str):
+        """Set the pixel format using a spinnaker-native format name."""
         pxf_node = PySpin.CEnumerationPtr(self._nodemap.GetNode("PixelFormat"))
         if PySpin.IsAvailable(pxf_node) and PySpin.IsWritable(pxf_node):
-            pxf_node.SetIntValue(pxf_node.GetEntryByName(internal_pixel_format).GetValue())
-            self.pixel_format_key = pixel_format if pixel_format in self.pixel_format_aliases else None
+            pxf_node.SetIntValue(pxf_node.GetEntryByName(pixel_format).GetValue())
         else:
-            print(f"Current pixel format: {self._get_camera_pixel_format()}")
+            print(f"Unable to set pixel format. Current format: {self._get_camera_pixel_format()}")
 
     # Functions to control the camera streaming and check status. -----------------------------------------------------
 
@@ -258,7 +253,9 @@ class SpinnakerCamera(GenericCamera):
                 if self._frame_timestamp is None:
                     self._frame_timestamp = timestamps_buffer[-1]
                 else:
-                    elapsed_frames = round((timestamps_buffer[-1] - self._frame_timestamp) / self._inter_frame_interval)
+                    elapsed_frames = round(
+                        (timestamps_buffer[-1] - self._frame_timestamp) / self._inter_frame_interval
+                    )
                     self._frame_timestamp = timestamps_buffer[-1]
                     dropped_frames += elapsed_frames - 1
                 # GPIO data

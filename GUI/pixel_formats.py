@@ -1,25 +1,28 @@
-"""Shared canonical pixel-format registry used across camera backends and GUI consumers."""
+"""Shared pixel-format registry used across camera backends and GUI consumers."""
+
+from dataclasses import dataclass
 
 import cv2
 
 
-PIXEL_FORMAT_REGISTRY = {  # Mapping of canonical pixel-format keys to their metadata.
-    "bayer_rggb8": {
-        "ffmpeg": "bayer_rggb8",
-        "cv2_code": getattr(cv2, "COLOR_BayerRG2BGR"),
-    },
-    "mono8": {
-        "ffmpeg": "mono8",
-        "cv2_code": None,
-    },
+@dataclass(frozen=True)
+class PixelFormat:
+    """Pixel format name mapping."""
+
+    name: str # Format name used in GUI and metadata files.
+    ffmpeg: str # Format name used in ffmpeg command line.
+    cv2_code: int | None # OpenCV color conversion code, None if monochrome.
+
+
+PIXEL_FORMAT_REGISTRY = { # Pixel format registry mapping supported format names to PixelFormat objects.
+    "bayer_rggb8": PixelFormat(
+        name="bayer_rggb8",
+        ffmpeg="bayer_rggb8",
+        cv2_code=getattr(cv2, "COLOR_BayerRG2BGR"),
+    ),
+    "mono8": PixelFormat(
+        name="mono8",
+        ffmpeg="mono8",
+        cv2_code=None,
+    ),
 }
-
-DEFAULT_PIXEL_FORMAT_PRIORITY = [
-    "bayer_rggb8",
-    "mono8",
-]
-
-
-def get_pixel_format_info(pixel_format_key: str) -> dict:
-    """Return the canonical metadata for a pixel-format key."""
-    return PIXEL_FORMAT_REGISTRY[pixel_format_key]

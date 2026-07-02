@@ -5,8 +5,6 @@ import subprocess
 import numpy as np
 from datetime import datetime
 
-from .pixel_formats import get_pixel_format_info
-
 # Check GPU availibility for video encode and set which encoders to use.
 
 try:
@@ -64,7 +62,7 @@ class Data_recorder:
             "FPS": int(self.settings.fps),
             "exposure_time": self.settings.exposure_time,
             "gain": self.settings.gain,
-            "pixel_format": self.camera_widget.camera_api.get_selected_pixel_format(),
+            "pixel_format": self.camera_widget.camera_api.pixel_format.name,
             "downsampling_factor": self.settings.downsampling_factor,
             "device_model": self.camera_widget.camera_api.device_model,
             "device_serial_number": self.camera_widget.camera_api.serial_number,
@@ -86,7 +84,7 @@ class Data_recorder:
                 self.camera_widget.GUI.ffmpeg_path,  # Path to binary
                 "-f rawvideo",  # Input codec (raw video)
                 f"-s {self.camera_widget.image_width}x{self.camera_widget.image_height}",  # Input frame size
-                f"-pix_fmt {get_pixel_format_info(self.camera_widget.camera_api.get_selected_pixel_format())['ffmpeg']}",  # Input pixel format for ffmpeg
+                f"-pix_fmt {self.camera_widget.camera_api.pixel_format.ffmpeg}",  # Input pixel format for ffmpeg
                 f"-r {self.settings.fps}",  # Frame rate
                 "-i -",  # input comes from a pipe (stdin)
                 f"-c:v {ffmpeg_encoder_map[self.camera_widget.GUI.ffmpeg_config['compression_standard']]}",  # Output codec

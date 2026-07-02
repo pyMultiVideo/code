@@ -290,7 +290,7 @@ class Camera_table_item:
             self.gain_edit.setValue(int(self.settings.gain))
 
         self.gain_edit.setEnabled(self.camera_api.manual_control_enabled)
-        self.settings.pixel_format = self.camera_api.get_selected_pixel_format()
+        self.settings.pixel_format = self.camera_api.pixel_format.name
 
         # Configure what settings are available manual camera control is not enabled
         if self.camera_api.manual_control_enabled:

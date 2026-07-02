@@ -20,7 +20,7 @@ class XimeaCamera(GenericCamera):
         self.N_GPIO = 1  # Number of GPIO pins
         self.manual_control_enabled = True
         self.pixel_format_aliases = {
-            "bayer_rggb8": "XI_RAW8",
+            "bayer_rggb8": None,
             "mono8": "XI_MONO8",
         }
         # Open camera by serial number
@@ -75,13 +75,15 @@ class XimeaCamera(GenericCamera):
         return ceil(self._cam.get_gain_minimum()), floor(self._cam.get_gain_maximum())
 
     def _get_camera_pixel_format(self) -> str:
-        """Get string specifying camera pixel format"""
+        """Get string specifying camera pixel format using its ximea-native name."""
         return self._cam.get_imgdataformat()
 
     def _get_supported_pixel_formats(self) -> list[str]:
-        """Return the internal pixel formats supported by the camera."""
+        """Return the ximea-native pixel formats supported by the camera."""
         supported_pixel_formats = []
         for pixel_format in self.pixel_format_aliases.values():
+            if pixel_format is None:
+                continue
             try:
                 self._cam.set_imgdataformat(pixel_format)
                 supported_pixel_formats.append(pixel_format)
@@ -103,11 +105,9 @@ class XimeaCamera(GenericCamera):
         """Set gain (dB)"""
         self._cam.set_gain(gain)
 
-    def set_pixel_format(self, pixel_format: str):
-        """Set pixel format if backend supports it; otherwise keep current format."""
-        internal_pixel_format = self.pixel_format_aliases.get(pixel_format, pixel_format)
-        self._cam.set_imgdataformat(internal_pixel_format)
-        self.pixel_format_key = pixel_format if pixel_format in self.pixel_format_aliases else None
+    def _set_pixel_format(self, pixel_format: str):
+        """Set pixel format using a ximea-native name."""
+        self._cam.set_imgdataformat(pixel_format)
 
     # Configuring Acqusition mode -----------------------------------------------------------------
 
