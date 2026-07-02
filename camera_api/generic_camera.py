@@ -14,7 +14,6 @@ class GenericCamera:
     """Template class for representing a camera. Defines functionallity that must be implemented for interaction with the GUI."""
 
     def __init__(self, unique_id: str):
-
         # Options for camera -----------------------------------------------------------
 
         self.unique_id = unique_id

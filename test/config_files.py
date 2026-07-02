@@ -32,7 +32,6 @@ def save_config_file(test_config_dir, test_config):
 
 
 def create_experiment_config(data_dir, n_cameras):
-
     camera_unique_ids = get_camera_unique_ids()
     config = {
         "data_dir": str(data_dir),

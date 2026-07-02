@@ -253,9 +253,7 @@ class SpinnakerCamera(GenericCamera):
                 if self._frame_timestamp is None:
                     self._frame_timestamp = timestamps_buffer[-1]
                 else:
-                    elapsed_frames = round(
-                        (timestamps_buffer[-1] - self._frame_timestamp) / self._inter_frame_interval
-                    )
+                    elapsed_frames = round((timestamps_buffer[-1] - self._frame_timestamp) / self._inter_frame_interval)
                     self._frame_timestamp = timestamps_buffer[-1]
                     dropped_frames += elapsed_frames - 1
                 # GPIO data

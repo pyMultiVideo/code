@@ -23,7 +23,6 @@ class GUIMain(QMainWindow):
     """Class implementing the main GUI window."""
 
     def __init__(self, parsed_args):
-
         super().__init__()
 
         # Deal with arguments parsed to application

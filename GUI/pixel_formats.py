@@ -9,12 +9,12 @@ import cv2
 class PixelFormat:
     """Pixel format name mapping."""
 
-    name: str # Format name used in GUI and metadata files.
-    ffmpeg: str # Format name used in ffmpeg command line.
-    cv2_code: int | None # OpenCV color conversion code, None if monochrome.
+    name: str  # Format name used in GUI and metadata files.
+    ffmpeg: str  # Format name used in ffmpeg command line.
+    cv2_code: int | None  # OpenCV color conversion code, None if monochrome.
 
 
-PIXEL_FORMAT_REGISTRY = { # Pixel format registry mapping supported format names to PixelFormat objects.
+PIXEL_FORMAT_REGISTRY = {  # Pixel format registry mapping supported format names to PixelFormat objects.
     "bayer_rggb8": PixelFormat(
         name="bayer_rggb8",
         ffmpeg="bayer_rggb8",
