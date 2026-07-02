@@ -11,11 +11,13 @@ from GUI.pixel_formats import PIXEL_FORMAT_REGISTRY, PixelFormat
 
 
 class GenericCamera:
-    """Template class for representing a camera. Defines functionallity that must be implemented for interaction with the GUI."""
+    """Template class for representing a camera. Defines functionallity that must be implemented
+    for interaction with the GUI."""
 
     def __init__(self, unique_id: str):
         # Options for camera -----------------------------------------------------------
 
+        # Camera parameters to be set by the backend-specific camera API implementation.
         self.unique_id = unique_id
         self.serial_number = None
         self.device_model = "GenericCamera"
@@ -24,7 +26,9 @@ class GenericCamera:
         self.image_height = None
         self.manual_control_enabled = False  # Whether camera supports manual gain / exposure controls.
         self.pixel_format_aliases = {}  # Maps GUI pixel format names to backend pixel format names.
-        self.pixel_format: PixelFormat | None = None
+
+        # Camera parameters set by GenericCamera methods (not backend-specific).
+        self.pixel_format: PixelFormat | None = None  # set by initialize_preferred_pixel_format().
 
     # ======================================================================================================
     # Methods to implement in subclasses (backend/API-specific overrides required)
@@ -93,18 +97,13 @@ class GenericCamera:
         raise NotImplementedError
 
     def get_available_images(self):
-        """Return all the data from the camera buffer as a dictionary.
-
-        Important notes:
-        1. This function must empty the buffer to make sure that no frames are dropped from the recording.
-        2. This function time stamps from this function are used to calculate if the frames are being aquired too slowly such that there is a risk of dropping frames
-
+        """Get all available images from the camera buffer and clear buffer.
         Returns:
             {
-            'images' : img_buffer - a list of images (as 1D numpy byte arrays).
-            'gpio_data' : gpio_buffer - a corresponding list of gpio data for each of the frames
-            'timestamps : timestamps_buffer - a corresponding list of timestampes for each frame
-            'dropped_frames': the number of dropped frames found (can be calculayted or a camera attributed)
+            'images' : list[np.ndarray] : A list of images, each a 1D numpy byte array.
+            'gpio_data' : list[np.ndarray] : List of gpio pinstates for each frame, each a 1D numpy boolean array.
+            'timestamps' : list[int] : List of timestamps for each frame in microseconds
+            'dropped_frames': int : Number of dropped frames since last call to get_available_images().
             }:
         """
         raise NotImplementedError

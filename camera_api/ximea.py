@@ -63,7 +63,7 @@ class XimeaCamera(GenericCamera):
         try:
             return ceil(self._cam.get_exposure_minimum()), floor(self._cam.get_exposure_maximum())
         except xiapi.Xi_error:
-            max_exposure_time = 1e6 / fps[0] + 8  # Systematically underestimate maximum since init will fail if too big
+            max_exposure_time = 1e6 / fps[0] + 8
             return ceil(7), floor(max_exposure_time)
 
     def get_gain(self) -> int:
@@ -186,7 +186,7 @@ class XimeaCamera(GenericCamera):
                 dropped_frames += next_image.acq_nframe - self._previous_frame_number - 1
                 self._previous_frame_number = next_image.acq_nframe
                 # Get state of GPIO pin and add to GPIIO data buffer [UNTESTED].
-                gpio_data.append([int(self._cam.get_gpi_level())])
+                gpio_data.append(np.array([int(self._cam.get_gpi_level())], dtype=bool))
         except xiapi.Xi_error:  # Buffer is empty.
             if len(img_buffer) == 0:
                 return

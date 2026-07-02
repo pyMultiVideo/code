@@ -226,7 +226,9 @@ class CameraWidget(QGroupBox):
         subject_id = self.subject_id_text.toPlainText()
         # Check subject ID is valid.
         if any(char in set('<>:"/\\|?*') for char in subject_id):
-            QMessageBox.information(self, "Invalid subject ID", f"Subject ID contains invalid characters: {subject_id}")
+            QMessageBox.information(
+                self, "Invalid subject ID", f"Subject ID contains invalid characters: {subject_id}"
+            )
             return
         # Start data recording.
         save_dir = self.GUI.video_capture_tab.data_dir
@@ -274,7 +276,7 @@ class CameraWidget(QGroupBox):
         inter_update_interval = (self.frame_timestamps[-1] - self.last_video_update_timestamp) / 1e6  # in seconds
         self.last_video_update_timestamp = self.frame_timestamps[-1]
         self.gpio_smoothed = self.gpio_smoothed * np.exp(-inter_update_interval / gpio_smoothing_tau)
-        self.gpio_smoothed[np.array(self.latest_GPIO) > 0] = 1
+        self.gpio_smoothed[self.latest_GPIO] = 1
         for i, gpio_indicator in enumerate(self.gpio_status_indicators):
             color = [255 * self.gpio_smoothed[i], 255 * self.gpio_smoothed[i], 150 * (1 - self.gpio_smoothed[i])]
             gpio_indicator.setText("\u2b24", color=color)
@@ -399,7 +401,8 @@ class CameraWidget(QGroupBox):
         self.gpio_status_indicators = [pg.TextItem() for _ in range(self.camera_api.N_GPIO)]
         for i, gpio_indicator in enumerate(self.gpio_status_indicators):
             gpio_indicator.setPos(
-                (5 + i) * int(self.GUI.gui_config["font_size"] * 1.25), 4 * int(self.GUI.gui_config["font_size"] * 1.25)
+                (5 + i) * int(self.GUI.gui_config["font_size"] * 1.25),
+                4 * int(self.GUI.gui_config["font_size"] * 1.25),
             )
             self.graphics_view.addItem(gpio_indicator)
         # Update Frame triggered text

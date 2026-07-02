@@ -1,4 +1,5 @@
 import PySpin
+import numpy as np
 from math import floor, ceil
 from .generic_camera import GenericCamera
 
@@ -253,16 +254,29 @@ class SpinnakerCamera(GenericCamera):
                 if self._frame_timestamp is None:
                     self._frame_timestamp = timestamps_buffer[-1]
                 else:
-                    elapsed_frames = round((timestamps_buffer[-1] - self._frame_timestamp) / self._inter_frame_interval)
+                    elapsed_frames = round(
+                        (timestamps_buffer[-1] - self._frame_timestamp) / self._inter_frame_interval
+                    )
                     self._frame_timestamp = timestamps_buffer[-1]
                     dropped_frames += elapsed_frames - 1
                 # GPIO data
-                if self.device_model == "Chameleon3":
+                if self.device_model == "Chameleon3":  # GPIO pinstate is embedded in image data.
                     img_data = img_buffer[-1]
-                    gpio_buffer.append([(img_data[32] >> 4) & 1, (img_data[32] >> 5) & 1, (img_data[32] >> 7) & 1])
-                else:
+                    gpio_buffer.append(
+                        np.array(
+                            [
+                                (img_data[32] >> 4) & 1,
+                                (img_data[32] >> 5) & 1,
+                                (img_data[32] >> 7) & 1,
+                            ],
+                            dtype=bool,
+                        )
+                    )
+                else:  # GPIO pinstate is in the chunk data.
                     gpio_binary = format(chunk_data.GetExposureEndLineStatusAll(), "04b")
-                    gpio_buffer.append([int(gpio_binary[3]), int(gpio_binary[1]), int(gpio_binary[0])])
+                    gpio_buffer.append(
+                        np.array([int(gpio_binary[3]), int(gpio_binary[1]), int(gpio_binary[0])], dtype=bool)
+                    )
                 next_image.Release()  # Clears image from buffer.
         except PySpin.SpinnakerException:  # Buffer is empty.
             if len(img_buffer) == 0:
