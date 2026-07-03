@@ -31,7 +31,7 @@ class SpinnakerCamera(GenericCamera):
         self._cam = next(
             (cam for cam in self._cam_list if cam.TLDevice.DeviceSerialNumber.GetValue() == self.serial_number), None
         )
-        self.device_model = self._cam.TLDevice.DeviceModelName.GetValue()[:10]
+        self.device_model = self._cam.TLDevice.DeviceModelName.GetValue()
         self._cam.Init()
         self._nodemap = self._cam.GetNodeMap()
         self._stream_nodemap = self._cam.GetTLStreamNodeMap()
@@ -53,16 +53,7 @@ class SpinnakerCamera(GenericCamera):
 
         chunk_selector = PySpin.CEnumerationPtr(self._nodemap.GetNode("ChunkSelector"))
 
-        if self.device_model == "Chameleon3":
-            # Config to embed GPIO pinstate in image data, as getting pinstates from ChunkData not implemented.
-            FRAME_INFO_REG = 0xFFFFF0F012F8
-            reg_read = self._cam.ReadPort(FRAME_INFO_REG)
-            reg_write = (reg_read & 0xFFFFFC00) + 0x3FF
-            self._cam.WritePort(FRAME_INFO_REG, reg_write)
-        else:
-            # Inlcude GPIO pinstate in ChunkData.
-            chunk_selector.SetIntValue(chunk_selector.GetEntryByName("ExposureEndLineStatusAll").GetValue())
-            self._cam.ChunkEnable.SetValue(True)
+        self._configure_gpio(chunk_selector)
 
         chunk_selector.SetIntValue(chunk_selector.GetEntryByName("Timestamp").GetValue())
         self._cam.ChunkEnable.SetValue(True)
@@ -164,14 +155,22 @@ class SpinnakerCamera(GenericCamera):
             trigger_mode = PySpin.CEnumerationPtr(self._nodemap.GetNode("TriggerMode"))
             trigger_mode.SetIntValue(trigger_mode.GetEntryByName("Off").GetValue())
             # Set frame rate control to manual.
-            if self.device_model == "Chameleon3":
-                frc_node = PySpin.CBooleanPtr(self._nodemap.GetNode("AcquisitionFrameRateEnabled"))
-                frc_node.SetValue(True)
-                fra_node = PySpin.CEnumerationPtr(self._nodemap.GetNode("AcquisitionFrameRateAuto"))
-                fra_node.SetIntValue(fra_node.GetEntryByName("Off").GetValue())
-            else:
-                fra_node = PySpin.CBooleanPtr(self._nodemap.GetNode("AcquisitionFrameRateEnable"))
-                fra_node.SetValue(True)
+            self._enable_manual_frame_rate_control()
+
+    def _configure_gpio(self, chunk_selector):
+        """Configure camera to include GPIO pinstates in image metadata."""
+        chunk_selector.SetIntValue(chunk_selector.GetEntryByName("ExposureEndLineStatusAll").GetValue())
+        self._cam.ChunkEnable.SetValue(True)
+
+    def _enable_manual_frame_rate_control(self):
+        """Enable manual frame-rate control for non-Chameleon Spinnaker cameras."""
+        fra_node = PySpin.CBooleanPtr(self._nodemap.GetNode("AcquisitionFrameRateEnable"))
+        fra_node.SetValue(True)
+
+    def _extract_gpio_data(self, _img_data, chunk_data):
+        """Extract GPIO pin states from chunk data, return as numpy boolean array."""
+        gpio_binary = format(chunk_data.GetExposureEndLineStatusAll(), "04b")
+        return np.array([int(gpio_binary[3]), int(gpio_binary[1]), int(gpio_binary[0])], dtype=bool)
 
     def _get_trigger_lines(self):
         """Get a list of the GPI lines that can be used to trigger frame acquisition"""
@@ -259,24 +258,7 @@ class SpinnakerCamera(GenericCamera):
                     )
                     self._frame_timestamp = timestamps_buffer[-1]
                     dropped_frames += elapsed_frames - 1
-                # GPIO data
-                if self.device_model == "Chameleon3":  # GPIO pinstate is embedded in image data.
-                    img_data = img_buffer[-1]
-                    gpio_buffer.append(
-                        np.array(
-                            [
-                                (img_data[32] >> 4) & 1,
-                                (img_data[32] >> 5) & 1,
-                                (img_data[32] >> 7) & 1,
-                            ],
-                            dtype=bool,
-                        )
-                    )
-                else:  # GPIO pinstate is in the chunk data.
-                    gpio_binary = format(chunk_data.GetExposureEndLineStatusAll(), "04b")
-                    gpio_buffer.append(
-                        np.array([int(gpio_binary[3]), int(gpio_binary[1]), int(gpio_binary[0])], dtype=bool)
-                    )
+                gpio_buffer.append(self._extract_gpio_data(img_buffer[-1], chunk_data))
                 next_image.Release()  # Clears image from buffer.
         except PySpin.SpinnakerException:  # Buffer is empty.
             if len(img_buffer) == 0:
@@ -288,6 +270,35 @@ class SpinnakerCamera(GenericCamera):
                     "timestamps": timestamps_buffer,
                     "dropped_frames": dropped_frames,
                 }
+
+
+class Chameleon3Camera(SpinnakerCamera):
+    """Spinnaker camera implementation for Chameleon3 model-specific behavior."""
+
+    def _configure_gpio(self, chunk_selector):
+        """Configure camera to include GPIO pinstates in image data. Getting GPIO pinstate
+        from chunk data is not supported on Chameleon3 cameras."""
+        FRAME_INFO_REG = 0xFFFFF0F012F8
+        reg_read = self._cam.ReadPort(FRAME_INFO_REG)
+        reg_write = (reg_read & 0xFFFFFC00) + 0x3FF
+        self._cam.WritePort(FRAME_INFO_REG, reg_write)
+
+    def _enable_manual_frame_rate_control(self):
+        frc_node = PySpin.CBooleanPtr(self._nodemap.GetNode("AcquisitionFrameRateEnabled"))
+        frc_node.SetValue(True)
+        fra_node = PySpin.CEnumerationPtr(self._nodemap.GetNode("AcquisitionFrameRateAuto"))
+        fra_node.SetIntValue(fra_node.GetEntryByName("Off").GetValue())
+
+    def _extract_gpio_data(self, img_data, chunk_data):
+        """Extract GPIO pin states from image data, return as numpy boolean array."""
+        return np.array(
+            [
+                (img_data[32] >> 4) & 1,
+                (img_data[32] >> 5) & 1,
+                (img_data[32] >> 7) & 1,
+            ],
+            dtype=bool,
+        )
 
 
 # Camera system functions -------------------------------------------------------------------------------
@@ -323,5 +334,13 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
 
 
 def initialise_camera_api(unique_id):
-    """Instantiate the SpinnakerCamera object"""
-    return SpinnakerCamera(unique_id=unique_id)
+    """Instantiate the model-appropriate Spinnaker camera object."""
+    serial_number, _ = unique_id.rsplit("-", 1)
+    cam_list = PYSPINSYSTEM.GetCameras()
+    cam = next((cam for cam in cam_list if cam.TLDevice.DeviceSerialNumber.GetValue() == serial_number))
+    cam_list.Clear()
+    model = cam.TLDevice.DeviceModelName.GetValue()[:10]
+    if model[:10] == "Chameleon3":
+        return Chameleon3Camera(unique_id=unique_id)
+    else:
+        return SpinnakerCamera(unique_id=unique_id)

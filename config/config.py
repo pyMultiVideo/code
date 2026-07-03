@@ -20,7 +20,7 @@ ffmpeg_config = {
 
 # Camera pixel format preferences -----------------------------------------------
 
-camera_pixel_format_priority = [
+pixel_format_priority = [
     "bayer_rggb8",
     "mono8",
 ]

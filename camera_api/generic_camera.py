@@ -4,7 +4,7 @@ Generic API defining functionality needed for for camera system to interact with
 
 from typing import Optional
 
-from config.config import camera_pixel_format_priority
+from config.config import pixel_format_priority
 from GUI.pixel_formats import PIXEL_FORMAT_REGISTRY, PixelFormat
 
 # GenericCamera class -------------------------------------------------------------------
@@ -17,7 +17,7 @@ class GenericCamera:
     def __init__(self, unique_id: str):
         # Options for camera -----------------------------------------------------------
 
-        # Camera parameters to be set by the backend-specific camera API implementation.
+        # Camera parameters to be set by backend-specific camera API subclass.
         self.unique_id = unique_id
         self.serial_number = None
         self.device_model = "GenericCamera"
@@ -125,12 +125,13 @@ class GenericCamera:
         self.set_exposure_time(CameraConfig.exposure_time)
 
     def initialize_preferred_pixel_format(self) -> None:
-        """Resolve, apply, and store the preferred pixel format for this camera."""
+        """Resolve, apply, and store the preferred pixel format for this camera. The preferred pixel
+        format is the first format in pixel_format_priority that is supported by the camera."""
         supported_native_formats = self._get_supported_pixel_formats()
         supported_formats = [
             fmt for fmt, native_name in self.pixel_format_aliases.items() if native_name in supported_native_formats
         ]
-        preferred_format = next((fmt for fmt in camera_pixel_format_priority if fmt in supported_formats), None)
+        preferred_format = next((fmt for fmt in pixel_format_priority if fmt in supported_formats), None)
         if preferred_format is None:
             raise ValueError("No supported pixel format available.")
         preferred_native_format = self.pixel_format_aliases[preferred_format]
