@@ -22,7 +22,7 @@ PIXEL_FORMAT_REGISTRY = {  # Pixel format registry mapping supported format name
     ),
     "mono8": PixelFormat(
         name="mono8",
-        ffmpeg="mono8",
+        ffmpeg="gray",
         cv2_code=None,
     ),
 }
