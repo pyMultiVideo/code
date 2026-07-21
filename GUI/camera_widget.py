@@ -58,6 +58,7 @@ class CameraWidget(QGroupBox):
         self.last_video_update_timestamp = 0
         self.frame_timestamps = deque([0], maxlen=10)
         self.controls_visible = True
+        self.recording = False
 
         # Video display ---------------------------------------------------------------
 
@@ -177,6 +178,8 @@ class CameraWidget(QGroupBox):
             self.update_timer.start(int(1000 / self.GUI.gui_config["camera_update_rate"]))
         else:
             self.data_recorder = Data_recorder(self)
+
+        self.begin_capturing()
 
     # Camera control ----------------------------------------------------
 
