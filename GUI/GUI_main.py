@@ -9,11 +9,10 @@ import json
 
 # import tab classes
 from .video_capture_tab import VideoCaptureTab
-from .camera_setup_tab import CameraSetupTab
+from .settings_tab import SettingsTab
 from .camera_manager import CameraManager
 
 from config.config import __version__, gui_config, ffmpeg_config, paths_config
-
 
 if os.name == "nt":  # Needed on windows to get taskbar icon to display correctly.
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(f"pyMultiVideo v{__version__}")
@@ -35,7 +34,12 @@ class GUIMain(QMainWindow):
             self.gui_config = config_data.get("gui_config")
         else:
             self.paths_config = paths_config
-            self.ffmpeg_config = ffmpeg_config
+            settings_filepath = os.path.join(self.paths_config["config_dir"], "application_config.json")
+            if os.path.exists(settings_filepath):
+                with open(settings_filepath, "r", encoding="utf-8") as f:
+                    self.ffmpeg_config = json.load(f)["ffmpeg_config"]
+            else:
+                self.ffmpeg_config = ffmpeg_config
             self.gui_config = gui_config
 
         # close-after argument
@@ -66,12 +70,12 @@ class GUIMain(QMainWindow):
         self.setWindowIcon(QIcon(os.path.join(self.paths_config["icons_dir"], "logo.svg")))
         # Initialise the tabs and tab widget.
         self.camera_manager = CameraManager()
-        self.camera_setup_tab = CameraSetupTab(parent=self)
+        self.camera_setup_tab = SettingsTab(parent=self)
         self.camera_setup_tab.tab_deselected()
         self.video_capture_tab = VideoCaptureTab(parent=self)
         self.tab_widget = QTabWidget()
         self.tab_widget.addTab(self.video_capture_tab, "Video Capture")
-        self.tab_widget.addTab(self.camera_setup_tab, "Cameras")
+        self.tab_widget.addTab(self.camera_setup_tab, "Settings")
         self.tab_widget.currentChanged.connect(self.on_tab_change)
         self.setCentralWidget(self.tab_widget)
         # Initialise menu bar.

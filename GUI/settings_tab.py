@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
     QGroupBox,
     QVBoxLayout,
     QHBoxLayout,
+    QLabel,
     QTableWidget,
     QLineEdit,
     QComboBox,
@@ -23,6 +24,7 @@ from PyQt6.QtWidgets import (
 from config.config import default_camera_config
 from .camera_widget import CameraWidget
 from .camera_manager import get_camera_ids
+from .data_recorder import GPU_AVAILABLE
 
 
 @dataclass
@@ -57,13 +59,17 @@ class TableCheckbox(QWidget):
         self.checkbox.setChecked(state)
 
 
-class CameraSetupTab(QWidget):
+class SettingsTab(QWidget):
     """Tab for naming cameras and editing camera-level settings."""
 
+    FFMPEG_ENCODING_SPEED_OPTIONS = ["fast", "medium", "slow"]
+    FFMPEG_COMPRESSION_STANDARD_OPTIONS = ["h264", "h265"]
+
     def __init__(self, parent=None):
-        super(CameraSetupTab, self).__init__(parent)
+        super(SettingsTab, self).__init__(parent)
         self.GUI = parent
         self.saved_setups_filepath = os.path.join(self.GUI.paths_config["camera_dir"], "camera_configs.json")
+        self.ffmpeg_settings_filepath = os.path.join(self.GUI.paths_config["config_dir"], "application_config.json")
         self.setups = {}  # Dict of setups: {Unique_id: Camera_table_item}
         self.preview_showing = False
         self.camera_preview = None  # Place holder for camera preview widget
@@ -78,8 +84,9 @@ class CameraSetupTab(QWidget):
             warning_box.setWindowTitle("Warning")
             warning_box.setStandardButtons(QMessageBox.StandardButton.Ok)
             warning_box.exec()
+
         # Initialize_camera_groupbox
-        self.camera_table_groupbox = QGroupBox("Camera Table")
+        self.camera_table_groupbox = QGroupBox("Camera Settings")
         self.camera_table = CameraOverviewTable(parent=self)
         self.camera_table.setMinimumSize(1, 1)
         self.camera_table.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
@@ -93,13 +100,58 @@ class CameraSetupTab(QWidget):
         self.refresh_layout.addStretch()
         self.refresh_layout.addWidget(self.refresh_cameras_button)
 
+        self.ffmpeg_groupbox = QGroupBox("FFMPEG Settings")
+        self.ffmpeg_layout = QHBoxLayout()
+
+        self.ffmpeg_crf_label = QLabel("CRF")
+        self.ffmpeg_crf_edit = QSpinBox()
+        self.ffmpeg_crf_edit.setRange(1, 51)
+        self.ffmpeg_crf_edit.setToolTip(
+            "Controls video quality vs file size, range [1 - 51], lower values give higher quality and larger files."
+        )
+        self.ffmpeg_crf_edit.setValue(int(self.GUI.ffmpeg_config["crf"]))
+
+        self.ffmpeg_encoding_speed_label = QLabel("Encoding Speed")
+        self.ffmpeg_encoding_speed_edit = QComboBox()
+        self.ffmpeg_encoding_speed_edit.addItems(self.FFMPEG_ENCODING_SPEED_OPTIONS)
+
+        self.ffmpeg_encoding_speed_edit.setToolTip("Controls encoding speed vs file size.")
+        self.ffmpeg_encoding_speed_edit.setCurrentText(self.GUI.ffmpeg_config["encoding_speed"])
+
+        self.ffmpeg_compression_standard_label = QLabel("Compression")
+        self.ffmpeg_compression_standard_edit = QComboBox()
+        self.ffmpeg_compression_standard_edit.addItems(self.FFMPEG_COMPRESSION_STANDARD_OPTIONS)
+        self.ffmpeg_compression_standard_edit.setCurrentText(self.GUI.ffmpeg_config["compression_standard"])
+
+        encoding_backend = "GPU" if GPU_AVAILABLE else "CPU"
+        self.ffmpeg_backend_label = QLabel(f"Encoder: <span style='color:#1E6FD9;'>{encoding_backend}</span>")
+        self.ffmpeg_backend_label.setToolTip("Detected from availability of nvidia-smi on this system.")
+
+        self.ffmpeg_layout.addWidget(self.ffmpeg_backend_label)
+        self.ffmpeg_layout.addWidget(self.ffmpeg_crf_label)
+        self.ffmpeg_layout.addWidget(self.ffmpeg_crf_edit)
+        self.ffmpeg_layout.addWidget(self.ffmpeg_encoding_speed_label)
+        self.ffmpeg_layout.addWidget(self.ffmpeg_encoding_speed_edit)
+        self.ffmpeg_layout.addWidget(self.ffmpeg_compression_standard_label)
+        self.ffmpeg_layout.addWidget(self.ffmpeg_compression_standard_edit)
+
+        self.ffmpeg_layout.addStretch()
+
+        self.ffmpeg_groupbox.setLayout(self.ffmpeg_layout)
+
+        self.ffmpeg_crf_edit.valueChanged.connect(self.ffmpeg_crf_changed)
+        self.ffmpeg_encoding_speed_edit.currentTextChanged.connect(self.ffmpeg_encoding_speed_changed)
+        self.ffmpeg_compression_standard_edit.currentTextChanged.connect(self.ffmpeg_compression_standard_changed)
+
         self.camera_table_layout = QVBoxLayout()
+        self.camera_table_layout.addLayout(self.refresh_layout)
         self.camera_table_layout.addWidget(self.camera_table)
         self.camera_table_groupbox.setLayout(self.camera_table_layout)
 
         self.page_layout = QVBoxLayout()
-        self.page_layout.addLayout(self.refresh_layout)
+        self.page_layout.addWidget(self.ffmpeg_groupbox)
         self.page_layout.addWidget(self.camera_table_groupbox)
+        self.page_layout.addStretch()
         self.setLayout(self.page_layout)
 
         if self.GUI.CLI_args.camera_config is None:
@@ -119,6 +171,23 @@ class CameraSetupTab(QWidget):
                 CameraSettingsConfig(**{**default_camera_config, **cam_dict}) for cam_dict in cams_list
             ]
         self.refresh()
+
+    def save_ffmpeg_config(self):
+        """Persist current ffmpeg settings to disk."""
+        payload = {"ffmpeg_config": self.GUI.ffmpeg_config}
+        temp_filepath = self.ffmpeg_settings_filepath + ".tmp"
+
+        try:
+            with open(temp_filepath, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=4)
+            os.replace(temp_filepath, self.ffmpeg_settings_filepath)
+        except OSError:
+            # Best-effort save: do not interrupt the GUI.
+            try:
+                if os.path.exists(temp_filepath):
+                    os.remove(temp_filepath)
+            except OSError:
+                pass
 
     # Tab changing logic -------------------------------------------------------------------------------
 
@@ -205,6 +274,18 @@ class CameraSetupTab(QWidget):
             if label in [setup.settings.name, setup.settings.unique_id]:
                 return setup.settings
         raise ValueError(f"No camera settings found for label: {label}")
+
+    def ffmpeg_crf_changed(self, value: int):
+        self.GUI.ffmpeg_config["crf"] = int(value)
+        self.save_ffmpeg_config()
+
+    def ffmpeg_encoding_speed_changed(self, value: str):
+        self.GUI.ffmpeg_config["encoding_speed"] = value
+        self.save_ffmpeg_config()
+
+    def ffmpeg_compression_standard_changed(self, value: str):
+        self.GUI.ffmpeg_config["compression_standard"] = value
+        self.save_ffmpeg_config()
 
 
 class CameraOverviewTable(QTableWidget):
