@@ -418,7 +418,6 @@ class Camera_table_item:
         if self.setups_tab.preview_showing:
             self.close_preview_camera()
         self.setups_tab.camera_preview = CameraWidget(self.setups_tab, label=self.get_label(), preview_mode=True)
-        self.setups_tab.camera_preview.configure_camera_settings()
         self.setups_tab.page_layout.addWidget(self.setups_tab.camera_preview)
         self.setups_tab.preview_showing = True
 

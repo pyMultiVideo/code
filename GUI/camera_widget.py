@@ -179,7 +179,9 @@ class CameraWidget(QGroupBox):
         else:
             self.data_recorder = Data_recorder(self)
 
+        # Initialize camera stream and apply settings.
         self.begin_capturing()
+        self.configure_camera_settings()
 
     # Camera control ----------------------------------------------------
 
@@ -229,9 +231,7 @@ class CameraWidget(QGroupBox):
         subject_id = self.subject_id_text.toPlainText()
         # Check subject ID is valid.
         if any(char in set('<>:"/\\|?*') for char in subject_id):
-            QMessageBox.information(
-                self, "Invalid subject ID", f"Subject ID contains invalid characters: {subject_id}"
-            )
+            QMessageBox.information(self, "Invalid subject ID", f"Subject ID contains invalid characters: {subject_id}")
             return
         # Start data recording.
         save_dir = self.GUI.video_capture_tab.data_dir
