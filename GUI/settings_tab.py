@@ -2,8 +2,7 @@ import os
 import json
 from dataclasses import dataclass, asdict
 
-from PyQt6.QtGui import QIcon
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (
     QWidget,
     QGroupBox,
@@ -91,14 +90,10 @@ class SettingsTab(QWidget):
         self.camera_table.setMinimumSize(1, 1)
         self.camera_table.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
 
-        # Initialise Refresh button
-        self.refresh_layout = QHBoxLayout()
-        self.refresh_cameras_button = QPushButton("Refresh camera list")
-        self.refresh_cameras_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "refresh.svg")))
-        self.refresh_cameras_button.clicked.connect(self.refresh)
-        self.refresh_cameras_button.setToolTip("Refresh the list of connected cameras")
-        self.refresh_layout.addStretch()
-        self.refresh_layout.addWidget(self.refresh_cameras_button)
+        # Refresh connected cameras while this tab is active.
+        self.refresh_timer = QTimer(self)
+        self.refresh_timer.setInterval(1000)
+        self.refresh_timer.timeout.connect(self.refresh)
 
         self.ffmpeg_groupbox = QGroupBox("FFMPEG Settings")
         self.ffmpeg_layout = QHBoxLayout()
@@ -146,7 +141,6 @@ class SettingsTab(QWidget):
         self.ffmpeg_compression_standard_edit.currentTextChanged.connect(self.ffmpeg_compression_standard_changed)
 
         self.camera_table_layout = QVBoxLayout()
-        self.camera_table_layout.addLayout(self.refresh_layout)
         self.camera_table_layout.addWidget(self.camera_table)
         self.camera_table_groupbox.setLayout(self.camera_table_layout)
 
@@ -178,11 +172,13 @@ class SettingsTab(QWidget):
 
     def tab_selected(self):
         """Called when tab selected."""
+        self.refresh_timer.start()
         self.refresh()
 
     def tab_deselected(self):
         """Called when tab deselected.
         Deinitialise all camera APIs on tab being deselected"""
+        self.refresh_timer.stop()
         for unique_id in self.setups:
             if self.preview_showing:
                 self.setups[unique_id].close_preview_camera()
