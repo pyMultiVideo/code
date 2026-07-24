@@ -68,7 +68,7 @@ class SettingsTab(QWidget):
     def __init__(self, parent=None):
         super(SettingsTab, self).__init__(parent)
         self.GUI = parent
-        self.saved_setups_filepath = os.path.join(self.GUI.paths_config["camera_dir"], "camera_configs.json")
+        self.camera_settings_filepath = os.path.join(self.GUI.paths_config["camera_dir"], "camera_configs.json")
         self.ffmpeg_settings_filepath = os.path.join(self.GUI.paths_config["config_dir"], "application_config.json")
         self.setups = {}  # Dict of setups: {Unique_id: Camera_table_item}
         self.preview_showing = False
@@ -103,6 +103,12 @@ class SettingsTab(QWidget):
         self.ffmpeg_groupbox = QGroupBox("FFMPEG Settings")
         self.ffmpeg_layout = QHBoxLayout()
 
+        encoding_backend = "GPU" if GPU_AVAILABLE else "CPU"
+        self.ffmpeg_backend_label = QLabel(
+            f"Encoder hardware: <span style='color:#1E6FD9; font-weight: bold;'>{encoding_backend}</span>"
+        )
+        self.ffmpeg_backend_label.setToolTip("Detected from availability of nvidia-smi on this system.")
+
         self.ffmpeg_crf_label = QLabel("CRF")
         self.ffmpeg_crf_edit = QSpinBox()
         self.ffmpeg_crf_edit.setRange(1, 51)
@@ -122,10 +128,6 @@ class SettingsTab(QWidget):
         self.ffmpeg_compression_standard_edit = QComboBox()
         self.ffmpeg_compression_standard_edit.addItems(self.FFMPEG_COMPRESSION_STANDARD_OPTIONS)
         self.ffmpeg_compression_standard_edit.setCurrentText(self.GUI.ffmpeg_config["compression_standard"])
-
-        encoding_backend = "GPU" if GPU_AVAILABLE else "CPU"
-        self.ffmpeg_backend_label = QLabel(f"Encoder: <span style='color:#1E6FD9;'>{encoding_backend}</span>")
-        self.ffmpeg_backend_label.setToolTip("Detected from availability of nvidia-smi on this system.")
 
         self.ffmpeg_layout.addWidget(self.ffmpeg_backend_label)
         self.ffmpeg_layout.addWidget(self.ffmpeg_crf_label)
@@ -156,10 +158,10 @@ class SettingsTab(QWidget):
 
         if self.GUI.CLI_args.camera_config is None:
             # Load saved setup info.
-            if not os.path.exists(self.saved_setups_filepath):
+            if not os.path.exists(self.camera_settings_filepath):
                 self.saved_setups = []
             else:
-                with open(self.saved_setups_filepath, "r") as file:
+                with open(self.camera_settings_filepath, "r") as file:
                     cams_list = json.load(file)
                 self.saved_setups = [
                     CameraSettingsConfig(**{**default_camera_config, **cam_dict}) for cam_dict in cams_list
@@ -171,23 +173,6 @@ class SettingsTab(QWidget):
                 CameraSettingsConfig(**{**default_camera_config, **cam_dict}) for cam_dict in cams_list
             ]
         self.refresh()
-
-    def save_ffmpeg_config(self):
-        """Persist current ffmpeg settings to disk."""
-        payload = {"ffmpeg_config": self.GUI.ffmpeg_config}
-        temp_filepath = self.ffmpeg_settings_filepath + ".tmp"
-
-        try:
-            with open(temp_filepath, "w", encoding="utf-8") as f:
-                json.dump(payload, f, indent=4)
-            os.replace(temp_filepath, self.ffmpeg_settings_filepath)
-        except OSError:
-            # Best-effort save: do not interrupt the GUI.
-            try:
-                if os.path.exists(temp_filepath):
-                    os.remove(temp_filepath)
-            except OSError:
-                pass
 
     # Tab changing logic -------------------------------------------------------------------------------
 
@@ -201,6 +186,25 @@ class SettingsTab(QWidget):
         for unique_id in self.setups:
             if self.preview_showing:
                 self.setups[unique_id].close_preview_camera()
+
+    # FFMPEG Settings methods ---------------------------------------------------------------------------
+
+    def ffmpeg_crf_changed(self, value: int):
+        self.GUI.ffmpeg_config["crf"] = int(value)
+        self.save_ffmpeg_config()
+
+    def ffmpeg_encoding_speed_changed(self, value: str):
+        self.GUI.ffmpeg_config["encoding_speed"] = value
+        self.save_ffmpeg_config()
+
+    def ffmpeg_compression_standard_changed(self, value: str):
+        self.GUI.ffmpeg_config["compression_standard"] = value
+        self.save_ffmpeg_config()
+
+    def save_ffmpeg_config(self):
+        """Save current ffmpeg settings to disk."""
+        with open(self.ffmpeg_settings_filepath, "w", encoding="utf-8") as f:
+            json.dump({"ffmpeg_config": self.GUI.ffmpeg_config}, f, indent=4)
 
     # Reading / Writing the Camera setups saved function --------------------------------------------------------
 
@@ -228,7 +232,7 @@ class SettingsTab(QWidget):
         self.saved_setups.append(setup.settings)
         # Save any setups in the list of setups
         if self.saved_setups:
-            with open(self.saved_setups_filepath, "w") as f:
+            with open(self.camera_settings_filepath, "w") as f:
                 json.dump([asdict(setup) for setup in self.saved_setups], f, indent=4)
 
     def refresh(self):
@@ -274,18 +278,6 @@ class SettingsTab(QWidget):
             if label in [setup.settings.name, setup.settings.unique_id]:
                 return setup.settings
         raise ValueError(f"No camera settings found for label: {label}")
-
-    def ffmpeg_crf_changed(self, value: int):
-        self.GUI.ffmpeg_config["crf"] = int(value)
-        self.save_ffmpeg_config()
-
-    def ffmpeg_encoding_speed_changed(self, value: str):
-        self.GUI.ffmpeg_config["encoding_speed"] = value
-        self.save_ffmpeg_config()
-
-    def ffmpeg_compression_standard_changed(self, value: str):
-        self.GUI.ffmpeg_config["compression_standard"] = value
-        self.save_ffmpeg_config()
 
 
 class CameraOverviewTable(QTableWidget):

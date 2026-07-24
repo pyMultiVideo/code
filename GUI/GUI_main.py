@@ -24,15 +24,15 @@ class GUIMain(QMainWindow):
     def __init__(self, parsed_args):
         super().__init__()
 
-        # Deal with arguments parsed to application
+        # Handle arguments parsed to application by CLI.
         self.CLI_args = parsed_args
-        # config arguments
-        if self.CLI_args.application_config:
+
+        if self.CLI_args.application_config:  # Config info passed from CLI.
             config_data = json.loads(self.CLI_args.application_config)
             self.paths_config = config_data.get("paths_config")
             self.ffmpeg_config = config_data.get("ffmpeg_config")
             self.gui_config = config_data.get("gui_config")
-        else:
+        else:  # Use config info from config.py and application_config.json file.
             self.paths_config = paths_config
             settings_filepath = os.path.join(self.paths_config["config_dir"], "application_config.json")
             if os.path.exists(settings_filepath):
