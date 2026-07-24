@@ -82,13 +82,20 @@ class GUIMain(QMainWindow):
         # Keyboard shortcuts.
         self.maximise_video_action = QAction("Maximise Video", self)
         self.maximise_video_action.setShortcut("Ctrl+M")
-        self.maximise_video_action.triggered.connect(self.video_capture_tab.toggle_maximise_video)
+        self.maximise_video_action.triggered.connect(self.handle_maximise_video_action)
         self.addAction(self.maximise_video_action)
+
+        self.full_screen_video_action = QAction("Fullscreen Video", self)
+        self.full_screen_video_action.setShortcut("Ctrl+F")
+        self.full_screen_video_action.triggered.connect(self.toggle_full_screen_video)
+        self.addAction(self.full_screen_video_action)
 
         self.exit_maximised_video_action = QAction("Exit Maximised Video", self)
         self.exit_maximised_video_action.setShortcut("Esc")
-        self.exit_maximised_video_action.triggered.connect(self.video_capture_tab.exit_video_maximised_mode)
+        self.exit_maximised_video_action.triggered.connect(self.exit_to_standard_video_mode)
         self.addAction(self.exit_maximised_video_action)
+        self.set_video_mode_actions_enabled(self.tab_widget.currentIndex() == 0)
+
         # Display main window.
         self.show()
         self.video_capture_tab.tab_selected()
@@ -100,13 +107,41 @@ class GUIMain(QMainWindow):
     def on_tab_change(self):
         """Function that is run on tab change: Deselect the tab you are in before selecting a new tab"""
         if self.tab_widget.currentIndex() == 0:  # Select video_capture_tab
-            self.maximise_video_action.setEnabled(True)
+            self.set_video_mode_actions_enabled(True)
             self.camera_setup_tab.tab_deselected()
             self.video_capture_tab.tab_selected()
         else:  # Select camera_setup_tab
-            self.maximise_video_action.setEnabled(False)
+            self.exit_to_standard_video_mode()
+            self.set_video_mode_actions_enabled(False)
             self.video_capture_tab.tab_deselected()
             self.camera_setup_tab.tab_selected()
+
+    def set_video_mode_actions_enabled(self, enabled: bool):
+        """Enable or disable keyboard actions used by video display modes."""
+        self.maximise_video_action.setEnabled(enabled)
+        self.full_screen_video_action.setEnabled(enabled)
+        self.exit_maximised_video_action.setEnabled(enabled)
+
+    def handle_maximise_video_action(self):
+        """Handle Ctrl+M with special behavior while in fullscreen mode."""
+        if self.isFullScreen():  # Leave fullscreen but keep video maximised layout.
+            self.showNormal()
+        else:
+            self.video_capture_tab.toggle_maximise_video()
+
+    def toggle_full_screen_video(self):
+        """Toggle true fullscreen video mode while preserving maximised-video layout behavior."""
+        if self.isFullScreen():
+            self.exit_to_standard_video_mode()
+        else:
+            self.video_capture_tab.enter_video_maximised_mode()
+            self.showFullScreen()
+
+    def exit_to_standard_video_mode(self):
+        """Return to standard mode: not fullscreen and not maximised video layout."""
+        if self.isFullScreen():
+            self.showNormal()
+        self.video_capture_tab.exit_video_maximised_mode()
 
     def closeEvent(self, event):
         """Close the GUI"""
