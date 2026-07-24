@@ -12,7 +12,7 @@ from .video_capture_tab import VideoCaptureTab
 from .settings_tab import SettingsTab
 from .camera_manager import CameraManager
 
-from config.config import __version__, gui_config, ffmpeg_config, paths_config
+from config.config import __version__, gui_config, ffmpeg_config, trigger_config, paths_config
 
 if os.name == "nt":  # Needed on windows to get taskbar icon to display correctly.
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(f"pyMultiVideo v{__version__}")
@@ -30,16 +30,24 @@ class GUIMain(QMainWindow):
         if self.CLI_args.application_config:  # Config info passed from CLI.
             config_data = json.loads(self.CLI_args.application_config)
             self.paths_config = config_data.get("paths_config")
-            self.ffmpeg_config = config_data.get("ffmpeg_config")
+            loaded_ffmpeg_config = config_data.get("ffmpeg_config") or {}
+            loaded_trigger_config = config_data.get("trigger_config") or {}
+            self.ffmpeg_config = {**ffmpeg_config, **loaded_ffmpeg_config}
+            self.trigger_config = {**trigger_config, **loaded_trigger_config}
             self.gui_config = config_data.get("gui_config")
         else:  # Use config info from config.py and application_config.json file.
             self.paths_config = paths_config
             settings_filepath = os.path.join(self.paths_config["config_dir"], "application_config.json")
             if os.path.exists(settings_filepath):
                 with open(settings_filepath, "r", encoding="utf-8") as f:
-                    self.ffmpeg_config = json.load(f)["ffmpeg_config"]
+                    loaded_config_data = json.load(f)
+                    loaded_ffmpeg_config = loaded_config_data.get("ffmpeg_config", {})
+                    loaded_trigger_config = loaded_config_data.get("trigger_config", {})
+                self.ffmpeg_config = {**ffmpeg_config, **loaded_ffmpeg_config}
+                self.trigger_config = {**trigger_config, **loaded_trigger_config}
             else:
                 self.ffmpeg_config = ffmpeg_config
+                self.trigger_config = trigger_config
             self.gui_config = gui_config
 
         # close-after argument
@@ -145,6 +153,7 @@ class GUIMain(QMainWindow):
 
     def closeEvent(self, event):
         """Close the GUI"""
+        self.camera_setup_tab.stop_trigger_output_and_close_board()
         # Ensure all threadpool futures are complete
         while self.video_capture_tab.futures:
             future = self.video_capture_tab.futures.pop()

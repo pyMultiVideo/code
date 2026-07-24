@@ -1,5 +1,6 @@
 import os
 import json
+import serial
 from dataclasses import dataclass, asdict
 
 from PyQt6.QtCore import Qt, QTimer
@@ -24,6 +25,7 @@ from config.config import default_camera_config
 from .camera_widget import CameraWidget
 from .camera_manager import get_camera_ids
 from .data_recorder import GPU_AVAILABLE
+from .pyboard_script import Pyboard, PyboardError, list_connected_pyboards, start_pulse_output, stop_pulse_output
 
 
 @dataclass
@@ -73,6 +75,11 @@ class SettingsTab(QWidget):
         self.preview_showing = False
         self.camera_preview = None  # Place holder for camera preview widget
         self.setups_changed = False  # Flag that is checked for handling camera setups being changed
+        self.trigger_board = None
+        self.trigger_board_port = None
+        self.trigger_pulse_running = False
+        self.trigger_warning_shown = False
+        self._trigger_controls_initialized = False
 
         # Check if any cameras are connected
         _, CAMERAS_CONNECTED = get_camera_ids()
@@ -84,18 +91,18 @@ class SettingsTab(QWidget):
             warning_box.setStandardButtons(QMessageBox.StandardButton.Ok)
             warning_box.exec()
 
-        # Initialize_camera_groupbox
-        self.camera_table_groupbox = QGroupBox("Camera Settings")
+        # Camera settings groupbox
+        self.camera_table_groupbox = QGroupBox("Cameras")
         self.camera_table = CameraOverviewTable(parent=self)
         self.camera_table.setMinimumSize(1, 1)
         self.camera_table.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
 
-        # Refresh connected cameras while this tab is active.
-        self.refresh_timer = QTimer(self)
-        self.refresh_timer.setInterval(1000)
-        self.refresh_timer.timeout.connect(self.refresh)
+        self.camera_table_layout = QVBoxLayout()
+        self.camera_table_layout.addWidget(self.camera_table)
+        self.camera_table_groupbox.setLayout(self.camera_table_layout)
 
-        self.ffmpeg_groupbox = QGroupBox("FFMPEG Settings")
+        # ffmpeg groupbox
+        self.ffmpeg_groupbox = QGroupBox("FFMPEG")
         self.ffmpeg_layout = QHBoxLayout()
 
         encoding_backend = "GPU" if GPU_AVAILABLE else "CPU"
@@ -140,15 +147,54 @@ class SettingsTab(QWidget):
         self.ffmpeg_encoding_speed_edit.currentTextChanged.connect(self.ffmpeg_encoding_speed_changed)
         self.ffmpeg_compression_standard_edit.currentTextChanged.connect(self.ffmpeg_compression_standard_changed)
 
-        self.camera_table_layout = QVBoxLayout()
-        self.camera_table_layout.addWidget(self.camera_table)
-        self.camera_table_groupbox.setLayout(self.camera_table_layout)
+        # Frame trigger groupbox.
+        self.trigger_groupbox = QGroupBox("Frame trigger")
+        self.trigger_layout = QHBoxLayout()
+
+        self.trigger_port_label = QLabel("Port")
+        self.trigger_port_dropdown = QComboBox()
+        self.trigger_port_dropdown.setToolTip("Select the serial port used by the MicroPython trigger board.")
+
+        self.trigger_pin_label = QLabel("Pin")
+        self.trigger_pin_edit = QLineEdit()
+        self.trigger_pin_edit.setFixedWidth(30)
+        self.trigger_pin_edit.setToolTip("Pin name used for trigger output pulses (for example B4 or X1).")
+
+        self.trigger_frequency_label = QLabel("Frequency (Hz)")
+        self.trigger_frequency_edit = QSpinBox()
+        self.trigger_frequency_edit.setRange(1, 300)
+        self.trigger_frequency_edit.setToolTip("Trigger pulse frequency in Hz.")
+
+        self.trigger_enable_checkbox = QCheckBox("Enable")
+        self.trigger_enable_checkbox.setChecked(bool(self.GUI.trigger_config.get("enabled", False)))
+
+        self.trigger_layout.addWidget(self.trigger_port_label)
+        self.trigger_layout.addWidget(self.trigger_port_dropdown)
+        self.trigger_layout.addWidget(self.trigger_pin_label)
+        self.trigger_layout.addWidget(self.trigger_pin_edit)
+        self.trigger_layout.addWidget(self.trigger_frequency_label)
+        self.trigger_layout.addWidget(self.trigger_frequency_edit)
+        self.trigger_layout.addWidget(self.trigger_enable_checkbox)
+        self.trigger_layout.addStretch()
+        self.trigger_groupbox.setLayout(self.trigger_layout)
 
         self.page_layout = QVBoxLayout()
         self.page_layout.addWidget(self.ffmpeg_groupbox)
         self.page_layout.addWidget(self.camera_table_groupbox)
+        self.page_layout.addWidget(self.trigger_groupbox)
         self.page_layout.addStretch()
         self.setLayout(self.page_layout)
+
+        self._refresh_trigger_port_options()
+        self.trigger_pin_edit.setText(str(self.GUI.trigger_config.get("pin", "B4")))
+        self.trigger_frequency_edit.setValue(int(self.GUI.trigger_config.get("freqeuncy_hz", 5)))
+        self._set_trigger_port_selection(str(self.GUI.trigger_config.get("port", "")))
+
+        self.trigger_port_dropdown.currentTextChanged.connect(self.trigger_port_changed)
+        self.trigger_pin_edit.editingFinished.connect(self.trigger_pin_changed)
+        self.trigger_frequency_edit.valueChanged.connect(self.trigger_frequency_changed)
+        self.trigger_enable_checkbox.stateChanged.connect(self.trigger_enable_changed)
+        self._trigger_controls_initialized = True
 
         if self.GUI.CLI_args.camera_config is None:
             # Load saved setup info.
@@ -166,14 +212,23 @@ class SettingsTab(QWidget):
             self.saved_setups = [
                 CameraSettingsConfig(**{**default_camera_config, **cam_dict}) for cam_dict in cams_list
             ]
+
+        # Refresh timer.
+        self.refresh_timer = QTimer(self)
+        self.refresh_timer.setInterval(1000)
+        self.refresh_timer.timeout.connect(self.refresh)
+
         self.refresh()
+        self._sync_trigger_output_state(restart=False)
 
     # Tab changing logic -------------------------------------------------------------------------------
 
     def tab_selected(self):
         """Called when tab selected."""
         self.refresh_timer.start()
+        self._refresh_trigger_port_options()
         self.refresh()
+        self._sync_trigger_output_state(restart=False)
 
     def tab_deselected(self):
         """Called when tab deselected.
@@ -198,9 +253,216 @@ class SettingsTab(QWidget):
         self.save_ffmpeg_config()
 
     def save_ffmpeg_config(self):
-        """Save current ffmpeg settings to disk."""
+        """Save current ffmpeg and trigger settings to disk."""
         with open(self.ffmpeg_settings_filepath, "w", encoding="utf-8") as f:
-            json.dump({"ffmpeg_config": self.GUI.ffmpeg_config}, f, indent=4)
+            json.dump(
+                {
+                    "ffmpeg_config": self.GUI.ffmpeg_config,
+                    "trigger_config": self.GUI.trigger_config,
+                },
+                f,
+                indent=4,
+            )
+
+    # Trigger output methods -------------------------------------------------------------------------
+
+    def _set_trigger_port_selection(self, selected_port: str):
+        if not selected_port:
+            return
+        idx = self.trigger_port_dropdown.findText(selected_port)
+        if idx >= 0:
+            self.trigger_port_dropdown.setCurrentIndex(idx)
+
+    def _set_trigger_controls_enabled(self, enabled: bool):
+        editable = enabled and not bool(self.GUI.trigger_config.get("enabled", False))
+        self.trigger_port_dropdown.setEnabled(editable)
+        self.trigger_pin_edit.setEnabled(editable)
+        self.trigger_frequency_edit.setEnabled(editable)
+
+    def _trigger_boards_available(self):
+        return (
+            self.trigger_port_dropdown.count() > 0 and self.trigger_port_dropdown.currentText() != "No boards detected"
+        )
+
+    def _refresh_trigger_port_options(self):
+        ports = list_connected_pyboards()
+        current_port = self.trigger_port_dropdown.currentText()
+        configured_port = str(self.GUI.trigger_config.get("port", "")).strip()
+        active_port = self.trigger_board_port if self.trigger_pulse_running else ""
+
+        if active_port and active_port not in ports:
+            # Keep the currently running trigger board visible even if discovery misses it.
+            ports = [active_port] + ports
+
+        self.trigger_port_dropdown.blockSignals(True)
+        self.trigger_port_dropdown.clear()
+
+        if not ports:
+            if active_port or configured_port:
+                # Port scans can fail while the selected board is busy outputting pulses.
+                self.trigger_port_dropdown.addItem(active_port or configured_port)
+                self.trigger_port_dropdown.setCurrentIndex(0)
+                self.trigger_port_dropdown.blockSignals(False)
+                self._set_trigger_controls_enabled(True)
+                return
+
+            self.trigger_port_dropdown.addItem("No boards detected")
+            self.trigger_port_dropdown.setCurrentIndex(0)
+            self.trigger_port_dropdown.blockSignals(False)
+            self._set_trigger_controls_enabled(False)
+            return
+
+        self._set_trigger_controls_enabled(True)
+        self.trigger_port_dropdown.addItems(ports)
+        if active_port and active_port in ports:
+            preferred_port = active_port
+        elif configured_port in ports:
+            preferred_port = configured_port
+        elif current_port and current_port in ports:
+            preferred_port = current_port
+        else:
+            # If no configured port exists, select first available board in UI only.
+            preferred_port = ports[0]
+
+        self._set_trigger_port_selection(preferred_port)
+        self.trigger_port_dropdown.blockSignals(False)
+
+    def trigger_port_changed(self, port: str):
+        if not self._trigger_controls_initialized:
+            return
+        self.GUI.trigger_config["port"] = str(port)
+        self.save_ffmpeg_config()
+        self._sync_trigger_output_state(restart=True)
+
+    def trigger_pin_changed(self):
+        if not self._trigger_controls_initialized:
+            return
+        pin = self.trigger_pin_edit.text().strip()
+        self.GUI.trigger_config["pin"] = pin
+        self.save_ffmpeg_config()
+        self._sync_trigger_output_state(restart=True)
+
+    def trigger_frequency_changed(self, frequency_hz: int):
+        if not self._trigger_controls_initialized:
+            return
+        self.GUI.trigger_config["freqeuncy_hz"] = int(frequency_hz)
+        self.save_ffmpeg_config()
+        self._sync_trigger_output_state(restart=True)
+
+    def trigger_enable_changed(self, state: int):
+        if not self._trigger_controls_initialized:
+            return
+        enabled = bool(state)
+        if enabled:
+            selected_port = self.trigger_port_dropdown.currentText().strip()
+            if selected_port and selected_port != "No boards detected":
+                self.GUI.trigger_config["port"] = selected_port
+
+        self.GUI.trigger_config["enabled"] = enabled
+        if not enabled:
+            self.trigger_warning_shown = False
+
+        self._set_trigger_controls_enabled(self._trigger_boards_available())
+        self.save_ffmpeg_config()
+        self._sync_trigger_output_state(restart=False)
+
+    def _should_output_trigger(self):
+        return bool(self.GUI.trigger_config.get("enabled", False))
+
+    def _warn_trigger_issue(self, title: str, message: str):
+        if self.trigger_warning_shown:
+            return
+        self.trigger_warning_shown = True
+        QMessageBox.warning(self, title, message)
+
+    def _close_trigger_board(self):
+        if self.trigger_board is None:
+            return
+        try:
+            self.trigger_board.close()
+        except Exception:
+            pass
+        self.trigger_board = None
+        self.trigger_board_port = None
+
+    def _ensure_trigger_board_connection(self):
+        selected_port = str(self.GUI.trigger_config.get("port", "")).strip()
+        if not selected_port:
+            dropdown_port = self.trigger_port_dropdown.currentText().strip()
+            if dropdown_port and dropdown_port != "No boards detected":
+                selected_port = dropdown_port
+        if not selected_port:
+            self._warn_trigger_issue("Trigger output", "No trigger output port selected.")
+            return False
+
+        if self.trigger_board is not None and self.trigger_board_port == selected_port:
+            return True
+
+        self._close_trigger_board()
+
+        try:
+            self.trigger_board = Pyboard(selected_port)
+            self.trigger_board_port = selected_port
+            return True
+        except Exception as exc:
+            self._warn_trigger_issue("Trigger output", f"Could not open trigger board on {selected_port}: {exc}")
+            self._close_trigger_board()
+            return False
+
+    def _start_trigger_output_if_needed(self):
+        if self.trigger_pulse_running:
+            return
+
+        pin = str(self.GUI.trigger_config.get("pin", "")).strip()
+        if not pin:
+            self._warn_trigger_issue("Trigger output", "Trigger output pin must not be empty.")
+            return
+
+        frequency_hz = int(self.GUI.trigger_config.get("freqeuncy_hz", 5))
+        if frequency_hz < 1:
+            self._warn_trigger_issue("Trigger output", "Trigger frequency must be at least 1 Hz.")
+            return
+
+        if not self._ensure_trigger_board_connection():
+            return
+
+        try:
+            start_pulse_output(self.trigger_board, pin=pin, frequency_hz=frequency_hz)
+            self.trigger_pulse_running = True
+            self.trigger_warning_shown = False
+        except Exception as exc:
+            self._warn_trigger_issue("Trigger output", f"Could not start trigger pulses: {exc}")
+            self.trigger_pulse_running = False
+            self._close_trigger_board()
+
+    def _stop_trigger_output_if_needed(self):
+        if not self.trigger_pulse_running:
+            self._close_trigger_board()
+            return
+
+        try:
+            stop_pulse_output(self.trigger_board)
+        except (PyboardError, serial.SerialException, OSError):
+            pass
+        except Exception:
+            pass
+        finally:
+            self.trigger_pulse_running = False
+            self._close_trigger_board()
+
+    def _sync_trigger_output_state(self, restart: bool = False):
+        if not self._should_output_trigger():
+            self._stop_trigger_output_if_needed()
+            return
+
+        if restart and self.trigger_pulse_running:
+            self._stop_trigger_output_if_needed()
+
+        self._start_trigger_output_if_needed()
+
+    def stop_trigger_output_and_close_board(self):
+        """Best-effort trigger-output shutdown for application close."""
+        self._stop_trigger_output_if_needed()
 
     # Reading / Writing the Camera setups saved function --------------------------------------------------------
 
@@ -233,6 +495,7 @@ class SettingsTab(QWidget):
 
     def refresh(self):
         """Check for new and removed cameras and updates the setups table."""
+        self._refresh_trigger_port_options()
         connected_cameras, _ = get_camera_ids()
         if not connected_cameras == self.setups.keys():
             # Add any new cameras setups to the setups (comparing unique_ids)

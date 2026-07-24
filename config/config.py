@@ -18,6 +18,15 @@ ffmpeg_config = {
     "compression_standard": "h264",  # ["h265" , "h264"]
 }
 
+# Default trigger config -------------------------------------------------------------
+
+trigger_config = {
+    "enabled": False,
+    "port": "",
+    "pin": "X1",
+    "freqeuncy_hz": 60,
+}
+
 # Camera pixel format preferences -----------------------------------------------
 
 pixel_format_priority = [
