@@ -175,10 +175,17 @@ class CameraWidget(QGroupBox):
         self.vlayout.addLayout(self.header_layout)
         self.vlayout.addWidget(self.graphics_view, stretch=100)
 
+        # Store default layout/frame settings so maximised-video mode can be restored cleanly.
+        self.default_header_layout_margins = self.header_layout.contentsMargins()
+        self.default_header_layout_spacing = self.header_layout.spacing()
+        self.default_vlayout_margins = self.vlayout.contentsMargins()
+        self.default_vlayout_spacing = self.vlayout.spacing()
+        self.default_is_flat = self.isFlat()
+
         self.setLayout(self.vlayout)
 
         if self.preview_mode:
-            self.toggle_control_visibility()
+            self.set_control_visibility(False)
             self.update_timer = QTimer()
             self.update_timer.timeout.connect(self.update)
             self.update_timer.start(int(1000 / self.GUI.gui_config["camera_update_rate"]))
@@ -384,12 +391,29 @@ class CameraWidget(QGroupBox):
         self.start_recording_button.setEnabled(self.GUI.ffmpeg_path_available)
         self.GUI.video_capture_tab.update_button_states()
 
-    def toggle_control_visibility(self) -> None:
-        """Toggle the visibility of the camera controls."""
-        self.controls_visible = not self.controls_visible
+    def set_control_visibility(self, visible: bool) -> None:
+        """Set camera control visibility."""
+        self.controls_visible = visible
         for i in range(self.header_layout.count()):
             widget = self.header_layout.itemAt(i).widget()
-            widget.setVisible(self.controls_visible)
+            widget.setVisible(visible)
+
+    def set_video_maximised_mode(self, enabled: bool) -> None:
+        """Set control visibility and adjust frame and spacing to maximise video feed area."""
+        if enabled:
+            self.set_control_visibility(False)
+            self.setFlat(True)
+            self.header_layout.setContentsMargins(0, 0, 0, 0)
+            self.header_layout.setSpacing(0)
+            self.vlayout.setContentsMargins(0, 0, 0, 0)
+            self.vlayout.setSpacing(0)
+        else:
+            self.set_control_visibility(True)
+            self.setFlat(self.default_is_flat)
+            self.header_layout.setContentsMargins(self.default_header_layout_margins)
+            self.header_layout.setSpacing(self.default_header_layout_spacing)
+            self.vlayout.setContentsMargins(self.default_vlayout_margins)
+            self.vlayout.setSpacing(self.default_vlayout_spacing)
 
     def handle_wheel_event(self, direction):
         """Zoom in / out of the video data"""

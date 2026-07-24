@@ -43,6 +43,8 @@ class VideoCaptureTab(QWidget):
         self.camera_widgets = []
         self.saved_config = None
         self.config_save_path = None
+        self.video_maximised_mode = False
+        self._tab_bar_visible_before_maximise = True
 
         # Initalise Threadpool used to pipe data to ffmpeg processes.
         self.threadpool = ThreadPoolExecutor(max_workers=32)
@@ -162,6 +164,10 @@ class VideoCaptureTab(QWidget):
         self.page_layout.addWidget(self.header_groupbox)
         self.page_layout.addLayout(self.camera_layout)
         self.setLayout(self.page_layout)
+        self.default_page_layout_margins = self.page_layout.contentsMargins()
+        self.default_page_layout_spacing = self.page_layout.spacing()
+        self.default_camera_layout_margins = self.camera_layout.contentsMargins()
+        self.default_camera_layout_spacing = self.camera_layout.spacing()
         # Handle if the parsed args are send via the command line
         if self.GUI.CLI_args.experiment_config is None:
             available_cameras = sorted(list(self.camera_setup_tab.get_camera_labels()), key=str.lower)
@@ -282,12 +288,52 @@ class VideoCaptureTab(QWidget):
         while self.camera_widgets:
             self.remove_camera_widget(self.camera_widgets.pop())
 
-    def toggle_full_screen_mode(self):
-        """Toggle full screen video display mode on/off."""
-        is_visible = self.header_groupbox.isVisible()
-        self.header_groupbox.setVisible(not is_visible)
+    def toggle_maximise_video(self):
+        """Toggle maximised video display mode on/off."""
+        if self.video_maximised_mode:
+            self.exit_video_maximised_mode()
+        else:
+            self.enter_video_maximised_mode()
+
+    def enter_video_maximised_mode(self):
+        """Hide chrome and spacing to maximize area available for video feeds."""
+        if self.video_maximised_mode:
+            return
+        tab_bar = self.GUI.tab_widget.tabBar()
+        self._tab_bar_visible_before_maximise = tab_bar.isVisible()
+        self.video_maximised_mode = True
+        self.header_groupbox.setVisible(False)
+        tab_bar.setVisible(False)
+        self.page_layout.setContentsMargins(0, 0, 0, 0)
+        self.page_layout.setSpacing(0)
+        self.camera_layout.setContentsMargins(0, 0, 0, 0)
+        self.camera_layout.setSpacing(0)
         for camera_widget in self.camera_widgets:
-            camera_widget.toggle_control_visibility()
+            camera_widget.set_video_maximised_mode(True)
+        self._refresh_video_layout()
+
+    def exit_video_maximised_mode(self):
+        """Restore chrome and layout spacing after maximised-video mode."""
+        if not self.video_maximised_mode:
+            return
+        tab_bar = self.GUI.tab_widget.tabBar()
+        self.video_maximised_mode = False
+        self.header_groupbox.setVisible(True)
+        tab_bar.setVisible(self._tab_bar_visible_before_maximise)
+        self.page_layout.setContentsMargins(self.default_page_layout_margins)
+        self.page_layout.setSpacing(self.default_page_layout_spacing)
+        self.camera_layout.setContentsMargins(self.default_camera_layout_margins)
+        self.camera_layout.setSpacing(self.default_camera_layout_spacing)
+        for camera_widget in self.camera_widgets:
+            camera_widget.set_video_maximised_mode(False)
+        self._refresh_video_layout()
+
+    def _refresh_video_layout(self):
+        """Force layout updates so camera views immediately resize after mode change."""
+        self.camera_layout.invalidate()
+        self.page_layout.invalidate()
+        self.updateGeometry()
+        self.update()
 
     def set_number_of_columns(self):
         """Set the number of columns in the camera grid layout."""
@@ -399,9 +445,7 @@ class VideoCaptureTab(QWidget):
         all_ready = all(c_w.start_recording_button.isEnabled() for c_w in self.camera_widgets)
         any_recording = any(camera_widget.recording for camera_widget in self.camera_widgets)
         self.start_recording_button.setEnabled(all_ready)
-        self.GUI.start_recording_all_action.setEnabled(all_ready)
         self.stop_recording_button.setEnabled(any_recording)
-        self.GUI.stop_recording_all_action.setEnabled(any_recording)
         # If any of the cameras are recording, disable certain buttons
         self.save_dir_button.setEnabled(not any_recording)
         self.load_button.setEnabled(not any_recording)

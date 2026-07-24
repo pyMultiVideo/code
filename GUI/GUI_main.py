@@ -78,29 +78,17 @@ class GUIMain(QMainWindow):
         self.tab_widget.addTab(self.camera_setup_tab, "Settings")
         self.tab_widget.currentChanged.connect(self.on_tab_change)
         self.setCentralWidget(self.tab_widget)
-        # Initialise menu bar.
-        main_menu = self.menuBar()
-        view_menu = main_menu.addMenu("Controls")
-        full_screen_controls_action = QAction(
-            QIcon(os.path.join(self.paths_config["icons_dir"], "fullscreen.svg")), "Toggle Fullscreen", self
-        )
-        full_screen_controls_action.setShortcut("Ctrl+F")
-        full_screen_controls_action.triggered.connect(self.video_capture_tab.toggle_full_screen_mode)
-        view_menu.addAction(full_screen_controls_action)
-        # Recording Shortcuts
-        self.start_recording_all_action = QAction(
-            QIcon(os.path.join(self.paths_config["icons_dir"], "record.svg")), "Start Recording", self
-        )
-        self.start_recording_all_action.setShortcut("Ctrl+Shift+R")
-        self.start_recording_all_action.triggered.connect(self.video_capture_tab.start_recording)
-        self.stop_recording_all_action = QAction(
-            QIcon(os.path.join(self.paths_config["icons_dir"], "stop.svg")), "Stop Recording", self
-        )
-        self.stop_recording_all_action.setShortcut("Ctrl+Shift+E")
-        self.stop_recording_all_action.triggered.connect(self.video_capture_tab.stop_recording)
-        view_menu.addAction(self.start_recording_all_action)
-        view_menu.addAction(self.stop_recording_all_action)
 
+        # Keyboard shortcuts.
+        self.maximise_video_action = QAction("Maximise Video", self)
+        self.maximise_video_action.setShortcut("Ctrl+M")
+        self.maximise_video_action.triggered.connect(self.video_capture_tab.toggle_maximise_video)
+        self.addAction(self.maximise_video_action)
+
+        self.exit_maximised_video_action = QAction("Exit Maximised Video", self)
+        self.exit_maximised_video_action.setShortcut("Esc")
+        self.exit_maximised_video_action.triggered.connect(self.video_capture_tab.exit_video_maximised_mode)
+        self.addAction(self.exit_maximised_video_action)
         # Display main window.
         self.show()
         self.video_capture_tab.tab_selected()
@@ -112,9 +100,11 @@ class GUIMain(QMainWindow):
     def on_tab_change(self):
         """Function that is run on tab change: Deselect the tab you are in before selecting a new tab"""
         if self.tab_widget.currentIndex() == 0:  # Select video_capture_tab
+            self.maximise_video_action.setEnabled(True)
             self.camera_setup_tab.tab_deselected()
             self.video_capture_tab.tab_selected()
         else:  # Select camera_setup_tab
+            self.maximise_video_action.setEnabled(False)
             self.video_capture_tab.tab_deselected()
             self.camera_setup_tab.tab_selected()
 
