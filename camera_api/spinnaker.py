@@ -22,9 +22,7 @@ class SpinnakerCamera(GenericCamera):
         }
 
         self._trigger_line = 2  # Trigger line name
-        self._previous_frame_number = 0
-        self._inter_frame_interval = 1
-        self._frame_timestamp = None
+        self._previous_frame_number = None
 
         # Initialise camera -------------------------------------------------------------------------------------------
         self._cam_list = PYSPINSYSTEM.GetCameras()
@@ -150,6 +148,10 @@ class SpinnakerCamera(GenericCamera):
             # Turn trigger mode back on
             trigger_mode.SetIntValue(trigger_mode.GetEntryByName("On").GetValue())
 
+            # Enable trigger overlap mode.
+            trigger_overlap = PySpin.CEnumerationPtr(self._nodemap.GetNode("TriggerOverlap"))
+            trigger_overlap.SetIntValue(trigger_overlap.GetEntryByName("ReadOut").GetValue())
+
         else:  # Internal triggering
             # Ensure that the trigger mode is off so manual camera control is enabled
             trigger_mode = PySpin.CEnumerationPtr(self._nodemap.GetNode("TriggerMode"))
@@ -192,7 +194,6 @@ class SpinnakerCamera(GenericCamera):
     def set_frame_rate(self, frame_rate):
         """Set the frame rate of the camera in Hz."""
         PySpin.CFloatPtr(self._nodemap.GetNode("AcquisitionFrameRate")).SetValue(int(frame_rate))
-        self._inter_frame_interval = int(1e6 // int(frame_rate))  # Microsecconds.
 
     def set_exposure_time(self, exposure_time: float) -> None:
         """Set the exposure time of the camera in microseconds."""
@@ -218,8 +219,7 @@ class SpinnakerCamera(GenericCamera):
             self._cam.Init()
         if not self._cam.IsStreaming():
             self._cam.BeginAcquisition()
-        self._frame_timestamp = None
-        self._previous_frame_number = 0
+        self._previous_frame_number = None
 
     def stop_capturing(self) -> None:
         """Stop the camera from streaming"""
@@ -249,15 +249,10 @@ class SpinnakerCamera(GenericCamera):
                 img_buffer.append(next_image.GetData())  # Image pixels as 1D numpy array of image bytes.
                 chunk_data = next_image.GetChunkData()  # Additional image data.
                 timestamps_buffer.append(chunk_data.GetTimestamp() // 1000)  # Image timestamp (microseconds)
-                # Frame timestamps
-                if self._frame_timestamp is None:
-                    self._frame_timestamp = timestamps_buffer[-1]
-                else:
-                    elapsed_frames = round(
-                        (timestamps_buffer[-1] - self._frame_timestamp) / self._inter_frame_interval
-                    )
-                    self._frame_timestamp = timestamps_buffer[-1]
-                    dropped_frames += elapsed_frames - 1
+                current_frame_number = int(next_image.GetFrameID())
+                if self._previous_frame_number and current_frame_number > self._previous_frame_number:
+                    dropped_frames += current_frame_number - self._previous_frame_number - 1
+                self._previous_frame_number = current_frame_number
                 gpio_buffer.append(self._extract_gpio_data(img_buffer[-1], chunk_data))
                 next_image.Release()  # Clears image from buffer.
         except PySpin.SpinnakerException:  # Buffer is empty.
@@ -274,6 +269,10 @@ class SpinnakerCamera(GenericCamera):
 
 class Chameleon3Camera(SpinnakerCamera):
     """Spinnaker camera implementation for Chameleon3 model-specific behavior."""
+
+    def __init__(self, unique_id):
+        super().__init__(unique_id)
+        self._trigger_line = 0  # Optically isolated input (GPIO pin 9).
 
     def _configure_gpio(self, chunk_selector):
         """Configure camera to include GPIO pinstates in image data. Getting GPIO pinstate
