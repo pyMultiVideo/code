@@ -59,6 +59,7 @@ class CameraWidget(QGroupBox):
         self.frame_timestamps = deque([0], maxlen=10)
         self.controls_visible = True
         self.recording = False
+        self.new_ffmpeg_dropped_frames = 0  # Number of frames dropped from ffmpeg queue since last data write.
 
         # Video display ---------------------------------------------------------------
 
@@ -111,16 +112,21 @@ class CameraWidget(QGroupBox):
         self.graphics_view.addItem(self.dropped_frames_text)
         self.dropped_frames_text.setText("", color="r")
 
+        self.dropped_frames_cause_text = pg.TextItem()
+        self.dropped_frames_cause_text.setPos(10, 6 * text_spacing)
+        self.graphics_view.addItem(self.dropped_frames_cause_text)
+        self.dropped_frames_cause_text.setText("", color="r")
+
         if self.preview_mode:
             # Exposure time overlay
             self.exposure_time_text = pg.TextItem()
-            self.exposure_time_text.setPos(10, 6 * text_spacing)
+            self.exposure_time_text.setPos(10, 7 * text_spacing)
             self.graphics_view.addItem(self.exposure_time_text)
             self.exposure_time_text.setText("Exposure Time:", color="magenta")
 
             # Gain overlay
             self.gain_text = pg.TextItem()
-            self.gain_text.setPos(10, 7 * text_spacing)
+            self.gain_text.setPos(10, 8 * text_spacing)
             self.graphics_view.addItem(self.gain_text)
             self.gain_text.setText("Gain:", color="magenta")
 
@@ -214,9 +220,17 @@ class CameraWidget(QGroupBox):
 
         # Record data to disk.
         if self.recording:
-            self.video_capture_tab.futures.append(
-                self.video_capture_tab.threadpool.submit(self.data_recorder.record_new_images, new_images)
-            )
+            if self.video_capture_tab.ffmpeg_buffer_full:
+                self.new_ffmpeg_dropped_frames += len(new_images["images"])
+            else:
+                self.video_capture_tab.futures.append(
+                    self.video_capture_tab.threadpool.submit(
+                        self.data_recorder.record_new_images,
+                        new_images,
+                        self.new_ffmpeg_dropped_frames,
+                    )
+                )
+                self.new_ffmpeg_dropped_frames = 0
 
     def update(self, update_video_display=True):
         """Called regularly by timer to fetch new images and optionally update video display."""
@@ -236,6 +250,7 @@ class CameraWidget(QGroupBox):
         # Start data recording.
         save_dir = self.GUI.video_capture_tab.data_dir
         self.data_recorder.start_recording(subject_id, save_dir, self.settings)
+        self.new_ffmpeg_dropped_frames = 0
         # Empty camera buffer before recording is started
         self.camera_api.get_available_images()
         self.recording = True
@@ -249,6 +264,9 @@ class CameraWidget(QGroupBox):
 
     def stop_recording(self):
         """Stop recording video data to disk."""
+        if self.new_ffmpeg_dropped_frames:
+            self.data_recorder.dropped_frames += self.new_ffmpeg_dropped_frames
+            self.new_ffmpeg_dropped_frames = 0
         self.data_recorder.stop_recording()
         self.recording = False
         # Update GUI
@@ -287,11 +305,17 @@ class CameraWidget(QGroupBox):
         if self.recording:
             elapsed_time = datetime.now() - self.data_recorder.record_start_time
             self.recording_status_item.setText(f"RECORDING  {str(elapsed_time).split('.')[0]}", color="g")
-        # Update dropped frames indicator.
-        if self._newly_dropped_frames:
+        # Dropped frames warning.
+        if bool(self._newly_dropped_frames) or self.video_capture_tab.ffmpeg_buffer_full:
             self.dropped_frames_text.setText("DROPPED FRAMES", color="r")
         else:
             self.dropped_frames_text.setText("")
+        if self._newly_dropped_frames:
+            self.dropped_frames_cause_text.setText("Camera buffer overflow", color="r")
+        elif self.video_capture_tab.ffmpeg_buffer_full:
+            self.dropped_frames_cause_text.setText("FFMPEG buffer overflow", color="r")
+        else:
+            self.dropped_frames_cause_text.setText("")
         # Show additional camera settings if in preview mode.
         if self.preview_mode:
             self.exposure_time_text.setText(

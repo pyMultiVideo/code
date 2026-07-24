@@ -37,6 +37,8 @@ class Data_recorder:
         self.settings = settings
         self.recorded_frames = 0
         self.dropped_frames = 0
+        self.camera_buffer_overflow_occurred = False
+        self.ffmpeg_buffer_overflow_occurred = False
         self.first_timestamp = None
         # Create Filepaths_config.
         self.subject_id = subject_id
@@ -72,6 +74,8 @@ class Data_recorder:
             "duration": None,
             "recorded_frames": 0,
             "dropped_frames": None,
+            "camera_buffer_overflow": False,
+            "ffmpeg_buffer_overflow": False,
         }
         with open(self.metadata_filepath, "w") as meta_data_file:
             json.dump(self.metadata, meta_data_file, indent=4)
@@ -110,6 +114,8 @@ class Data_recorder:
         self.metadata["duration"] = str(end_time - self.record_start_time)[:-3]
         self.metadata["recorded_frames"] = self.recorded_frames
         self.metadata["dropped_frames"] = self.dropped_frames
+        self.metadata["camera_buffer_overflow"] = self.camera_buffer_overflow_occurred
+        self.metadata["ffmpeg_buffer_overflow"] = self.ffmpeg_buffer_overflow_occurred
 
         with open(self.metadata_filepath, "w") as self.meta_data_file:
             json.dump(self.metadata, self.meta_data_file, indent=4)
@@ -117,13 +123,17 @@ class Data_recorder:
         self.ffmpeg_process.stdin.close()
         self.ffmpeg_process.wait()
 
-    def record_new_images(self, new_images):
+    def record_new_images(self, new_images, ffmpeg_new_dropped_frames=0):
         """Record newly aquired images and GPIO pinstates."""
         if self.first_timestamp is None:
             self.first_timestamp = new_images["timestamps"][0]
             self.timestamp_digit_count = len(str(self.first_timestamp))
         self.recorded_frames += len(new_images["images"])
-        self.dropped_frames += new_images["dropped_frames"]
+        self.dropped_frames += new_images["dropped_frames"] + ffmpeg_new_dropped_frames
+        if new_images["dropped_frames"]:
+            self.camera_buffer_overflow_occurred = True
+        if ffmpeg_new_dropped_frames:
+            self.ffmpeg_buffer_overflow_occurred = True
         # Concatenate the list of numpy buffers into one bytestream
         frame = np.concatenate([img for img in new_images["images"]])
         self.ffmpeg_process.stdin.write(frame)
