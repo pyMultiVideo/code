@@ -1,10 +1,7 @@
 from pathlib import Path
 import os
-from datetime import datetime
 import json
-
 import sys
-from pathlib import Path
 
 # Add the parent directory to sys.path for proper imports
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -13,7 +10,7 @@ from config.config import paths_config, default_camera_config
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # pyMV code folder.
 
-### Start of helper functions ###
+# Helper functions.
 
 
 def get_camera_unique_ids():
@@ -93,7 +90,7 @@ def generate_performance_test_config(
     }
 
 
-### End of Helper Functions ###
+#
 
 
 subject_ids = [f"subject_{i}" for i in range(len(get_camera_unique_ids()))]
@@ -101,7 +98,7 @@ subject_ids = [f"subject_{i}" for i in range(len(get_camera_unique_ids()))]
 # The parameters which are varied
 testing_parameters = {
     # Folder test name
-    "test_name": f"maze-r-2",
+    "test_name": "maze-r-2",
     # "test_name": f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
     # Recording_length (s)
     "close_after": "00:45",  # MM:SS

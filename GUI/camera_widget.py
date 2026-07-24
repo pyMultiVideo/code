@@ -209,7 +209,7 @@ class CameraWidget(QGroupBox):
     def fetch_image_data(self):
         """Get images and associated data from camera and save to disk if recording."""
         new_images = self.camera_api.get_available_images()
-        if new_images == None:
+        if new_images is None:
             return
         # Store most recent image and GPIO state for the next display update.
         self.latest_image = new_images["images"][-1]
@@ -397,7 +397,7 @@ class CameraWidget(QGroupBox):
             scale_factor = 1.1 if direction == "Wheel scrolled up" else 1 / 1.1
             self.video_view_box.scaleBy((scale_factor, scale_factor))
 
-    ### Config related functions ------------------------------------------------------
+    # Config related functions ------------------------------------------------------
 
     def get_camera_config(self):
         """Get the camera configuration"""
@@ -446,7 +446,7 @@ class CameraWidget(QGroupBox):
         super().closeEvent(event)
         event.accept()
 
-    ### Functions for changing camera settings ----------------------------------------
+    # Functions for changing camera settings ----------------------------------------
 
     def rename(self, new_label):
         """Rename the camera"""

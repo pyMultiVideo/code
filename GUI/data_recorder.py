@@ -91,10 +91,10 @@ class Data_recorder:
                 f"-pix_fmt {self.camera_widget.camera_api.pixel_format.ffmpeg}",  # Input pixel format for ffmpeg
                 f"-r {self.settings.fps}",  # Frame rate
                 "-i -",  # input comes from a pipe (stdin)
-                f"-c:v {ffmpeg_encoder_map[self.camera_widget.GUI.ffmpeg_config['compression_standard']]}",  # Output codec
+                f"-c:v {ffmpeg_encoder_map[self.camera_widget.GUI.ffmpeg_config['compression_standard']]}",  # Codec
                 f"-s {self.downsampled_width}x{self.downsampled_height}",  # Output frame size after any downsampling.
                 "-pix_fmt yuv420p",  # Output pixel format
-                f"-preset {self.camera_widget.GUI.ffmpeg_config['encoding_speed']}",  # Encoding speed [fast, medium, slow]
+                f"-preset {self.camera_widget.GUI.ffmpeg_config['encoding_speed']}",  # Enc. speed [fast, medium, slow]
                 (
                     f"-cq {self.camera_widget.GUI.ffmpeg_config['crf']}"
                     if GPU_AVAILABLE

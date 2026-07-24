@@ -38,7 +38,7 @@ def open_error_dialog():
     msg_box.exec()
 
 
-### Terminal Commands -----------------------------------------------------------------------------
+# Terminal Commands -----------------------------------------------------------------------------
 
 
 def valid_time(value):
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     try:
         parsed_args, unparsed_args = parse_args()
         main(parsed_args, unparsed_args)
-    except Exception as e:
+    except Exception:
         logging.error("Startup failure", exc_info=True)
         open_error_dialog()
         sys.exit()

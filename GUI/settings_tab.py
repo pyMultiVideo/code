@@ -260,7 +260,7 @@ class SettingsTab(QWidget):
         self.n_setups = len(self.setups.keys())
 
     def get_camera_labels(self) -> list[str]:
-        """Get the labels of the available cameras. The label is the camera's user set name if available, else unique ID."""
+        """Get the labels of the available cameras. Label is the camera's user set name if available, else unique ID."""
         return [setup.get_label() for setup in self.setups.values()]
 
     def get_camera_unique_id_from_label(self, camera_label: str) -> str:
