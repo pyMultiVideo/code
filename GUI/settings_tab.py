@@ -240,21 +240,9 @@ class SettingsTab(QWidget):
             if self.preview_showing:
                 self.setups[unique_id].close_preview_camera()
 
-    # FFMPEG Settings methods ---------------------------------------------------------------------------
+    # Save application settings. -----------------------------------------------------------------------
 
-    def ffmpeg_crf_changed(self, value: int):
-        self.GUI.ffmpeg_config["crf"] = int(value)
-        self.save_ffmpeg_config()
-
-    def ffmpeg_encoding_speed_changed(self, value: str):
-        self.GUI.ffmpeg_config["encoding_speed"] = value
-        self.save_ffmpeg_config()
-
-    def ffmpeg_compression_standard_changed(self, value: str):
-        self.GUI.ffmpeg_config["compression_standard"] = value
-        self.save_ffmpeg_config()
-
-    def save_ffmpeg_config(self):
+    def save_app_config(self):
         """Save current ffmpeg and trigger settings to disk."""
         with open(self.ffmpeg_settings_filepath, "w", encoding="utf-8") as f:
             json.dump(
@@ -266,9 +254,24 @@ class SettingsTab(QWidget):
                 indent=4,
             )
 
+    # FFMPEG Settings methods ---------------------------------------------------------------------------
+
+    def ffmpeg_crf_changed(self, value: int):
+        self.GUI.ffmpeg_config["crf"] = int(value)
+        self.save_app_config()
+
+    def ffmpeg_encoding_speed_changed(self, value: str):
+        self.GUI.ffmpeg_config["encoding_speed"] = value
+        self.save_app_config()
+
+    def ffmpeg_compression_standard_changed(self, value: str):
+        self.GUI.ffmpeg_config["compression_standard"] = value
+        self.save_app_config()
+
     # Trigger output methods -------------------------------------------------------------------------
 
     def _set_trigger_port_selection(self, selected_port: str):
+        """Select the given trigger port in the dropdown when present."""
         if not selected_port:
             return
         idx = self.trigger_port_dropdown.findText(selected_port)
@@ -276,17 +279,20 @@ class SettingsTab(QWidget):
             self.trigger_port_dropdown.setCurrentIndex(idx)
 
     def _set_trigger_controls_enabled(self, enabled: bool):
+        """Enable or lock trigger controls based on board and output state."""
         editable = enabled and not bool(self.GUI.trigger_config.get("enabled", False))
         self.trigger_port_dropdown.setEnabled(editable)
         self.trigger_pin_edit.setEnabled(editable)
         self.trigger_frequency_edit.setEnabled(editable)
 
     def _trigger_boards_available(self):
+        """Return whether at least one valid trigger board is available."""
         return (
             self.trigger_port_dropdown.count() > 0 and self.trigger_port_dropdown.currentText() != "No boards detected"
         )
 
     def _refresh_trigger_port_options(self):
+        """Refresh available trigger ports while preserving sensible selection."""
         ports = self.trigger_manager.get_available_ports()
         current_port = self.trigger_port_dropdown.currentText()
         configured_port = str(self.GUI.trigger_config.get("port", "")).strip()
@@ -326,28 +332,32 @@ class SettingsTab(QWidget):
         self.trigger_port_dropdown.blockSignals(False)
 
     def trigger_port_changed(self, port: str):
+        """Persist trigger port changes and restart output if needed."""
         if not self._trigger_controls_initialized:
             return
         self.GUI.trigger_config["port"] = str(port)
-        self.save_ffmpeg_config()
+        self.save_app_config()
         self._sync_trigger_output_state(restart=True)
 
     def trigger_pin_changed(self):
+        """Persist trigger pin changes and restart output if needed."""
         if not self._trigger_controls_initialized:
             return
         pin = self.trigger_pin_edit.text().strip()
         self.GUI.trigger_config["pin"] = pin
-        self.save_ffmpeg_config()
+        self.save_app_config()
         self._sync_trigger_output_state(restart=True)
 
     def trigger_frequency_changed(self, frequency_hz: int):
+        """Persist trigger frequency changes and restart output if needed."""
         if not self._trigger_controls_initialized:
             return
         self.GUI.trigger_config["freqeuncy_hz"] = int(frequency_hz)
-        self.save_ffmpeg_config()
+        self.save_app_config()
         self._sync_trigger_output_state(restart=True)
 
     def trigger_enable_changed(self, state: int):
+        """Handle trigger enable toggle and synchronize pulse output state."""
         if not self._trigger_controls_initialized:
             return
         enabled = bool(state)
@@ -361,19 +371,22 @@ class SettingsTab(QWidget):
             self.trigger_warning_shown = False
 
         self._set_trigger_controls_enabled(self._trigger_boards_available())
-        self.save_ffmpeg_config()
+        self.save_app_config()
         self._sync_trigger_output_state(restart=False)
 
     def _should_output_trigger(self):
+        """Return whether trigger output is enabled in current settings."""
         return bool(self.GUI.trigger_config.get("enabled", False))
 
     def _warn_trigger_issue(self, title: str, message: str):
+        """Show a single warning dialog for trigger issues until reset."""
         if self.trigger_warning_shown:
             return
         self.trigger_warning_shown = True
         QMessageBox.warning(self, title, message)
 
     def _sync_trigger_output_state(self, restart: bool = False):
+        """Start, stop, or restart trigger output to match current config."""
         if not self._should_output_trigger():
             self.trigger_manager.stop_pulse()
             return
