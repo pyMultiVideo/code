@@ -2,6 +2,7 @@
 
 import time
 import serial
+from dataclasses import dataclass
 from serial.tools import list_ports
 from inspect import getsource
 
@@ -202,6 +203,62 @@ class PyboardManager:
             self.pulse_running = False
             self.disconnect()
         return stopped_cleanly
+
+    def apply_trigger_output(self, trigger_config: dict, selected_port: str = "", restart: bool = False):
+        """Apply trigger output state from configuration and return execution result."""
+        enabled = bool(trigger_config.get("enabled", False))
+        if not enabled:
+            self.stop_pulse()
+            return TriggerApplyResult(success=True)
+
+        if restart and self.pulse_running:
+            self.stop_pulse()
+
+        if self.pulse_running:
+            return TriggerApplyResult(success=True)
+
+        resolved_port = str(trigger_config.get("port", "")).strip()
+        selected_port = str(selected_port).strip()
+        if not resolved_port and selected_port and selected_port != "No boards detected":
+            resolved_port = selected_port
+
+        if not resolved_port:
+            return TriggerApplyResult(
+                success=False,
+                error="No trigger output port selected.",
+                revert_enabled=True,
+            )
+
+        pin = str(trigger_config.get("pin", "")).strip()
+        if not pin:
+            return TriggerApplyResult(
+                success=False,
+                error="Trigger output pin must not be empty.",
+                revert_enabled=True,
+            )
+
+        frequency_hz = int(trigger_config.get("frequency_hz", 60))
+        if frequency_hz < 1:
+            return TriggerApplyResult(
+                success=False,
+                error="Trigger frequency must be at least 1 Hz.",
+                revert_enabled=True,
+            )
+
+        if not self.connect(resolved_port):
+            return TriggerApplyResult(success=False, error=self.last_error, revert_enabled=True)
+
+        if not self.start_pulse(pin=pin, frequency_hz=frequency_hz):
+            return TriggerApplyResult(success=False, error=self.last_error, revert_enabled=True)
+
+        return TriggerApplyResult(success=True)
+
+
+@dataclass
+class TriggerApplyResult:
+    success: bool
+    error: str = ""
+    revert_enabled: bool = False
 
 
 # Helper functions. ---------------------------------------------------------------------------

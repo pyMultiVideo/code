@@ -189,7 +189,7 @@ class SettingsTab(QWidget):
 
         self._refresh_trigger_port_options()
         self.trigger_pin_edit.setText(str(self.GUI.trigger_config.get("pin", "B4")))
-        self.trigger_frequency_edit.setValue(int(self.GUI.trigger_config.get("freqeuncy_hz", 5)))
+        self.trigger_frequency_edit.setValue(int(self.GUI.trigger_config.get("frequency_hz", 60)))
         self._set_trigger_port_selection(str(self.GUI.trigger_config.get("port", "")))
 
         self.trigger_port_dropdown.currentTextChanged.connect(self.trigger_port_changed)
@@ -331,30 +331,26 @@ class SettingsTab(QWidget):
         self._set_trigger_port_selection(preferred_port)
         self.trigger_port_dropdown.blockSignals(False)
 
-    def trigger_port_changed(self, port: str):
-        """Persist trigger port changes and restart output if needed."""
+    def _persist_trigger_field_and_sync(self, key: str, value, restart: bool):
+        """Update one trigger field, persist config, then apply trigger output state."""
         if not self._trigger_controls_initialized:
             return
-        self.GUI.trigger_config["port"] = str(port)
+        self.GUI.trigger_config[key] = value
         self.save_app_config()
-        self._sync_trigger_output_state(restart=True)
+        self._sync_trigger_output_state(restart=restart)
+
+    def trigger_port_changed(self, port: str):
+        """Persist trigger port changes and restart output if needed."""
+        self._persist_trigger_field_and_sync("port", str(port), restart=True)
 
     def trigger_pin_changed(self):
         """Persist trigger pin changes and restart output if needed."""
-        if not self._trigger_controls_initialized:
-            return
         pin = self.trigger_pin_edit.text().strip()
-        self.GUI.trigger_config["pin"] = pin
-        self.save_app_config()
-        self._sync_trigger_output_state(restart=True)
+        self._persist_trigger_field_and_sync("pin", pin, restart=True)
 
     def trigger_frequency_changed(self, frequency_hz: int):
         """Persist trigger frequency changes and restart output if needed."""
-        if not self._trigger_controls_initialized:
-            return
-        self.GUI.trigger_config["freqeuncy_hz"] = int(frequency_hz)
-        self.save_app_config()
-        self._sync_trigger_output_state(restart=True)
+        self._persist_trigger_field_and_sync("frequency_hz", int(frequency_hz), restart=True)
 
     def trigger_enable_changed(self, state: int):
         """Handle trigger enable toggle and synchronize pulse output state."""
@@ -374,10 +370,6 @@ class SettingsTab(QWidget):
         self.save_app_config()
         self._sync_trigger_output_state(restart=False)
 
-    def _should_output_trigger(self):
-        """Return whether trigger output is enabled in current settings."""
-        return bool(self.GUI.trigger_config.get("enabled", False))
-
     def _warn_trigger_issue(self, title: str, message: str):
         """Show a single warning dialog for trigger issues until reset."""
         if self.trigger_warning_shown:
@@ -386,45 +378,25 @@ class SettingsTab(QWidget):
         QMessageBox.warning(self, title, message)
 
     def _sync_trigger_output_state(self, restart: bool = False):
-        """Start, stop, or restart trigger output to match current config."""
-        if not self._should_output_trigger():
-            self.trigger_manager.stop_pulse()
+        """Apply trigger output configuration and handle user-visible failure states."""
+        result = self.trigger_manager.apply_trigger_output(
+            trigger_config=self.GUI.trigger_config,
+            selected_port=self.trigger_port_dropdown.currentText(),
+            restart=restart,
+        )
+        if result.success:
+            self.trigger_warning_shown = False
             return
 
-        if restart and self.trigger_manager.pulse_running:
-            self.trigger_manager.stop_pulse()
+        if result.revert_enabled and bool(self.GUI.trigger_config.get("enabled", False)):
+            self.GUI.trigger_config["enabled"] = False
+            self.trigger_enable_checkbox.blockSignals(True)
+            self.trigger_enable_checkbox.setChecked(False)
+            self.trigger_enable_checkbox.blockSignals(False)
+            self._set_trigger_controls_enabled(self._trigger_boards_available())
+            self.save_app_config()
 
-        if self.trigger_manager.pulse_running:
-            return
-
-        selected_port = str(self.GUI.trigger_config.get("port", "")).strip()
-        if not selected_port:
-            dropdown_port = self.trigger_port_dropdown.currentText().strip()
-            if dropdown_port and dropdown_port != "No boards detected":
-                selected_port = dropdown_port
-        if not selected_port:
-            self._warn_trigger_issue("Trigger output", "No trigger output port selected.")
-            return
-
-        pin = str(self.GUI.trigger_config.get("pin", "")).strip()
-        if not pin:
-            self._warn_trigger_issue("Trigger output", "Trigger output pin must not be empty.")
-            return
-
-        frequency_hz = int(self.GUI.trigger_config.get("freqeuncy_hz", 5))
-        if frequency_hz < 1:
-            self._warn_trigger_issue("Trigger output", "Trigger frequency must be at least 1 Hz.")
-            return
-
-        if not self.trigger_manager.connect(selected_port):
-            self._warn_trigger_issue("Trigger output", self.trigger_manager.last_error)
-            return
-
-        if not self.trigger_manager.start_pulse(pin=pin, frequency_hz=frequency_hz):
-            self._warn_trigger_issue("Trigger output", self.trigger_manager.last_error)
-            return
-
-        self.trigger_warning_shown = False
+        self._warn_trigger_issue("Trigger output", result.error)
 
     def stop_trigger_output_and_close_board(self):
         """Best-effort trigger-output shutdown for application close."""

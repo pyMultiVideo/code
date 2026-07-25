@@ -24,7 +24,7 @@ trigger_config = {
     "enabled": False,
     "port": "",
     "pin": "X1",
-    "freqeuncy_hz": 60,
+    "frequency_hz": 60,
 }
 
 # Camera pixel format preferences -----------------------------------------------
