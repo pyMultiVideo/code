@@ -107,7 +107,7 @@ class SettingsTab(QWidget):
 
         encoding_backend = "GPU" if GPU_AVAILABLE else "CPU"
         self.ffmpeg_backend_label = QLabel(
-            f"Encoder hardware: <span style='color:#1E6FD9; font-weight: bold;'>{encoding_backend}</span>"
+            f"Hardware: <span style='color:#1E6FD9; font-weight: bold;'>{encoding_backend}</span>"
         )
         self.ffmpeg_backend_label.setToolTip("Detected from availability of nvidia-smi on this system.")
 
@@ -158,7 +158,7 @@ class SettingsTab(QWidget):
         self.trigger_pin_label = QLabel("Pin")
         self.trigger_pin_edit = QLineEdit()
         self.trigger_pin_edit.setFixedWidth(30)
-        self.trigger_pin_edit.setToolTip("Pin name used for trigger output pulses (for example B4 or X1).")
+        self.trigger_pin_edit.setToolTip("Pin name or number used for trigger output pulses (e.g. X1 or 18).")
 
         self.trigger_frequency_label = QLabel("Frequency (Hz)")
         self.trigger_frequency_edit = QSpinBox()
@@ -166,7 +166,9 @@ class SettingsTab(QWidget):
         self.trigger_frequency_edit.setToolTip("Trigger pulse frequency in Hz.")
 
         self.trigger_enable_checkbox = QCheckBox("Enable")
+        self.trigger_enable_checkbox.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.trigger_enable_checkbox.setChecked(bool(self.GUI.trigger_config.get("enabled", False)))
+        self.trigger_enable_checkbox.setToolTip("Enable or disable trigger pulse output.")
 
         self.trigger_layout.addWidget(self.trigger_port_label)
         self.trigger_layout.addWidget(self.trigger_port_dropdown)
@@ -178,10 +180,13 @@ class SettingsTab(QWidget):
         self.trigger_layout.addStretch()
         self.trigger_groupbox.setLayout(self.trigger_layout)
 
+        self.top_controls_layout = QHBoxLayout()
+        self.top_controls_layout.addWidget(self.ffmpeg_groupbox)
+        self.top_controls_layout.addWidget(self.trigger_groupbox)
+
         self.page_layout = QVBoxLayout()
-        self.page_layout.addWidget(self.ffmpeg_groupbox)
+        self.page_layout.addLayout(self.top_controls_layout)
         self.page_layout.addWidget(self.camera_table_groupbox)
-        self.page_layout.addWidget(self.trigger_groupbox)
         self.page_layout.addStretch()
         self.setLayout(self.page_layout)
 
