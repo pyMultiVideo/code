@@ -112,11 +112,6 @@ class CameraWidget(QGroupBox):
         self.graphics_view.addItem(self.dropped_frames_text)
         self.dropped_frames_text.setText("", color="r")
 
-        self.dropped_frames_cause_text = pg.TextItem()
-        self.dropped_frames_cause_text.setPos(10, 6 * text_spacing)
-        self.graphics_view.addItem(self.dropped_frames_cause_text)
-        self.dropped_frames_cause_text.setText("", color="r")
-
         if self.preview_mode:
             # Exposure time overlay
             self.exposure_time_text = pg.TextItem()
@@ -313,16 +308,12 @@ class CameraWidget(QGroupBox):
             elapsed_time = datetime.now() - self.data_recorder.record_start_time
             self.recording_status_item.setText(f"RECORDING  {str(elapsed_time).split('.')[0]}", color="g")
         # Dropped frames warning.
-        if bool(self._newly_dropped_frames) or self.video_capture_tab.ffmpeg_buffer_full:
-            self.dropped_frames_text.setText("DROPPED FRAMES", color="r")
+        if self._newly_dropped_frames:
+            self.dropped_frames_text.setText("DROPPED FRAMES - camera buffer overflow", color="r")
+        elif self.recording and self.video_capture_tab.ffmpeg_buffer_full:
+            self.dropped_frames_text.setText("DROPPED FRAMES -FFMPEG buffer overflow", color="r")
         else:
             self.dropped_frames_text.setText("")
-        if self._newly_dropped_frames:
-            self.dropped_frames_cause_text.setText("Camera buffer overflow", color="r")
-        elif self.video_capture_tab.ffmpeg_buffer_full:
-            self.dropped_frames_cause_text.setText("FFMPEG buffer overflow", color="r")
-        else:
-            self.dropped_frames_cause_text.setText("")
         # Show additional camera settings if in preview mode.
         if self.preview_mode:
             self.exposure_time_text.setText(
