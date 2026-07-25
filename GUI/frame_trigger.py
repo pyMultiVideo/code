@@ -1,14 +1,15 @@
+"""Module for controlling trigger pulse output on a MicroPython board from the GUI."""
+
 import time
 import serial
 from serial.tools import list_ports
 from inspect import getsource
 
-# Pyboard class
-
+# Pyboard class for communicating with a MicroPython board over a serial connection. 
+# Adapted from https://github.com/micropython/micropython/blob/master/tools/pyboard.py
 
 class PyboardError(BaseException):
     pass
-
 
 class Pyboard:
     def __init__(self, serial_device, baudrate=115200):
@@ -99,46 +100,12 @@ class Pyboard:
             raise PyboardError("exception", ret, ret_err)
         return ret
 
+# Functions called by GUI to detect and control pulse output on pyboards. ---------------------------------
 
-# Helper functions.
-
-
-def check_if_pyboard(port):
-    """Return True if the given port is a Pyboard, False otherwise."""
-    try:
-        board = Pyboard(port)
-        board.enter_raw_repl()
-        board.close()
-        return True
-    except (PyboardError, serial.SerialException):
-        return False
-
-
-def list_connected_pyboards():
+def list_connected_pyboards(skip_check_ports=[]):
     """Return a list of serial ports that appear to be MicroPython boards."""
     ports = [c[0] for c in list_ports.comports() if ("Pyboard" in c[1]) or ("USB Serial Device" in c[1])]
-    return [port for port in ports if check_if_pyboard(port)]
-
-
-def _pyboard_enable_pulses(pin, frequency_hz):
-    """Used on pyboard to toggle pin at 50% duty cycle until KeyboardInterrupt."""
-    import time
-    from machine import Pin
-
-    period_us = int(1e6 / frequency_hz)
-    on_off_dur = period_us // 2
-    pulse_pin = Pin(pin, Pin.OUT)
-    try:
-        while True:
-            pulse_pin.value(1)
-            time.sleep_us(on_off_dur)
-            pulse_pin.value(0)
-            time.sleep_us(on_off_dur)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        pulse_pin.value(0)
-
+    return [port for port in ports if _check_if_pyboard(port) and port not in skip_check_ports]
 
 def start_pulse_output(pyboard, pin, frequency_hz):
     """Start continuous pulse output on MicroPython pin."""
@@ -164,14 +131,38 @@ def stop_pulse_output(pyboard, timeout=2):
 
     return output
 
+# Helper functions. ---------------------------------------------------------------------------
 
-if __name__ == "__main__":
-    pyboard_ports = list_connected_pyboards()
-    if not pyboard_ports:
-        raise RuntimeError("No connected pyboard found")
+def _check_if_pyboard(port):
+    """Return True if the given port is a Pyboard, False otherwise."""
+    try:
+        board = Pyboard(port)
+        board.enter_raw_repl()
+        board.close()
+        return True
+    except (PyboardError, serial.SerialException):
+        return False
 
-    pyboard = Pyboard(pyboard_ports[0])
-    start_pulse_output(pyboard, pin="B4", frequency_hz=5)
-    time.sleep(2)
-    stop_pulse_output(pyboard)
-    pyboard.close()
+
+def _pyboard_enable_pulses(pin, frequency_hz):
+    """Used on pyboard to toggle pin at 50% duty cycle until KeyboardInterrupt."""
+    import time
+    from machine import Pin
+
+    period_us = int(1e6 / frequency_hz)
+    on_off_dur = period_us // 2
+    try:
+        pin = int(pin)
+    except ValueError:
+        pass  # pin is a string, not an int
+    pulse_pin = Pin(pin, Pin.OUT)
+    try:
+        while True:
+            pulse_pin.value(1)
+            time.sleep_us(on_off_dur)
+            pulse_pin.value(0)
+            time.sleep_us(on_off_dur)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        pulse_pin.value(0)

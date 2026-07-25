@@ -25,7 +25,7 @@ from config.config import default_camera_config
 from .camera_widget import CameraWidget
 from .camera_manager import get_camera_ids
 from .data_recorder import GPU_AVAILABLE
-from .pyboard_script import Pyboard, PyboardError, list_connected_pyboards, start_pulse_output, stop_pulse_output
+from .frame_trigger import Pyboard, PyboardError, list_connected_pyboards, start_pulse_output, stop_pulse_output
 
 
 @dataclass
