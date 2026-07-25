@@ -1,6 +1,5 @@
 import os
 import json
-import serial
 from dataclasses import dataclass, asdict
 
 from PyQt6.QtCore import Qt, QTimer
@@ -25,7 +24,7 @@ from config.config import default_camera_config
 from .camera_widget import CameraWidget
 from .camera_manager import get_camera_ids
 from .data_recorder import GPU_AVAILABLE
-from .frame_trigger import Pyboard, PyboardError, list_connected_pyboards, start_pulse_output, stop_pulse_output
+from .frame_trigger import PyboardManager
 
 
 @dataclass
@@ -75,9 +74,7 @@ class SettingsTab(QWidget):
         self.preview_showing = False
         self.camera_preview = None  # Place holder for camera preview widget
         self.setups_changed = False  # Flag that is checked for handling camera setups being changed
-        self.trigger_board = None
-        self.trigger_board_port = None
-        self.trigger_pulse_running = False
+        self.trigger_manager = PyboardManager()
         self.trigger_warning_shown = False
         self._trigger_controls_initialized = False
 
@@ -290,14 +287,10 @@ class SettingsTab(QWidget):
         )
 
     def _refresh_trigger_port_options(self):
-        ports = list_connected_pyboards()
+        ports = self.trigger_manager.get_available_ports()
         current_port = self.trigger_port_dropdown.currentText()
         configured_port = str(self.GUI.trigger_config.get("port", "")).strip()
-        active_port = self.trigger_board_port if self.trigger_pulse_running else ""
-
-        if active_port and active_port not in ports:
-            # Keep the currently running trigger board visible even if discovery misses it.
-            ports = [active_port] + ports
+        active_port = self.trigger_manager.pyboard_port if self.trigger_manager.pulse_running else ""
 
         self.trigger_port_dropdown.blockSignals(True)
         self.trigger_port_dropdown.clear()
@@ -380,17 +373,17 @@ class SettingsTab(QWidget):
         self.trigger_warning_shown = True
         QMessageBox.warning(self, title, message)
 
-    def _close_trigger_board(self):
-        if self.trigger_board is None:
+    def _sync_trigger_output_state(self, restart: bool = False):
+        if not self._should_output_trigger():
+            self.trigger_manager.stop_pulse()
             return
-        try:
-            self.trigger_board.close()
-        except Exception:
-            pass
-        self.trigger_board = None
-        self.trigger_board_port = None
 
-    def _ensure_trigger_board_connection(self):
+        if restart and self.trigger_manager.pulse_running:
+            self.trigger_manager.stop_pulse()
+
+        if self.trigger_manager.pulse_running:
+            return
+
         selected_port = str(self.GUI.trigger_config.get("port", "")).strip()
         if not selected_port:
             dropdown_port = self.trigger_port_dropdown.currentText().strip()
@@ -398,24 +391,6 @@ class SettingsTab(QWidget):
                 selected_port = dropdown_port
         if not selected_port:
             self._warn_trigger_issue("Trigger output", "No trigger output port selected.")
-            return False
-
-        if self.trigger_board is not None and self.trigger_board_port == selected_port:
-            return True
-
-        self._close_trigger_board()
-
-        try:
-            self.trigger_board = Pyboard(selected_port)
-            self.trigger_board_port = selected_port
-            return True
-        except Exception as exc:
-            self._warn_trigger_issue("Trigger output", f"Could not open trigger board on {selected_port}: {exc}")
-            self._close_trigger_board()
-            return False
-
-    def _start_trigger_output_if_needed(self):
-        if self.trigger_pulse_running:
             return
 
         pin = str(self.GUI.trigger_config.get("pin", "")).strip()
@@ -428,46 +403,19 @@ class SettingsTab(QWidget):
             self._warn_trigger_issue("Trigger output", "Trigger frequency must be at least 1 Hz.")
             return
 
-        if not self._ensure_trigger_board_connection():
+        if not self.trigger_manager.connect(selected_port):
+            self._warn_trigger_issue("Trigger output", self.trigger_manager.last_error)
             return
 
-        try:
-            start_pulse_output(self.trigger_board, pin=pin, frequency_hz=frequency_hz)
-            self.trigger_pulse_running = True
-            self.trigger_warning_shown = False
-        except Exception as exc:
-            self._warn_trigger_issue("Trigger output", f"Could not start trigger pulses: {exc}")
-            self.trigger_pulse_running = False
-            self._close_trigger_board()
-
-    def _stop_trigger_output_if_needed(self):
-        if not self.trigger_pulse_running:
-            self._close_trigger_board()
+        if not self.trigger_manager.start_pulse(pin=pin, frequency_hz=frequency_hz):
+            self._warn_trigger_issue("Trigger output", self.trigger_manager.last_error)
             return
 
-        try:
-            stop_pulse_output(self.trigger_board)
-        except (PyboardError, serial.SerialException, OSError):
-            pass
-        except Exception:
-            pass
-        finally:
-            self.trigger_pulse_running = False
-            self._close_trigger_board()
-
-    def _sync_trigger_output_state(self, restart: bool = False):
-        if not self._should_output_trigger():
-            self._stop_trigger_output_if_needed()
-            return
-
-        if restart and self.trigger_pulse_running:
-            self._stop_trigger_output_if_needed()
-
-        self._start_trigger_output_if_needed()
+        self.trigger_warning_shown = False
 
     def stop_trigger_output_and_close_board(self):
         """Best-effort trigger-output shutdown for application close."""
-        self._stop_trigger_output_if_needed()
+        self.trigger_manager.stop_pulse()
 
     # Reading / Writing the Camera setups saved function --------------------------------------------------------
 
