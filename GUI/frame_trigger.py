@@ -113,7 +113,6 @@ class PyboardManager:
         self.pyboard = None
         self.pyboard_port = None
         self.pulse_running = False
-        self.last_error = ""
         self._checked_ports = set()
         self._pyboard_ports = set()
 
@@ -132,76 +131,57 @@ class PyboardManager:
             pyboard_ports = [active_port] + pyboard_ports
         return pyboard_ports
 
-    def connect(self, port: str) -> bool:
-        """Connect to the selected board port, reusing existing connection when possible."""
-        selected_port = str(port).strip()
-        if not selected_port:
-            self.last_error = "No trigger output port selected."
-            return False
-
-        if self.pyboard is not None and self.pyboard_port == selected_port:
-            return True
-        self.disconnect()
-        try:
-            self.pyboard = Pyboard(selected_port)
-            self.pyboard_port = selected_port
-            self.last_error = ""
-            return True
-        except (PyboardError, serial.SerialException, OSError) as exc:
-            self.last_error = f"Could not open pyboard on {selected_port}: {exc}"
-            self.disconnect()
-            return False
-
     def disconnect(self):
         """Close the current board connection, if any."""
         if self.pyboard is None:
             return
         try:
             self.pyboard.close()
-        except (PyboardError, serial.SerialException, OSError):
+        except serial.SerialException:
             pass
         self.pyboard = None
         self.pyboard_port = None
 
-    def start_pulse(self, pin, frequency_hz: int) -> bool:
+    def start_pulse(self, port, pin, frequency_hz):
         """Start trigger pulse output on the currently connected board."""
-        if self.pyboard is None:
-            self.last_error = "Trigger board is not connected."
-            return False
+        # Connect to pyboard
+        try:
+            self.pyboard = Pyboard(port)
+            self.pyboard_port = port
+        except serial.SerialException:
+            raise (PyboardError(f"Could not connect to port: {port}"))
+        # Instantiate pin as output on pyboard.
+        try:
+            pin = int(pin)
+        except ValueError:
+            pass
         try:
             self.pyboard.enter_raw_repl()
+            self.pyboard.exec(f"from machine import Pin; pulse_pin = Pin({pin!r}, Pin.OUT)")
+        except PyboardError:
+            self.disconnect()
+            raise (PyboardError(f"Could not set pin {pin!r} as output."))
+        # Start pulse output.
+        try:
             self.pyboard.exec(getsource(_pyboard_enable_pulses))
-            self.pyboard.exec_raw_no_follow(f"_pyboard_enable_pulses({pin!r}, {float(frequency_hz)})")
+            self.pyboard.exec_raw_no_follow(f"_pyboard_enable_pulses({frequency_hz})")
             self.pulse_running = True
-            self.last_error = ""
-            return True
-        except PyboardError as exc:
-            self.last_error = f"Could not start trigger pulses: {exc}"
+        except PyboardError:
             self.pulse_running = False
             self.disconnect()
-            return False
+            raise (PyboardError(f"Could not start pulse."))
 
     def stop_pulse(self) -> bool:
         """Stop trigger pulse output and release board resources."""
-        if not self.pyboard:
-            self.pulse_running = False
-            return True
-        stopped_cleanly = True
+        if not self.pulse_running:
+            return
         try:
             self.pyboard.serial.write(b"\x03")
-            try:
-                output, output_err = self.pyboard.follow(timeout=2)
-            finally:
-                self.pyboard.exit_raw_repl()
-            if output_err and b"KeyboardInterrupt" not in output_err:
-                raise PyboardError("exception", output, output_err)
-        except (PyboardError, serial.SerialException, OSError) as exc:
-            self.last_error = f"Could not stop trigger pulses: {exc}"
-            stopped_cleanly = False
-        finally:
-            self.pulse_running = False
-            self.disconnect()
-        return stopped_cleanly
+            output, output_err = self.pyboard.follow(timeout=2)
+        except (PyboardError, serial.SerialException) as exc:
+            raise (PyboardError(f"Could not stop pulse: {exc}"))
+        self.pulse_running = False
+        self.disconnect()
 
 
 # Helper functions. ---------------------------------------------------------------------------
@@ -218,18 +198,12 @@ def _check_if_pyboard(port):
         return False
 
 
-def _pyboard_enable_pulses(pin, frequency_hz):
+def _pyboard_enable_pulses(frequency_hz):
     """Used on pyboard to toggle pin at 50% duty cycle until KeyboardInterrupt."""
     import time
-    from machine import Pin
 
     period_us = int(1e6 / frequency_hz)
     on_off_dur = period_us // 2
-    try:
-        pin = int(pin)
-    except ValueError:
-        pass  # pin is a string, not an int
-    pulse_pin = Pin(pin, Pin.OUT)
     try:
         while True:
             pulse_pin.value(1)

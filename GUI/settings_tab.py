@@ -24,7 +24,7 @@ from config.config import default_camera_config
 from .camera_widget import CameraWidget
 from .camera_manager import get_camera_ids
 from .data_recorder import GPU_AVAILABLE
-from .frame_trigger import PyboardManager
+from .frame_trigger import PyboardManager, PyboardError
 
 
 @dataclass
@@ -75,18 +75,11 @@ class SettingsTab(QWidget):
         self.camera_preview = None  # Place holder for camera preview widget
         self.setups_changed = False  # Flag that is checked for handling camera setups being changed
         self.trigger_manager = PyboardManager()
-        self.trigger_warning_shown = False
-        self._trigger_controls_initialized = False
 
         # Check if any cameras are connected
         _, CAMERAS_CONNECTED = get_camera_ids()
         if not CAMERAS_CONNECTED:
-            warning_box = QMessageBox()
-            warning_box.setIcon(QMessageBox.Icon.Warning)
-            warning_box.setText("No cameras connected.")
-            warning_box.setWindowTitle("Warning")
-            warning_box.setStandardButtons(QMessageBox.StandardButton.Ok)
-            warning_box.exec()
+            QMessageBox.warning(self, "Warning", "No cameras connected.")
 
         # Camera settings groupbox
         self.camera_table_groupbox = QGroupBox("Cameras")
@@ -187,16 +180,15 @@ class SettingsTab(QWidget):
         self.page_layout.addStretch()
         self.setLayout(self.page_layout)
 
-        self._refresh_trigger_port_options()
         self.trigger_pin_edit.setText(str(self.GUI.trigger_config.get("pin", "X1")))
         self.trigger_frequency_edit.setValue(int(self.GUI.trigger_config.get("frequency_hz", 60)))
+        self._refresh_trigger_port_options()
         self._set_trigger_port_selection(str(self.GUI.trigger_config.get("port", "")))
 
         self.trigger_port_dropdown.currentTextChanged.connect(self.trigger_port_changed)
         self.trigger_pin_edit.editingFinished.connect(self.trigger_pin_changed)
         self.trigger_frequency_edit.valueChanged.connect(self.trigger_frequency_changed)
         self.trigger_enable_checkbox.stateChanged.connect(self.trigger_enable_changed)
-        self._trigger_controls_initialized = True
 
         if self.GUI.CLI_args.camera_config is None:
             # Load saved setup info.
@@ -221,16 +213,14 @@ class SettingsTab(QWidget):
         self.refresh_timer.timeout.connect(self.refresh)
 
         self.refresh()
-        self._apply_trigger_enable_state()
+        self.trigger_enable_changed(self.trigger_enable_checkbox.isChecked())
 
     # Tab changing logic -------------------------------------------------------------------------------
 
     def tab_selected(self):
         """Called when tab selected."""
         self.refresh_timer.start()
-        self._refresh_trigger_port_options()
         self.refresh()
-        self._apply_trigger_enable_state()
 
     def tab_deselected(self):
         """Called when tab deselected.
@@ -270,6 +260,40 @@ class SettingsTab(QWidget):
 
     # Trigger output methods -------------------------------------------------------------------------
 
+    def trigger_port_changed(self, port: str):
+        self.GUI.trigger_config["port"] = str(port)
+        self.save_app_config()
+
+    def trigger_pin_changed(self):
+        self.GUI.trigger_config["pin"] = self.trigger_pin_edit.text().strip()
+        self.save_app_config()
+
+    def trigger_frequency_changed(self, frequency_hz: int):
+        self.GUI.trigger_config["frequency_hz"] = int(frequency_hz)
+        self.save_app_config()
+
+    def trigger_enable_changed(self, state: int):
+        """Handle trigger enable toggle and apply pulse output state."""
+        enabled = bool(state)
+        if enabled:  # Enable pulses.
+            try:
+                self.trigger_manager.start_pulse(
+                    port=self.GUI.trigger_config["port"],
+                    pin=self.GUI.trigger_config["pin"],
+                    frequency_hz=self.GUI.trigger_config["frequency_hz"],
+                )
+                self._set_trigger_controls_enabled(False)
+            except PyboardError as e:
+                QMessageBox.warning(self, "Warning", f"Error starting pulse: {e}")
+        else: # Disable pulses
+            try:
+                self.trigger_manager.stop_pulse()
+                self._set_trigger_controls_enabled(True)
+            except Exception as e:
+                QMessageBox.warning(self, "Warning", f"Error stopping pulse: {e}")
+        self.GUI.trigger_config["enabled"] = enabled
+        self.save_app_config()
+
     def _set_trigger_port_selection(self, selected_port: str):
         """Select the given trigger port in the dropdown when present."""
         if not selected_port:
@@ -280,163 +304,25 @@ class SettingsTab(QWidget):
 
     def _set_trigger_controls_enabled(self, enabled: bool):
         """Enable or lock trigger controls based on board and output state."""
-        editable = enabled and not bool(self.GUI.trigger_config.get("enabled", False))
-        self.trigger_port_dropdown.setEnabled(editable)
-        self.trigger_pin_edit.setEnabled(editable)
-        self.trigger_frequency_edit.setEnabled(editable)
-
-    def _trigger_boards_available(self):
-        """Return whether at least one valid trigger board is available."""
-        return (
-            self.trigger_port_dropdown.count() > 0 and self.trigger_port_dropdown.currentText() != "No boards detected"
-        )
+        self.trigger_port_dropdown.setEnabled(enabled)
+        self.trigger_pin_edit.setEnabled(enabled)
+        self.trigger_frequency_edit.setEnabled(enabled)
 
     def _refresh_trigger_port_options(self):
         """Refresh available trigger ports while preserving sensible selection."""
-        ports = self.trigger_manager.get_available_ports()
         current_port = self.trigger_port_dropdown.currentText()
-        configured_port = str(self.GUI.trigger_config.get("port", "")).strip()
-        active_port = self.trigger_manager.pyboard_port if self.trigger_manager.pulse_running else ""
-
-        self.trigger_port_dropdown.blockSignals(True)
+        ports = self.trigger_manager.get_available_ports()
+        if self.trigger_manager.pyboard_port:
+            ports.append(self.trigger_manager.pyboard_port)
+        # self.trigger_port_dropdown.blockSignals(True)
         self.trigger_port_dropdown.clear()
-
-        if not ports:
-            if active_port or configured_port:
-                # Port scans can fail while the selected board is busy outputting pulses.
-                self.trigger_port_dropdown.addItem(active_port or configured_port)
-                self.trigger_port_dropdown.setCurrentIndex(0)
-                self.trigger_port_dropdown.blockSignals(False)
-                self._set_trigger_controls_enabled(True)
-                return
-
-            self.trigger_port_dropdown.addItem("No boards detected")
-            self.trigger_port_dropdown.setCurrentIndex(0)
-            self.trigger_port_dropdown.blockSignals(False)
-            self._set_trigger_controls_enabled(False)
-            return
-
-        self._set_trigger_controls_enabled(True)
-        self.trigger_port_dropdown.addItems(ports)
-        if active_port and active_port in ports:
-            preferred_port = active_port
-        elif configured_port in ports:
-            preferred_port = configured_port
-        elif current_port and current_port in ports:
-            preferred_port = current_port
+        if ports:
+            self.trigger_port_dropdown.addItems(ports)
         else:
-            # If no configured port exists, select first available board in UI only.
-            preferred_port = ports[0]
+            self.trigger_port_dropdown.addItem("No boards detected")
+        self._set_trigger_port_selection(current_port)
+        # self.trigger_port_dropdown.blockSignals(False)
 
-        self._set_trigger_port_selection(preferred_port)
-        self.trigger_port_dropdown.blockSignals(False)
-
-    def trigger_port_changed(self, port: str):
-        """Persist trigger port changes."""
-        if not self._trigger_controls_initialized:
-            return
-        self.GUI.trigger_config["port"] = str(port)
-        self.save_app_config()
-
-    def trigger_pin_changed(self):
-        """Persist trigger pin changes."""
-        if not self._trigger_controls_initialized:
-            return
-        pin = self.trigger_pin_edit.text().strip()
-        self.GUI.trigger_config["pin"] = pin
-        self.save_app_config()
-
-    def trigger_frequency_changed(self, frequency_hz: int):
-        """Persist trigger frequency changes."""
-        if not self._trigger_controls_initialized:
-            return
-        self.GUI.trigger_config["frequency_hz"] = int(frequency_hz)
-        self.save_app_config()
-
-    def trigger_enable_changed(self, state: int):
-        """Handle trigger enable toggle and apply pulse output state."""
-        if not self._trigger_controls_initialized:
-            return
-        # New user action: clear warning suppression so current failure can be shown.
-        self.trigger_warning_shown = False
-        enabled = bool(state)
-        if enabled:
-            selected_port = self.trigger_port_dropdown.currentText().strip()
-            if selected_port and selected_port != "No boards detected":
-                self.GUI.trigger_config["port"] = selected_port
-
-        self.GUI.trigger_config["enabled"] = enabled
-        self._set_trigger_controls_enabled(self._trigger_boards_available())
-        self.save_app_config()
-        self._apply_trigger_enable_state()
-
-    def _handle_trigger_enable_failure(self, error: str):
-        """Revert trigger enabled state after a start failure and notify once."""
-        self.GUI.trigger_config["enabled"] = False
-        self.trigger_enable_checkbox.blockSignals(True)
-        self.trigger_enable_checkbox.setChecked(False)
-        self.trigger_enable_checkbox.blockSignals(False)
-        self._set_trigger_controls_enabled(self._trigger_boards_available())
-        self.save_app_config()
-        # Force the failure dialog for this explicit enable attempt.
-        self.trigger_warning_shown = False
-        self._warn_trigger_issue("Trigger output", error)
-
-    def _warn_trigger_issue(self, title: str, message: str):
-        """Show a single warning dialog for trigger issues until reset."""
-        if self.trigger_warning_shown:
-            return
-        self.trigger_warning_shown = True
-        QMessageBox.warning(self, title, message)
-
-    def _apply_trigger_enable_state(self):
-        """Start or stop trigger output based on current enabled config state."""
-        enabled = bool(self.GUI.trigger_config.get("enabled", False))
-        if not enabled:
-            if self.trigger_manager.stop_pulse():
-                self.trigger_warning_shown = False
-                return
-            self._warn_trigger_issue("Trigger output", self.trigger_manager.last_error)
-            return
-
-        if self.trigger_manager.pulse_running:
-            self.trigger_warning_shown = False
-            return
-
-        resolved_port = str(self.GUI.trigger_config.get("port", "")).strip()
-        selected_port = self.trigger_port_dropdown.currentText().strip()
-        if not resolved_port and selected_port and selected_port != "No boards detected":
-            resolved_port = selected_port
-            self.GUI.trigger_config["port"] = resolved_port
-            self.save_app_config()
-
-        if not resolved_port:
-            self._handle_trigger_enable_failure("No trigger output port selected.")
-            return
-
-        pin = str(self.GUI.trigger_config.get("pin", "")).strip()
-        if not pin:
-            self._handle_trigger_enable_failure("Trigger output pin must not be empty.")
-            return
-
-        frequency_hz = int(self.GUI.trigger_config.get("frequency_hz", 60))
-        if frequency_hz < 1:
-            self._handle_trigger_enable_failure("Trigger frequency must be at least 1 Hz.")
-            return
-
-        if not self.trigger_manager.connect(resolved_port):
-            self._handle_trigger_enable_failure(self.trigger_manager.last_error)
-            return
-
-        if not self.trigger_manager.start_pulse(pin=pin, frequency_hz=frequency_hz):
-            self._handle_trigger_enable_failure(self.trigger_manager.last_error)
-            return
-
-        self.trigger_warning_shown = False
-
-    def stop_trigger_output_and_close_board(self):
-        """Best-effort trigger-output shutdown for application close."""
-        self.trigger_manager.stop_pulse()
 
     # Reading / Writing the Camera setups saved function --------------------------------------------------------
 
