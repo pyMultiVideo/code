@@ -92,6 +92,7 @@ class SettingsTab(QWidget):
         self.camera_table_groupbox.setLayout(self.camera_table_layout)
 
         # ffmpeg groupbox
+
         self.ffmpeg_groupbox = QGroupBox("FFMPEG")
         self.ffmpeg_layout = QHBoxLayout()
 
@@ -138,6 +139,7 @@ class SettingsTab(QWidget):
         self.ffmpeg_compression_standard_edit.currentTextChanged.connect(self.ffmpeg_compression_standard_changed)
 
         # Frame trigger groupbox.
+
         self.trigger_groupbox = QGroupBox("Frame trigger")
         self.trigger_layout = QHBoxLayout()
 
@@ -180,10 +182,9 @@ class SettingsTab(QWidget):
         self.page_layout.addStretch()
         self.setLayout(self.page_layout)
 
-        self.trigger_pin_edit.setText(str(self.GUI.trigger_config.get("pin", "X1")))
-        self.trigger_frequency_edit.setValue(int(self.GUI.trigger_config.get("frequency_hz", 60)))
-        self._refresh_trigger_port_options()
-        self._set_trigger_port_selection(str(self.GUI.trigger_config.get("port", "")))
+        self.trigger_pin_edit.setText(str(self.GUI.trigger_config["pin"]))
+        self.trigger_frequency_edit.setValue(int(self.GUI.trigger_config["frequency_hz"]))
+        self.initialise_trigger_port_selection()
 
         self.trigger_port_dropdown.currentTextChanged.connect(self.trigger_port_changed)
         self.trigger_pin_edit.editingFinished.connect(self.trigger_pin_changed)
@@ -285,7 +286,7 @@ class SettingsTab(QWidget):
                 self._set_trigger_controls_enabled(False)
             except PyboardError as e:
                 QMessageBox.warning(self, "Warning", f"Error starting pulse: {e}")
-        else: # Disable pulses
+        else:  # Disable pulses
             try:
                 self.trigger_manager.stop_pulse()
                 self._set_trigger_controls_enabled(True)
@@ -294,35 +295,46 @@ class SettingsTab(QWidget):
         self.GUI.trigger_config["enabled"] = enabled
         self.save_app_config()
 
+    def initialise_trigger_port_selection(self):
+        """Initialise the trigger port selection dropdown from config."""
+        self._refresh_trigger_port_options()
+        port = self.GUI.trigger_config["port"]
+        if port:
+            if port in self.trigger_manager.get_available_ports():
+                self._set_trigger_port_selection(port)
+                return
+            else:
+                QMessageBox.warning(self, "Warning", f"Trigger board not available on port: {port}")
+        self.trigger_port_dropdown.setCurrentIndex(-1)
+
     def _set_trigger_port_selection(self, selected_port: str):
         """Select the given trigger port in the dropdown when present."""
-        if not selected_port:
-            return
         idx = self.trigger_port_dropdown.findText(selected_port)
         if idx >= 0:
             self.trigger_port_dropdown.setCurrentIndex(idx)
 
     def _set_trigger_controls_enabled(self, enabled: bool):
-        """Enable or lock trigger controls based on board and output state."""
+        """Enable/disable trigger settings controls."""
         self.trigger_port_dropdown.setEnabled(enabled)
         self.trigger_pin_edit.setEnabled(enabled)
         self.trigger_frequency_edit.setEnabled(enabled)
 
     def _refresh_trigger_port_options(self):
-        """Refresh available trigger ports while preserving sensible selection."""
+        """Refresh available trigger ports while preserving current selection."""
+        is_selected = self.trigger_port_dropdown.currentIndex() >= 0
         current_port = self.trigger_port_dropdown.currentText()
         ports = self.trigger_manager.get_available_ports()
-        if self.trigger_manager.pyboard_port:
-            ports.append(self.trigger_manager.pyboard_port)
-        # self.trigger_port_dropdown.blockSignals(True)
+        self.trigger_port_dropdown.blockSignals(True)
         self.trigger_port_dropdown.clear()
         if ports:
             self.trigger_port_dropdown.addItems(ports)
         else:
             self.trigger_port_dropdown.addItem("No boards detected")
-        self._set_trigger_port_selection(current_port)
-        # self.trigger_port_dropdown.blockSignals(False)
-
+        if is_selected:
+            self._set_trigger_port_selection(current_port)
+        else:
+            self.trigger_port_dropdown.setCurrentIndex(-1)
+        self.trigger_port_dropdown.blockSignals(False)
 
     # Reading / Writing the Camera setups saved function --------------------------------------------------------
 

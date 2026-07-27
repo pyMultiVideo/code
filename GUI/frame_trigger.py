@@ -129,7 +129,7 @@ class PyboardManager:
         pyboard_ports = [port for port in candidate_ports if port in self._pyboard_ports]
         if active_port and active_port not in pyboard_ports:
             pyboard_ports = [active_port] + pyboard_ports
-        return pyboard_ports
+        return sorted(pyboard_ports)
 
     def disconnect(self):
         """Close the current board connection, if any."""
@@ -169,7 +169,7 @@ class PyboardManager:
         except PyboardError:
             self.pulse_running = False
             self.disconnect()
-            raise (PyboardError(f"Could not start pulse."))
+            raise (PyboardError("Could not start pulse."))
 
     def stop_pulse(self) -> bool:
         """Stop trigger pulse output and release board resources."""
