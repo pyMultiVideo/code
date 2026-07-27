@@ -21,7 +21,7 @@ class SpinnakerCamera(GenericCamera):
             "mono8": "Mono8",
         }
 
-        self._trigger_line = 2  # Trigger line name
+        self._trigger_line = 0  # Optically isolated input.
         self._previous_frame_number = None
 
         # Initialise camera -------------------------------------------------------------------------------------------
@@ -269,10 +269,6 @@ class SpinnakerCamera(GenericCamera):
 
 class Chameleon3Camera(SpinnakerCamera):
     """Spinnaker camera implementation for Chameleon3 model-specific behavior."""
-
-    def __init__(self, unique_id):
-        super().__init__(unique_id)
-        self._trigger_line = 0  # Optically isolated input (GPIO pin 9).
 
     def _configure_gpio(self, chunk_selector):
         """Configure camera to include GPIO pinstates in image data. Getting GPIO pinstate
