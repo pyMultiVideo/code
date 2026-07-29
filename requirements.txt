@@ -3,9 +3,3 @@ PyQt6
 pyqtgraph 
 opencv-python 
 pyserial
-
-fire
-tqdm 
-matplotlib
-seaborn
-pandas
