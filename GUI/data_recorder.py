@@ -139,4 +139,4 @@ class Data_recorder:
         self.ffmpeg_process.stdin.write(frame)
         for gpio_pinstate, timestamp in zip(new_images["gpio_data"], new_images["timestamps"]):
             rel_timestamp = timestamp - self.first_timestamp
-            self.gpio_writer.writerow(list(gpio_pinstate) + [rel_timestamp])
+            self.gpio_writer.writerow(list(gpio_pinstate.astype(int)) + [rel_timestamp])
