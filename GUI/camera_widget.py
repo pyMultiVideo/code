@@ -293,7 +293,7 @@ class CameraWidget(QGroupBox):
         # Compute average framerate and display over image.
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
         calculated_framerate = 1e6 / avg_time_diff
-        color = "r" if (abs(calculated_framerate - int(self.settings.fps)) > 1) else "g"
+        color = "r" if (abs(calculated_framerate - int(self.settings.fps)) > int(self.settings.fps) * 0.05) else "g"
         self.frame_rate_text.setText(f"FPS: {calculated_framerate:.2f}", color=color)
         # Update GPIO status indicators.
         inter_update_interval = (self.frame_timestamps[-1] - self.last_video_update_timestamp) / 1e6  # in seconds

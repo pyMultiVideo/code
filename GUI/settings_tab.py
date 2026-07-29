@@ -471,7 +471,7 @@ class Camera_table_item:
         # FPS edit
         self.fps_edit = QSpinBox()
         # Set the min and max values of the spinbox
-        self.fps_edit.setRange(*self.camera_api.get_frame_rate_range(self.settings.exposure_time))
+        self.fps_edit.setRange(*self.get_camera_frame_rate_range())
         self.fps_edit.setEnabled(not self.settings.external_trigger)
         if self.settings.fps:
             self.settings.fps = str(self.settings.fps)
@@ -481,7 +481,7 @@ class Camera_table_item:
         # Exposure time edit
         self.exposure_time_edit = QSpinBox()
         self.exposure_time_edit.setSingleStep(100)
-        self.exposure_time_edit.setRange(*self.camera_api.get_exposure_time_range(self.settings.fps))
+        self.exposure_time_edit.setRange(*self.get_camera_exposure_time_range())
         self.exposure_time_edit.setValue(self.settings.exposure_time)
         self.exposure_time_edit.setEnabled(self.camera_api.manual_control_enabled)
         if self.settings.exposure_time:
@@ -498,11 +498,9 @@ class Camera_table_item:
 
         # Configure what settings are available manual camera control is not enabled
         if self.camera_api.manual_control_enabled:
-            # Connect functions is camera control enabled
             self.exposure_time_edit.valueChanged.connect(self.camera_exposure_time_changed)
             self.gain_edit.valueChanged.connect(self.camera_gain_changed)
-            # Connect the Set range functions
-            self.exposure_time_edit.setRange(*self.camera_api.get_exposure_time_range(self.settings.fps))
+            self.exposure_time_edit.setRange(*self.get_camera_exposure_time_range())
             self.gain_edit.setRange(*self.camera_api.get_gain_range())
         else:  # The edit boxes are not enabled if no function is connected
             self.exposure_time_edit.setEnabled(False)
@@ -546,6 +544,22 @@ class Camera_table_item:
             return self.setups_tab.camera_preview.label == self.get_label()
         return False
 
+    def get_camera_frame_rate_range(self):
+        """Get camera frame rate range from camera API. If not available set range to fixed values."""
+        try:
+            return self.camera_api.get_frame_rate_range()
+        except Exception:
+            return (1, 150)
+
+    def get_camera_exposure_time_range(self):
+        """Get camera exposure time range from camera API. If not available, calculate based on fps."""
+        max_exposure_time = int(1e6 / (int(self.settings.fps) + 5))
+        try:
+            exposure_range = self.camera_api.get_exposure_time_range()
+            return (exposure_range[0], min(exposure_range[1], max_exposure_time))
+        except Exception:
+            return (1, max_exposure_time)
+
     # Attribute Changed Functions -----------------------------------------------------------------
 
     def camera_name_changed(self):
@@ -574,30 +588,29 @@ class Camera_table_item:
     # Camera Parameters Changed--------------------------------------------------------------------
 
     def camera_fps_changed(self):
-        """Called when fps text of setup is edited."""
+        """Called when fps control changed."""
         self.settings.fps = int(self.fps_edit.text())
         self.setups_tab.update_saved_setups(setup=self)
         if self.current_camera_preview_showing():
             self.setups_tab.camera_preview.camera_api.set_frame_rate(self.settings.fps)
-        self.exposure_time_edit.setRange(*self.camera_api.get_exposure_time_range(self.settings.fps))
+        self.exposure_time_edit.setRange(*self.get_camera_exposure_time_range())
 
     def camera_exposure_time_changed(self):
-        """"""
+        """Called when exposure time control changed."""
         self.settings.exposure_time = int(self.exposure_time_edit.text())
         self.setups_tab.update_saved_setups(setup=self)
         if self.current_camera_preview_showing():
             self.setups_tab.camera_preview.camera_api.set_exposure_time(self.settings.exposure_time)
-        self.fps_edit.setRange(*self.camera_api.get_frame_rate_range(self.settings.exposure_time))
 
     def camera_gain_changed(self):
-        """"""
+        """Called when gain control changed."""
         self.settings.gain = float(self.gain_edit.text())
         self.setups_tab.update_saved_setups(setup=self)
         if self.current_camera_preview_showing():
             self.setups_tab.camera_preview.camera_api.set_gain(self.settings.gain)
 
     def camera_external_trigger_changed(self):
-        """Change if the camera is"""
+        """Called when external trigger control changed."""
         self.settings.external_trigger = self.external_trigger_checkbox.isChecked()
         self.setups_tab.update_saved_setups(setup=self)
         # Restart the preview if open
@@ -610,7 +623,7 @@ class Camera_table_item:
     # FFMPEG Parameters ---------------------------------------------------------------------------
 
     def camera_downsampling_factor_changed(self):
-        """Called when the downsampling factor of the seutp is edited"""
+        """Called when the downsampling factor control changed."""
         self.settings.downsampling_factor = int(self.downsampling_factor_edit.currentText())
         self.setups_tab.update_saved_setups(setup=self)
 

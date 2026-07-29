@@ -36,7 +36,7 @@ class GenericCamera:
 
     # Get camera parameters -------------------------------------------------------------------------------
 
-    def get_frame_rate_range(self, *exposure_time: float) -> tuple[int, int]:
+    def get_frame_rate_range(self) -> tuple[int, int]:
         """Get the min and max frame rate in Hz."""
         raise NotImplementedError
 
@@ -44,7 +44,7 @@ class GenericCamera:
         """Get exposure of camera (optional, used only in camera_preview)."""
         return None
 
-    def get_exposure_time_range(self, *fps: int) -> tuple[int, int]:
+    def get_exposure_time_range(self) -> tuple[int, int]:
         """Get exposure time range of camera"""
         raise NotImplementedError
 
@@ -118,11 +118,23 @@ class GenericCamera:
 
     def configure_settings(self, CameraConfig) -> None:
         """Apply settings from a CameraConfig object using the backend setters."""
-        self.set_acqusition_mode(CameraConfig.external_trigger)
+        try:
+            self.set_acqusition_mode(CameraConfig.external_trigger)
+        except Exception as e:
+            print(f"Error occurred while setting acquisition mode: {e}")
         if not CameraConfig.external_trigger:
-            self.set_frame_rate(CameraConfig.fps)
-        self.set_gain(CameraConfig.gain)
-        self.set_exposure_time(CameraConfig.exposure_time)
+            try:
+                self.set_frame_rate(CameraConfig.fps)
+            except Exception as e:
+                print(f"Error occurred while setting frame rate: {e}")
+        try:
+            self.set_gain(CameraConfig.gain)
+        except Exception as e:
+            print(f"Error occurred while setting gain: {e}")
+        try:
+            self.set_exposure_time(CameraConfig.exposure_time)
+        except Exception as e:
+            print(f"Error occurred while setting exposure time: {e}")
 
     def initialize_preferred_pixel_format(self) -> None:
         """Resolve, apply, and store the preferred pixel format for this camera. The preferred pixel

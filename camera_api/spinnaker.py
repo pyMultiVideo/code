@@ -73,30 +73,19 @@ class SpinnakerCamera(GenericCamera):
 
     # Functions to get the camera parameters --------------------------------------------------------------------------
 
-    def get_frame_rate_range(self, *exposure_time) -> tuple[int, int]:
+    def get_frame_rate_range(self) -> tuple[int, int]:
         """Get the min and max frame rate (Hz)."""
-        try:
-            node = PySpin.CFloatPtr(self._cam.GetNodeMap().GetNode("AcquisitionFrameRate"))
-            return ceil(node.GetMin()), floor(node.GetMax())
-        except PySpin.SpinnakerException:
-            if exposure_time:
-                max_frame_rate = 1e6 / exposure_time[0]  # Use the first value of the tuple
-                return ceil(1), floor(max_frame_rate)
-            else:
-                raise ValueError("Exposure time must be provided to calculate frame rate range.")
+        node = PySpin.CFloatPtr(self._cam.GetNodeMap().GetNode("AcquisitionFrameRate"))
+        return ceil(node.GetMin()), floor(node.GetMax())
 
     def get_exposure_time(self) -> float:
         """Get exposure of camera"""
         return float(PySpin.CFloatPtr(self._nodemap.GetNode("ExposureTime")).GetValue())
 
-    def get_exposure_time_range(self, *fps) -> tuple[int, int]:
+    def get_exposure_time_range(self) -> tuple[int, int]:
         """Get the min and max exposure time (us)"""
-        try:
-            node = PySpin.CFloatPtr(self._cam.GetNodeMap().GetNode("ExposureTime"))
-            return ceil(node.GetMin()), floor(node.GetMax())
-        except PySpin.SpinnakerException:
-            max_exposure_time = 1e6 / fps[0] + 8  # Underestimate maximum since init will fail if too big
-            return ceil(7), floor(max_exposure_time)
+        node = PySpin.CFloatPtr(self._cam.GetNodeMap().GetNode("ExposureTime"))
+        return ceil(node.GetMin()), floor(node.GetMax())
 
     def get_gain(self) -> int:
         """Get camera gain setting in dB."""

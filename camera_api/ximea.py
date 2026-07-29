@@ -5,8 +5,6 @@ from math import floor, ceil
 
 from .generic_camera import GenericCamera
 
-# Look at the multiple camera example. There is a set_limit_bandwidth method that could cause problems.
-
 
 class XimeaCamera(GenericCamera):
     """Inherits from the camera class and adds the Ximea specific functions from the xiAPI library"""
@@ -43,28 +41,17 @@ class XimeaCamera(GenericCamera):
 
     # Functions to get the camera parameters ----------------------------------------------
 
-    def get_frame_rate_range(self, *exposure_time) -> tuple[int, int]:
+    def get_frame_rate_range(self) -> tuple[int, int]:
         """Get the min and max frame rate (Hz)."""
-        try:
-            return ceil(self._cam.get_framerate_minimum()), floor(self._cam.get_framerate_maximum())
-        except xiapi.Xi_error:
-            if exposure_time:
-                max_frame_rate = 1e6 / exposure_time[0]  # Use the first value of the tuple
-                return ceil(1), floor(max_frame_rate)
-            else:
-                raise ValueError("Exposure time must be provided to calculate frame rate range.")
+        return ceil(self._cam.get_framerate_minimum()), floor(self._cam.get_framerate_maximum())
 
     def get_exposure_time(self) -> float:
         """Get exposure of camera"""
         return self._cam.get_exposure()
 
-    def get_exposure_time_range(self, *fps) -> tuple[int, int]:
+    def get_exposure_time_range(self) -> tuple[int, int]:
         """Get the min and max exposure time (us)"""
-        try:
-            return ceil(self._cam.get_exposure_minimum()), floor(self._cam.get_exposure_maximum())
-        except xiapi.Xi_error:
-            max_exposure_time = 1e6 / fps[0] + 8
-            return ceil(7), floor(max_exposure_time)
+        return ceil(self._cam.get_exposure_minimum()), floor(self._cam.get_exposure_maximum())
 
     def get_gain(self) -> int:
         """Get camera gain setting in dB."""
