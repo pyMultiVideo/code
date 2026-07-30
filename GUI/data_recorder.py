@@ -130,7 +130,6 @@ class Data_recorder:
         """Record newly aquired images and GPIO pinstates."""
         if self.first_timestamp is None:
             self.first_timestamp = new_images["timestamps"][0]
-            self.timestamp_digit_count = len(str(self.first_timestamp))
         self.recorded_frames += len(new_images["images"])
         self.dropped_frames += new_images["dropped_frames"] + ffmpeg_new_dropped_frames
         if new_images["dropped_frames"]:

@@ -57,7 +57,6 @@ class CameraWidget(QGroupBox):
         self.latest_image = None
         self.last_video_update_timestamp = 0
         self.frame_timestamps = deque([0], maxlen=10)
-        self.controls_visible = True
         self.recording = False
         self.new_ffmpeg_dropped_frames = 0  # Number of frames dropped from ffmpeg queue since last data write.
 
@@ -384,7 +383,6 @@ class CameraWidget(QGroupBox):
 
     def set_control_visibility(self, visible: bool) -> None:
         """Set camera control visibility."""
-        self.controls_visible = visible
         for i in range(self.header_layout.count()):
             widget = self.header_layout.itemAt(i).widget()
             widget.setVisible(visible)
