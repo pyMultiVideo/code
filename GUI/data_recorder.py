@@ -31,6 +31,7 @@ class Data_recorder:
 
     def __init__(self, camera_widget):
         self.camera_widget = camera_widget
+        self.ffmpeg_config = self.camera_widget.GUI.ffmpeg_config
 
     def start_recording(self, subject_id, save_dir, settings):
         """Open data files and launches FFMPEG process"""
@@ -65,7 +66,6 @@ class Data_recorder:
             "exposure_time": self.settings.exposure_time,
             "gain": self.settings.gain,
             "pixel_format": self.camera_widget.camera_api.pixel_format.name,
-            "downsampling_factor": self.settings.downsampling_factor,
             "device_model": self.camera_widget.camera_api.device_model,
             "device_serial_number": self.camera_widget.camera_api.serial_number,
             # Recording information
@@ -76,6 +76,11 @@ class Data_recorder:
             "dropped_frames": None,
             "camera_buffer_overflow": False,
             "ffmpeg_buffer_overflow": False,
+            # FFMPEG config settings
+            "downsampling_factor": self.settings.downsampling_factor,
+            "compression_standard": self.ffmpeg_config["compression_standard"],
+            "encoding_speed": self.ffmpeg_config["encoding_speed"],
+            "encoding_crf": self.ffmpeg_config["crf"],
         }
         with open(self.metadata_filepath, "w") as meta_data_file:
             json.dump(self.metadata, meta_data_file, indent=4)
@@ -91,14 +96,12 @@ class Data_recorder:
                 f"-pix_fmt {self.camera_widget.camera_api.pixel_format.ffmpeg}",  # Input pixel format for ffmpeg
                 f"-r {self.settings.fps}",  # Frame rate
                 "-i -",  # input comes from a pipe (stdin)
-                f"-c:v {ffmpeg_encoder_map[self.camera_widget.GUI.ffmpeg_config['compression_standard']]}",  # Codec
+                f"-c:v {ffmpeg_encoder_map[self.ffmpeg_config['compression_standard']]}",  # Codec
                 f"-s {self.downsampled_width}x{self.downsampled_height}",  # Output frame size after any downsampling.
                 "-pix_fmt yuv420p",  # Output pixel format
-                f"-preset {self.camera_widget.GUI.ffmpeg_config['encoding_speed']}",  # Enc. speed [fast, medium, slow]
+                f"-preset {self.ffmpeg_config['encoding_speed']}",  # Enc. speed [fast, medium, slow]
                 (
-                    f"-cq {self.camera_widget.GUI.ffmpeg_config['crf']}"
-                    if GPU_AVAILABLE
-                    else f"-crf {self.camera_widget.GUI.ffmpeg_config['crf']}"
+                    f"-cq {self.ffmpeg_config['crf']}" if GPU_AVAILABLE else f"-crf {self.ffmpeg_config['crf']}"
                 ),  # Controls quality vs filesize
                 f'"{self.video_filepath}"',  # Output file path
             ]
