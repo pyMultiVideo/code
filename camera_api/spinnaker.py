@@ -7,7 +7,7 @@ PYSPINSYSTEM = PySpin.System.GetInstance()  # One PySpin system instance per pMV
 
 
 class SpinnakerCamera(GenericCamera):
-    """Inherits from the camera class and adds the spinnaker specific functions from the PySpin library"""
+    """Inherits from GenericCamera class and adds spinnaker specific functions from the PySpin library"""
 
     def __init__(self, unique_id):
         super().__init__(unique_id)
@@ -48,16 +48,13 @@ class SpinnakerCamera(GenericCamera):
         sbc_node.SetValue(100)
 
         # Configure image metadata to include GPIO pinstate and image timestamp.
-
         chunk_selector = PySpin.CEnumerationPtr(self._nodemap.GetNode("ChunkSelector"))
-
         self._configure_gpio(chunk_selector)
-
         chunk_selector.SetIntValue(chunk_selector.GetEntryByName("Timestamp").GetValue())
         self._cam.ChunkEnable.SetValue(True)
         self._cam.ChunkModeActive.SetValue(True)
 
-        # Acqusition mode continuous
+        # Set continuous acquisition mode
         acq_mode = PySpin.CEnumerationPtr(self._nodemap.GetNode("AcquisitionMode"))
         acq_mode.SetIntValue(acq_mode.GetEntryByName("Continuous").GetValue())
 
@@ -116,9 +113,11 @@ class SpinnakerCamera(GenericCamera):
 
     # Configure Camera for external acqusition
 
-    def set_acqusition_mode(self, external_trigger: bool):
-        if external_trigger:
-            # Ensure trigger mode is off before configuring
+    def set_external_trigger_enable(self, enable: bool):
+        """Configure whether camera uses external triggering for frame acquisition."""
+        if enable: # Enable external triggering
+
+            # Ensure external trigger mode is off before configuring settings
             trigger_mode = PySpin.CEnumerationPtr(self._nodemap.GetNode("TriggerMode"))
             trigger_mode.SetIntValue(trigger_mode.GetEntryByName("Off").GetValue())
 
@@ -142,6 +141,7 @@ class SpinnakerCamera(GenericCamera):
             trigger_overlap.SetIntValue(trigger_overlap.GetEntryByName("ReadOut").GetValue())
 
         else:  # Internal triggering
+            
             # Ensure that the trigger mode is off so manual camera control is enabled
             trigger_mode = PySpin.CEnumerationPtr(self._nodemap.GetNode("TriggerMode"))
             trigger_mode.SetIntValue(trigger_mode.GetEntryByName("Off").GetValue())
@@ -162,21 +162,6 @@ class SpinnakerCamera(GenericCamera):
         """Extract GPIO pin states from chunk data, return as numpy boolean array."""
         gpio_binary = format(chunk_data.GetExposureEndLineStatusAll(), "04b")
         return np.array([int(gpio_binary[3]), int(gpio_binary[1]), int(gpio_binary[0])], dtype=bool)
-
-    def _get_trigger_lines(self):
-        """Get a list of the GPI lines that can be used to trigger frame acquisition"""
-        trigger_lines = []
-        try:
-            line_selector = PySpin.CEnumerationPtr(self._nodemap.GetNode("LineSelector"))
-            for entry in line_selector.GetEntries():
-                entry = PySpin.CEnumEntryPtr(entry)
-                if PySpin.IsAvailable(entry) and PySpin.IsReadable(entry):
-                    line_name = entry.GetSymbolic()
-                    if "Line" in line_name:
-                        trigger_lines.append(line_name)
-        except PySpin.SpinnakerException as e:
-            print(f"Error retrieving trigger lines: {e}")
-        return trigger_lines
 
     # Functions to set camera paramteters -----------------------------------------------------------------------------
 

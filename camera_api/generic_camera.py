@@ -41,7 +41,7 @@ class GenericCamera:
         raise NotImplementedError
 
     def get_exposure_time(self) -> Optional[float]:
-        """Get exposure of camera (optional, used only in camera_preview)."""
+        """Get exposure of camera in microseconds, optional - used only in camera_preview."""
         return None
 
     def get_exposure_time_range(self) -> tuple[int, int]:
@@ -49,7 +49,7 @@ class GenericCamera:
         raise NotImplementedError
 
     def get_gain(self) -> Optional[float]:
-        """Get camera gain setting in dB (optional, used only in camera_preview)."""
+        """Get camera gain setting in dB, optional - used only in camera_preview."""
         return None
 
     def get_gain_range(self) -> tuple[int, int]:
@@ -78,8 +78,8 @@ class GenericCamera:
         """Set the gain of the camera"""
         raise NotImplementedError
 
-    def set_acqusition_mode(self, external_trigger: bool):
-        """Configure the acqusition mode of the camera"""
+    def set_external_trigger_enable(self, enable: bool):
+        """Configure whether camera uses external triggering for frame acquisition."""
         raise NotImplementedError
 
     def _set_pixel_format(self, pixel_format: str) -> None:
@@ -93,7 +93,7 @@ class GenericCamera:
         raise NotImplementedError
 
     def stop_capturing(self) -> None:
-        """Stop acquiring images from the camera"""
+        """Stop acquiring images from the camera."""
         raise NotImplementedError
 
     def get_available_images(self):
@@ -119,9 +119,9 @@ class GenericCamera:
     def configure_settings(self, CameraConfig) -> None:
         """Apply settings from a CameraConfig object using the backend setters."""
         try:
-            self.set_acqusition_mode(CameraConfig.external_trigger)
+            self.set_external_trigger_enable(CameraConfig.external_trigger)
         except Exception as e:
-            print(f"Error occurred while setting acquisition mode: {e}")
+            print(f"Error occurred while setting external trigger mode: {e}")
         if not CameraConfig.external_trigger:
             try:
                 self.set_frame_rate(CameraConfig.fps)
@@ -137,7 +137,7 @@ class GenericCamera:
             print(f"Error occurred while setting exposure time: {e}")
 
     def initialize_preferred_pixel_format(self) -> None:
-        """Resolve, apply, and store the preferred pixel format for this camera. The preferred pixel
+        """Set the camera pixel format given preferred and available formats. The selected pixel
         format is the first format in pixel_format_priority that is supported by the camera."""
         supported_native_formats = self._get_supported_pixel_formats()
         supported_formats = [
@@ -155,9 +155,10 @@ class GenericCamera:
 
 
 def list_available_cameras() -> list[str]:
-    """Return a list of the available cameras identifier strings.
-    naming format requirements: NUMBERS-MODULENAME
-    type(name) == str
+    """Return a list of the available cameras identifier strings.  The camera identifier 
+    strings follow the naming format requirements: CAMERA_ID-MODULENAME
+    where CAMERA_ID is the unique identifier used by the camera system to identify the camera,
+    and MODULENAME is the name of the corresponding pyMultivideo API module.
     """
     unique_id_list = []
     return unique_id_list

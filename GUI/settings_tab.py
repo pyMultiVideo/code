@@ -615,7 +615,7 @@ class Camera_table_item:
         self.setups_tab.update_saved_setups(setup=self)
         # Restart the preview if open
         if self.current_camera_preview_showing():
-            self.setups_tab.camera_preview.camera_api.set_acqusition_mode(self.settings.external_trigger)
+            self.setups_tab.camera_preview.camera_api.set_external_trigger_enable(self.settings.external_trigger)
             self.setups_tab.camera_preview.update_viewfinder_text()
         # FPS spin box only enabled if external trigger not enabled.
         self.fps_edit.setEnabled(not self.settings.external_trigger)

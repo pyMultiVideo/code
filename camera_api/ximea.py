@@ -7,7 +7,7 @@ from .generic_camera import GenericCamera
 
 
 class XimeaCamera(GenericCamera):
-    """Inherits from the camera class and adds the Ximea specific functions from the xiAPI library"""
+    """Inherits from GenericCamera class and adds the Ximea specific functions from the xiAPI library"""
 
     def __init__(self, unique_id):
         super().__init__(unique_id)
@@ -98,16 +98,16 @@ class XimeaCamera(GenericCamera):
 
     # Configuring Acqusition mode -----------------------------------------------------------------
 
-    def set_acqusition_mode(self, external_trigger: bool):
-        """Setting the camera to external triggering or not"""
+    def set_external_trigger_enable(self, enable: bool):
+        """Configure whether camera uses external triggering for frame acquisition."""
         was_streaming = self._is_streaming()  # Check if the camera was streaming initially
-        if external_trigger:
+        if enable: # Use external trigger mode
             if was_streaming:
                 self._cam.stop_acquisition()
             self._cam.set_trigger_source("XI_TRG_EDGE_RISING")  # Turn Trigger back on
             self._cam.set_trigger_selector("XI_TRG_SEL_FRAME_START")  # Trigger on frame start
             self._cam.set_acq_frame_burst_count(1)  # Single frame acquisition mode
-        else:  # Turn off external trigger mode in case it is already enabled
+        else:  # Internal triggering.
             if was_streaming:
                 self._cam.stop_acquisition()
             self._cam.set_trigger_source("XI_TRG_OFF")
