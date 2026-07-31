@@ -476,35 +476,30 @@ class Camera_table_item:
         if self.settings.fps:
             self.settings.fps = str(self.settings.fps)
             self.fps_edit.setValue(int(self.settings.fps))
-        self.fps_edit.valueChanged.connect(self.camera_fps_changed)
+        self.fps_edit.setEnabled(self.camera_api.has_manual_control["fps"])
+        if self.camera_api.has_manual_control["fps"]:
+            self.fps_edit.valueChanged.connect(self.camera_fps_changed)
 
         # Exposure time edit
         self.exposure_time_edit = QSpinBox()
         self.exposure_time_edit.setSingleStep(100)
         self.exposure_time_edit.setRange(*self.get_camera_exposure_time_range())
         self.exposure_time_edit.setValue(self.settings.exposure_time)
-        self.exposure_time_edit.setEnabled(self.camera_api.manual_control_enabled)
         if self.settings.exposure_time:
             self.exposure_time_edit.setValue(int(self.settings.exposure_time))
+        self.exposure_time_edit.setEnabled(self.camera_api.has_manual_control["exposure"])
+        if self.camera_api.has_manual_control["exposure"]:
+            self.exposure_time_edit.valueChanged.connect(self.camera_exposure_time_changed)
 
         # Gain edit
         self.gain_edit = QSpinBox()
+        self.gain_edit.setRange(*self.camera_api.get_gain_range())
         self.gain_edit.setValue(int(self.settings.gain))
-        if self.settings.gain:
-            self.gain_edit.setValue(int(self.settings.gain))
-
-        self.gain_edit.setEnabled(self.camera_api.manual_control_enabled)
-        self.settings.pixel_format = self.camera_api.pixel_format.name
-
-        # Configure what settings are available manual camera control is not enabled
-        if self.camera_api.manual_control_enabled:
-            self.exposure_time_edit.valueChanged.connect(self.camera_exposure_time_changed)
+        self.gain_edit.setEnabled(self.camera_api.has_manual_control["gain"])
+        if self.camera_api.has_manual_control["gain"]:
             self.gain_edit.valueChanged.connect(self.camera_gain_changed)
-            self.exposure_time_edit.setRange(*self.get_camera_exposure_time_range())
-            self.gain_edit.setRange(*self.camera_api.get_gain_range())
-        else:  # The edit boxes are not enabled if no function is connected
-            self.exposure_time_edit.setEnabled(False)
-            self.gain_edit.setEnabled(False)
+
+        self.settings.pixel_format = self.camera_api.pixel_format.name
 
         # Downsampling factor edit
         self.downsampling_factor_edit = QComboBox()
@@ -516,7 +511,9 @@ class Camera_table_item:
         self.external_trigger_checkbox = TableCheckbox()
         if self.settings.external_trigger:
             self.external_trigger_checkbox.setChecked(bool(self.settings.external_trigger))
-        self.external_trigger_checkbox.checkbox.stateChanged.connect(self.camera_external_trigger_changed)
+        self.external_trigger_checkbox.checkbox.setEnabled(self.camera_api.has_manual_control["trigger"])
+        if self.camera_api.has_manual_control["trigger"]:
+            self.external_trigger_checkbox.checkbox.stateChanged.connect(self.camera_external_trigger_changed)
 
         # Preview button.
         self.preview_camera_button = QPushButton("Preview")
@@ -618,7 +615,7 @@ class Camera_table_item:
             self.setups_tab.camera_preview.camera_api.set_external_trigger_enable(self.settings.external_trigger)
             self.setups_tab.camera_preview.update_viewfinder_text()
         # FPS spin box only enabled if external trigger not enabled.
-        self.fps_edit.setEnabled(not self.settings.external_trigger)
+        self.fps_edit.setEnabled(not self.settings.external_trigger and self.camera_api.has_manual_control["fps"])
 
     # FFMPEG Parameters ---------------------------------------------------------------------------
 

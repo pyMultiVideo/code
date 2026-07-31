@@ -15,12 +15,11 @@ class SpinnakerCamera(GenericCamera):
         # Options for camera -----------------------------------------------------------
         self.serial_number, self._api = self.unique_id.rsplit("-", 1)
         self.N_GPIO = 3  # Number of GPIO pins
-        self.manual_control_enabled = True
+        self.has_manual_control = {"fps": True, "exposure": True, "gain": True, "trigger": True}
         self.pixel_format_aliases = {  # Maps GUI pixel format names to spinnaker pixel format names.
             "bayer_rggb8": "BayerRG8",
             "mono8": "Mono8",
         }
-
         self._trigger_line = 0  # Optically isolated input.
         self._previous_frame_number = None
 
@@ -115,7 +114,7 @@ class SpinnakerCamera(GenericCamera):
 
     def set_external_trigger_enable(self, enable: bool):
         """Configure whether camera uses external triggering for frame acquisition."""
-        if enable: # Enable external triggering
+        if enable:  # Enable external triggering
 
             # Ensure external trigger mode is off before configuring settings
             trigger_mode = PySpin.CEnumerationPtr(self._nodemap.GetNode("TriggerMode"))
@@ -141,7 +140,7 @@ class SpinnakerCamera(GenericCamera):
             trigger_overlap.SetIntValue(trigger_overlap.GetEntryByName("ReadOut").GetValue())
 
         else:  # Internal triggering
-            
+
             # Ensure that the trigger mode is off so manual camera control is enabled
             trigger_mode = PySpin.CEnumerationPtr(self._nodemap.GetNode("TriggerMode"))
             trigger_mode.SetIntValue(trigger_mode.GetEntryByName("Off").GetValue())

@@ -24,8 +24,13 @@ class GenericCamera:
         self.N_GPIO = 0  # Number of GPIO pins used as inputs for sync pulses.
         self.image_width = None
         self.image_height = None
-        self.manual_control_enabled = False  # Whether camera supports manual gain / exposure controls.
         self.pixel_format_aliases = {}  # Maps GUI pixel format names to backend pixel format names.
+        self.has_manual_control = {  # Whether camera supports manual control of these parameters.
+            "fps": False,
+            "exposure": False,
+            "gain": False,
+            "trigger": False,
+        }
 
         # Camera parameters set by GenericCamera methods (not backend-specific).
         self.pixel_format: PixelFormat | None = None  # set by initialize_preferred_pixel_format().
@@ -118,23 +123,30 @@ class GenericCamera:
 
     def configure_settings(self, CameraConfig) -> None:
         """Apply settings from a CameraConfig object using the backend setters."""
-        try:
-            self.set_external_trigger_enable(CameraConfig.external_trigger)
-        except Exception as e:
-            print(f"Error occurred while setting external trigger mode: {e}")
-        if not CameraConfig.external_trigger:
+
+        if self.has_manual_control["trigger"]:
+            try:
+                self.set_external_trigger_enable(CameraConfig.external_trigger)
+            except Exception as e:
+                print(f"Error occurred while setting external trigger mode: {e}")
+
+        if self.has_manual_control["fps"] and not CameraConfig.external_trigger:
             try:
                 self.set_frame_rate(CameraConfig.fps)
             except Exception as e:
                 print(f"Error occurred while setting frame rate: {e}")
-        try:
-            self.set_gain(CameraConfig.gain)
-        except Exception as e:
-            print(f"Error occurred while setting gain: {e}")
-        try:
-            self.set_exposure_time(CameraConfig.exposure_time)
-        except Exception as e:
-            print(f"Error occurred while setting exposure time: {e}")
+
+        if self.has_manual_control["gain"]:
+            try:
+                self.set_gain(CameraConfig.gain)
+            except Exception as e:
+                print(f"Error occurred while setting gain: {e}")
+
+        if self.has_manual_control["exposure"]:
+            try:
+                self.set_exposure_time(CameraConfig.exposure_time)
+            except Exception as e:
+                print(f"Error occurred while setting exposure time: {e}")
 
     def initialize_preferred_pixel_format(self) -> None:
         """Set the camera pixel format given preferred and available formats. The selected pixel
@@ -155,7 +167,7 @@ class GenericCamera:
 
 
 def list_available_cameras() -> list[str]:
-    """Return a list of the available cameras identifier strings.  The camera identifier 
+    """Return a list of the available cameras identifier strings.  The camera identifier
     strings follow the naming format requirements: CAMERA_ID-MODULENAME
     where CAMERA_ID is the unique identifier used by the camera system to identify the camera,
     and MODULENAME is the name of the corresponding pyMultivideo API module.

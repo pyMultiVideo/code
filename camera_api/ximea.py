@@ -16,7 +16,7 @@ class XimeaCamera(GenericCamera):
         # pMV Information
         self.serial_number, self._api = self.unique_id.rsplit("-", 1)
         self.N_GPIO = 1  # Number of GPIO pins
-        self.manual_control_enabled = True
+        self.has_manual_control = {"fps": True, "exposure": True, "gain": True, "trigger": True}
         self.pixel_format_aliases = {
             "bayer_rggb8": None,
             "mono8": "XI_MONO8",
@@ -101,7 +101,7 @@ class XimeaCamera(GenericCamera):
     def set_external_trigger_enable(self, enable: bool):
         """Configure whether camera uses external triggering for frame acquisition."""
         was_streaming = self._is_streaming()  # Check if the camera was streaming initially
-        if enable: # Use external trigger mode
+        if enable:  # Use external trigger mode
             if was_streaming:
                 self._cam.stop_acquisition()
             self._cam.set_trigger_source("XI_TRG_EDGE_RISING")  # Turn Trigger back on
