@@ -9,12 +9,10 @@ from .generic_camera import FrameData, GenericCamera
 class XimeaCamera(GenericCamera):
     """Inherits from GenericCamera class and adds the Ximea specific functions from the xiAPI library"""
 
-    def __init__(self, unique_id):
-        super().__init__(unique_id)
+    def __init__(self, serial_number):
+        super().__init__(serial_number)
 
         # Initialise camera -------------------------------------------------------------
-        # pMV Information
-        self.serial_number, self._api = self.unique_id.rsplit("-", 1)
         self.N_GPIO = 1  # Number of GPIO pins
         self.has_manual_control = {"fps": True, "exposure": True, "gain": True, "trigger": True}
         self.pixel_format_aliases = {
@@ -183,14 +181,14 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
 
     if VERBOSE:
         print(f"Number of cameras detected: {num_devices}")
-    unique_id_list = []
+    serial_number_list = []
     for idx in range(num_devices):
         try:
             cam = xiapi.Camera(dev_id=idx)
-            cam_id: str = f"{cam.get_device_info_string('device_sn').decode('utf-8')}-ximea"
+            serial_number: str = cam.get_device_info_string("device_sn").decode("utf-8")
             if VERBOSE:
-                print(f"Camera ID: {cam_id}")
-            unique_id_list.append(cam_id)
+                print(f"Serial number: {serial_number}")
+            serial_number_list.append(serial_number)
         except Exception as e:
             if VERBOSE:
                 print(f"Error accessing camera: {e}")
@@ -198,9 +196,9 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
             if cam.CAM_OPEN:
                 cam.close_device()
 
-    return unique_id_list
+    return serial_number_list
 
 
-def initialise_camera_api(unique_id):
+def initialise_camera_api(serial_number):
     """Instantiate the XimeaCamera object"""
-    return XimeaCamera(unique_id=unique_id)
+    return XimeaCamera(serial_number=serial_number)

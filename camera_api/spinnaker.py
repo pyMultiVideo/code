@@ -9,11 +9,10 @@ PYSPINSYSTEM = PySpin.System.GetInstance()  # One PySpin system instance per pMV
 class SpinnakerCamera(GenericCamera):
     """Inherits from GenericCamera class and adds spinnaker specific functions from the PySpin library"""
 
-    def __init__(self, unique_id):
-        super().__init__(unique_id)
+    def __init__(self, serial_number):
+        super().__init__(serial_number)
 
         # Options for camera -----------------------------------------------------------
-        self.serial_number, self._api = self.unique_id.rsplit("-", 1)
         self.N_GPIO = 3  # Number of GPIO pins
         self.has_manual_control = {"fps": True, "exposure": True, "gain": True, "trigger": True}
         self.pixel_format_aliases = {  # Maps GUI pixel format names to spinnaker pixel format names.
@@ -263,7 +262,7 @@ class Chameleon3Camera(SpinnakerCamera):
 
 def list_available_cameras(VERBOSE=False) -> list[str]:
     """PySpin specific implementation of getting a list of serial numbers from all the pyspin cameras"""
-    unique_id_list = []
+    serial_number_list = []
     pyspin_system = PySpin.System.GetInstance()
     pyspin_cam_list = pyspin_system.GetCameras()
 
@@ -273,10 +272,10 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
     for cam in pyspin_cam_list:
         try:
             cam.Init()
-            cam_id: str = f"{cam.DeviceSerialNumber()}-spinnaker"
+            serial_number: str = str(cam.DeviceSerialNumber())
             if VERBOSE:
-                print(f"Camera ID: {cam_id}")
-            unique_id_list.append(cam_id)
+                print(f"Serial number: {serial_number}")
+            serial_number_list.append(serial_number)
         except Exception as e:
             if VERBOSE:
                 print(f"Error accessing camera: {e}")
@@ -287,17 +286,16 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
                 cam.DeInit()
     pyspin_cam_list.Clear()
     pyspin_system.ReleaseInstance()
-    return unique_id_list
+    return serial_number_list
 
 
-def initialise_camera_api(unique_id):
+def initialise_camera_api(serial_number):
     """Instantiate the model-appropriate Spinnaker camera object."""
-    serial_number, _ = unique_id.rsplit("-", 1)
     cam_list = PYSPINSYSTEM.GetCameras()
     cam = next((cam for cam in cam_list if cam.TLDevice.DeviceSerialNumber.GetValue() == serial_number))
     cam_list.Clear()
     model = cam.TLDevice.DeviceModelName.GetValue()[:10]
     if model[:10] == "Chameleon3":
-        return Chameleon3Camera(unique_id=unique_id)
+        return Chameleon3Camera(serial_number=serial_number)
     else:
-        return SpinnakerCamera(unique_id=unique_id)
+        return SpinnakerCamera(serial_number=serial_number)

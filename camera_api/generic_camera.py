@@ -14,10 +14,12 @@ from GUI.pixel_formats import PIXEL_FORMAT_REGISTRY, PixelFormat
 @dataclass
 class FrameData:
     """Class for representing a single frame of image data and associated metadata."""
-    image: np.ndarray # Image data as a 1D numpy array.
-    GPIO_pinstate: np.ndarray # State of GPIO pins as a 1D numpy bool array.
-    timestamp: int # Frame timestamp in microseconds.
-    number: int # Frame number.
+
+    image: np.ndarray  # Image data as a 1D numpy array.
+    GPIO_pinstate: np.ndarray  # State of GPIO pins as a 1D numpy bool array.
+    timestamp: int  # Frame timestamp in microseconds.
+    number: int  # Frame number.
+
 
 # GenericCamera class -------------------------------------------------------------------
 
@@ -26,12 +28,13 @@ class GenericCamera:
     """Template class for representing a camera. Defines functionallity that must be implemented
     for interaction with the GUI."""
 
-    def __init__(self, unique_id: str):
+    def __init__(self, serial_number: str):
         # Options for camera -----------------------------------------------------------
 
         # Camera parameters to be set by backend-specific camera API subclass.
-        self.unique_id = unique_id
-        self.serial_number = None
+        self.serial_number = serial_number
+        # Camera system identifier is inferred from the backend module name.
+        self.camera_system = self.__class__.__module__.split(".")[-1]
         self.device_model = "GenericCamera"
         self.N_GPIO = 0  # Number of GPIO pins used as inputs for sync pulses.
         self.image_width = None
@@ -46,6 +49,10 @@ class GenericCamera:
 
         # Camera parameters set by GenericCamera methods (not backend-specific).
         self.pixel_format: PixelFormat | None = None  # set by initialize_preferred_pixel_format().
+
+    def get_unique_id(self) -> str:
+        """Return unique camera ID in SERIAL-MODULE format."""
+        return f"{self.serial_number}-{self.camera_system}"
 
     # ======================================================================================================
     # Methods to implement in subclasses (backend/API-specific overrides required)
@@ -171,15 +178,11 @@ class GenericCamera:
 
 
 def list_available_cameras() -> list[str]:
-    """Return a list of the available cameras identifier strings.  The camera identifier
-    strings follow the naming format requirements: CAMERA_ID-MODULENAME
-    where CAMERA_ID is the unique identifier used by the camera system to identify the camera,
-    and MODULENAME is the name of the corresponding pyMultivideo API module.
-    """
-    unique_id_list = []
-    return unique_id_list
+    """Return a list of camera serial numbers available for this backend."""
+    serial_number_list = []
+    return serial_number_list
 
 
-def initialise_camera_api(unique_id: str):
-    """Returns a GenricCamera object"""
-    return GenericCamera(unique_id=unique_id)
+def initialise_camera_api(serial_number: str):
+    """Return a GenericCamera object for the requested serial number."""
+    return GenericCamera(serial_number=serial_number)

@@ -435,7 +435,7 @@ class VideoCaptureTab(QWidget):
     def get_camera_widget_labels(self) -> List[str]:
         """Return the camera labels for all camera widgets currently initialsed."""
         return [
-            camera_widget.label if camera_widget.label else camera_widget.unique_id
+            camera_widget.label if camera_widget.label else camera_widget.camera_api.get_unique_id()
             for camera_widget in self.camera_widgets
         ]
 
