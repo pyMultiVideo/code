@@ -10,6 +10,8 @@ import numpy as np
 from config.config import pixel_format_priority
 from GUI.pixel_formats import PIXEL_FORMAT_REGISTRY, PixelFormat
 
+# FrameData class -----------------------------------------------------------------------
+
 
 @dataclass
 class FrameData:
@@ -32,15 +34,12 @@ class GenericCamera:
         # Options for camera -----------------------------------------------------------
 
         # Camera parameters to be set by backend-specific camera API subclass.
-        self.serial_number = serial_number
-        # Camera system identifier is inferred from the backend module name.
-        self.camera_system = self.__class__.__module__.split(".")[-1]
         self.device_model = "GenericCamera"
         self.N_GPIO = 0  # Number of GPIO pins used as inputs for sync pulses.
         self.image_width = None
         self.image_height = None
         self.pixel_format_aliases = {}  # Maps GUI pixel format names to backend pixel format names.
-        self.has_manual_control = {  # Whether camera supports manual control of these parameters.
+        self.has_manual_control = {  # Which camera parameters support manual control.
             "fps": False,
             "exposure": False,
             "gain": False,
@@ -48,11 +47,9 @@ class GenericCamera:
         }
 
         # Camera parameters set by GenericCamera methods (not backend-specific).
+        self.serial_number = serial_number
         self.pixel_format: PixelFormat | None = None  # set by initialize_preferred_pixel_format().
-
-    def get_unique_id(self) -> str:
-        """Return unique camera ID in SERIAL-MODULE format."""
-        return f"{self.serial_number}-{self.camera_system}"
+        self.camera_system = self.__class__.__module__.split(".")[-1]  # Set to module name of subclass.
 
     # ======================================================================================================
     # Methods to implement in subclasses (backend/API-specific overrides required)
@@ -131,6 +128,10 @@ class GenericCamera:
     # ======================================================================================================
     # Fully implemented GenericCamera methods (shared logic; usually not overridden)
     # ======================================================================================================
+
+    def get_unique_id(self) -> str:
+        """Return unique camera ID in SERIAL_NUMBER-CAMERA_SYSTEM format."""
+        return f"{self.serial_number}-{self.camera_system}"
 
     def configure_settings(self, CameraConfig) -> None:
         """Apply settings from a CameraConfig object using the backend setters."""
