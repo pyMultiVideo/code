@@ -2,10 +2,22 @@
 Generic API defining functionality needed for for camera system to interact with the GUI.
 """
 
+from dataclasses import dataclass
 from typing import Optional
+
+import numpy as np
 
 from config.config import pixel_format_priority
 from GUI.pixel_formats import PIXEL_FORMAT_REGISTRY, PixelFormat
+
+
+@dataclass
+class FrameData:
+    """Class for representing a single frame of image data and associated metadata."""
+    image: np.ndarray # Image data as a 1D numpy array.
+    GPIO_pinstate: np.ndarray # State of GPIO pins as a 1D numpy bool array.
+    timestamp: int # Frame timestamp in microseconds.
+    number: int # Frame number.
 
 # GenericCamera class -------------------------------------------------------------------
 
@@ -101,16 +113,8 @@ class GenericCamera:
         """Stop acquiring images from the camera."""
         raise NotImplementedError
 
-    def get_available_images(self):
-        """Get all available images from the camera buffer and clear buffer.
-        Returns:
-            {
-            'images' : list[np.ndarray] : A list of images, each a 1D numpy byte array.
-            'gpio_data' : list[np.ndarray] : List of gpio pinstates for each frame, each a 1D numpy boolean array.
-            'timestamps' : list[int] : List of timestamps for each frame in microseconds
-            'dropped_frames': int : Number of dropped frames since last call to get_available_images().
-            }:
-        """
+    def get_available_images(self) -> list[FrameData]:
+        """Get all available frames from the camera and return as list of FrameData objects."""
         raise NotImplementedError
 
     def close(self):

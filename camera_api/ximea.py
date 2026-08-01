@@ -3,7 +3,7 @@ from ximea import xiapi
 import numpy as np
 from math import floor, ceil
 
-from .generic_camera import GenericCamera
+from .generic_camera import FrameData, GenericCamera
 
 
 class XimeaCamera(GenericCamera):
@@ -24,7 +24,6 @@ class XimeaCamera(GenericCamera):
         # Open camera by serial number
         self._cam = xiapi.Camera()
         self._cam.open_device_by_SN(self.serial_number)
-        self._previous_frame_number = 0
         self.device_model = self._cam.get_device_model_id()
         self.image_width = self._cam.get_width()
         self.image_height = self._cam.get_height()
@@ -131,7 +130,6 @@ class XimeaCamera(GenericCamera):
         """Begin streaming images from the camera."""
         if not self._cam.CAM_OPEN:
             self._cam.open_device_by_SN(self.serial_number)
-            self._previous_frame_number = 0
         if not self._is_streaming():
             try:
                 self._cam.start_acquisition()
@@ -154,36 +152,25 @@ class XimeaCamera(GenericCamera):
         except xiapi.Xi_error:
             pass
 
-    def get_available_images(self):
-        """Gets all available images from the buffer and return images GPIO pinstate data and timestamps."""
-        img_buffer = []
-        timestamps_buffer = []
-        gpio_data = []
-        dropped_frames = 0
+    def get_available_images(self) -> list[FrameData]:
+        """Gets all available images from the buffer and returns FrameData objects."""
+        frames = []
         # Get all available images from camera buffer.
         try:
             while True:
                 next_image = xiapi.Image()  # img class to put data into
                 self._cam.get_image(next_image, timeout=0)  # Raise an exception if buffer is empty.
-                # Add the image data to the image buffer as a 1D numpy array of bytes.
-                img_buffer.append(np.frombuffer(next_image.get_image_data_raw(), dtype=np.uint8))
-                # Add image timestamp to timestamp buffer.
-                timestamps_buffer.append(next_image.tsSec * 1000000 + next_image.tsUSec)  # Microseconds.
-                # Calcuate number of dropped frames.
-                dropped_frames += next_image.acq_nframe - self._previous_frame_number - 1
-                self._previous_frame_number = next_image.acq_nframe
-                # Get state of GPIO pin and add to GPIIO data buffer [UNTESTED].
-                gpio_data.append(np.array([int(self._cam.get_gpi_level())], dtype=bool))
+                frame_image = np.frombuffer(next_image.get_image_data_raw(), dtype=np.uint8)
+                frames.append(
+                    FrameData(
+                        image=frame_image,
+                        GPIO_pinstate=np.array([int(self._cam.get_gpi_level())], dtype=bool),
+                        timestamp=next_image.tsSec * 1000000 + next_image.tsUSec,
+                        number=int(next_image.acq_nframe),
+                    )
+                )
         except xiapi.Xi_error:  # Buffer is empty.
-            if len(img_buffer) == 0:
-                return
-            else:
-                return {
-                    "images": img_buffer,
-                    "gpio_data": gpio_data,
-                    "timestamps": timestamps_buffer,
-                    "dropped_frames": dropped_frames,
-                }
+            return frames
 
 
 # Camera system functions -------------------------------------------------------------------------------

@@ -5,6 +5,8 @@ import subprocess
 import numpy as np
 from datetime import datetime
 
+from camera_api.generic_camera import FrameData
+
 # Check GPU availibility for video encode and set which encoders to use.
 
 try:
@@ -126,19 +128,20 @@ class Data_recorder:
         self.ffmpeg_process.stdin.close()
         self.ffmpeg_process.wait()
 
-    def record_new_images(self, new_images, ffmpeg_new_dropped_frames=0):
+    def record_new_images(self, new_frames: list[FrameData], camera_new_dropped_frames=0, ffmpeg_new_dropped_frames=0):
         """Record newly aquired images and GPIO pinstates."""
         if self.first_timestamp is None:
-            self.first_timestamp = new_images["timestamps"][0]
-        self.recorded_frames += len(new_images["images"])
-        self.dropped_frames += new_images["dropped_frames"] + ffmpeg_new_dropped_frames
-        if new_images["dropped_frames"]:
+            self.first_timestamp = new_frames[0].timestamp
+        self.recorded_frames += len(new_frames)
+        self.dropped_frames += camera_new_dropped_frames + ffmpeg_new_dropped_frames
+        if camera_new_dropped_frames:
             self.camera_buffer_overflow_occurred = True
         if ffmpeg_new_dropped_frames:
             self.ffmpeg_buffer_overflow_occurred = True
-        # Concatenate the list of numpy buffers into one bytestream
-        frame = np.concatenate([img for img in new_images["images"]])
-        self.ffmpeg_process.stdin.write(frame)
-        for gpio_pinstate, timestamp in zip(new_images["gpio_data"], new_images["timestamps"]):
-            rel_timestamp = timestamp - self.first_timestamp
-            self.gpio_writer.writerow(list(gpio_pinstate.astype(int)) + [rel_timestamp])
+        # Concatenate the list of numpy buffers into one bytestream and pass to ffmpeg.
+        images = np.concatenate([frame_data.image for frame_data in new_frames])
+        self.ffmpeg_process.stdin.write(images)
+        # Write frame metadata to csv file.
+        for frame_data in new_frames:
+            rel_timestamp = frame_data.timestamp - self.first_timestamp
+            self.gpio_writer.writerow(list(frame_data.GPIO_pinstate.astype(int)) + [rel_timestamp])

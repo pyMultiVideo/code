@@ -1,7 +1,7 @@
 import PySpin
 import numpy as np
 from math import floor, ceil
-from .generic_camera import GenericCamera
+from .generic_camera import FrameData, GenericCamera
 
 PYSPINSYSTEM = PySpin.System.GetInstance()  # One PySpin system instance per pMV
 
@@ -21,7 +21,6 @@ class SpinnakerCamera(GenericCamera):
             "mono8": "Mono8",
         }
         self._trigger_line = 0  # Optically isolated input.
-        self._previous_frame_number = None
 
         # Initialise camera -------------------------------------------------------------------------------------------
         self._cam_list = PYSPINSYSTEM.GetCameras()
@@ -192,7 +191,6 @@ class SpinnakerCamera(GenericCamera):
             self._cam.Init()
         if not self._cam.IsStreaming():
             self._cam.BeginAcquisition()
-        self._previous_frame_number = None
 
     def stop_capturing(self) -> None:
         """Stop the camera from streaming"""
@@ -209,35 +207,26 @@ class SpinnakerCamera(GenericCamera):
         self._cam = None
         self._cam_list.Clear()
 
-    def get_available_images(self):
-        """Gets all available images from the buffer and return images GPIO pinstate data and timestamps."""
-        img_buffer = []
-        timestamps_buffer = []
-        gpio_buffer = []
-        dropped_frames = 0
+    def get_available_images(self) -> list[FrameData]:
+        """Gets all available images from the buffer and returns FrameData objects."""
+        frames = []
 
         try:
             while True:
                 next_image = self._cam.GetNextImage(0)  # Raises exception if buffer empty.
-                img_buffer.append(next_image.GetData())  # Image pixels as 1D numpy array of image bytes.
-                chunk_data = next_image.GetChunkData()  # Additional image data.
-                timestamps_buffer.append(chunk_data.GetTimestamp() // 1000)  # Image timestamp (microseconds)
-                current_frame_number = int(next_image.GetFrameID())
-                if self._previous_frame_number and current_frame_number > self._previous_frame_number:
-                    dropped_frames += current_frame_number - self._previous_frame_number - 1
-                self._previous_frame_number = current_frame_number
-                gpio_buffer.append(self._extract_gpio_data(img_buffer[-1], chunk_data))
+                chunk_data = next_image.GetChunkData()  # Image metadata.
+                frame_image = next_image.GetData()  # Image pixels as 1D numpy array of image bytes.
+                frames.append(
+                    FrameData(
+                        image=frame_image,
+                        GPIO_pinstate=self._extract_gpio_data(frame_image, chunk_data),
+                        timestamp=chunk_data.GetTimestamp() // 1000,
+                        number=int(next_image.GetFrameID()),
+                    )
+                )
                 next_image.Release()  # Clears image from buffer.
         except PySpin.SpinnakerException:  # Buffer is empty.
-            if len(img_buffer) == 0:
-                return
-            else:
-                return {
-                    "images": img_buffer,
-                    "gpio_data": gpio_buffer,
-                    "timestamps": timestamps_buffer,
-                    "dropped_frames": dropped_frames,
-                }
+            return frames
 
 
 class Chameleon3Camera(SpinnakerCamera):

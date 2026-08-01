@@ -55,10 +55,13 @@ class CameraWidget(QGroupBox):
         self.image_height = self.camera_api.image_height
         self.image_width = self.camera_api.image_width
         self.latest_image = None
+        self.latest_GPIO = None
         self.last_video_update_timestamp = 0
         self.frame_timestamps = deque([0], maxlen=10)
         self.recording = False
-        self.new_ffmpeg_dropped_frames = 0  # Number of frames dropped from ffmpeg queue since last data write.
+        self._ffmpeg_new_dropped_frames = 0  # Number of frames dropped from ffmpeg queue since last data write.
+        self._last_frame_number = None
+        self._camera_new_dropped_framess = 0
 
         # Video display ---------------------------------------------------------------
 
@@ -195,7 +198,12 @@ class CameraWidget(QGroupBox):
     def begin_capturing(self):
         """Start streaming video from camera."""
         self.recording = False
+        self._reset_frame_tracking()
         self.camera_api.begin_capturing()
+
+    def _reset_frame_tracking(self):
+        self._last_frame_number = None
+        self._camera_new_dropped_framess = 0
 
     def stop_capturing(self):
         """Stop streaming video from camera."""
@@ -209,29 +217,35 @@ class CameraWidget(QGroupBox):
 
     def fetch_image_data(self):
         """Get images and associated data from camera and save to disk if recording."""
-        new_images = self.camera_api.get_available_images()
-        if new_images is None:
+        new_frames = self.camera_api.get_available_images()
+        if not new_frames:
             return
-        # Store most recent image and GPIO state for the next display update.
-        self.latest_image = new_images["images"][-1]
-        self.latest_GPIO = new_images["gpio_data"][-1]
-        # Check for dropped frames based on expected interval between exposure timestamps
-        self._newly_dropped_frames = new_images["dropped_frames"]
-        self.frame_timestamps.extend(new_images["timestamps"])  # For displaying the calculated framerate
+
+        self._camera_new_dropped_framess = 0
+        for frame in new_frames:
+            if self._last_frame_number is not None and frame.number > self._last_frame_number + 1:
+                self._camera_new_dropped_framess += frame.number - self._last_frame_number - 1
+            self._last_frame_number = frame.number
+
+        latest_frame = new_frames[-1]
+        self.latest_image = latest_frame.image
+        self.latest_GPIO = latest_frame.GPIO_pinstate
+        self.frame_timestamps.extend(frame.timestamp for frame in new_frames)  # For displaying the calculated framerate
 
         # Record data to disk.
         if self.recording:
             if self.video_capture_tab.ffmpeg_buffer_full:
-                self.new_ffmpeg_dropped_frames += len(new_images["images"])
+                self._ffmpeg_new_dropped_frames += len(new_frames)
             else:
                 self.video_capture_tab.futures.append(
                     self.video_capture_tab.threadpool.submit(
                         self.data_recorder.record_new_images,
-                        new_images,
-                        self.new_ffmpeg_dropped_frames,
+                        new_frames,
+                        self._camera_new_dropped_framess,
+                        self._ffmpeg_new_dropped_frames,
                     )
                 )
-                self.new_ffmpeg_dropped_frames = 0
+                self._ffmpeg_new_dropped_frames = 0
 
     def update(self, update_video_display=True):
         """Called regularly by timer to fetch new images and optionally update video display."""
@@ -251,9 +265,10 @@ class CameraWidget(QGroupBox):
         # Start data recording.
         save_dir = self.GUI.video_capture_tab.data_dir
         self.data_recorder.start_recording(subject_id, save_dir, self.settings)
-        self.new_ffmpeg_dropped_frames = 0
+        self._ffmpeg_new_dropped_frames = 0
         # Empty camera buffer before recording is started
         self.camera_api.get_available_images()
+        self._reset_frame_tracking()
         self.recording = True
         # Update GUI
         self.stop_recording_button.setEnabled(True)
@@ -265,9 +280,9 @@ class CameraWidget(QGroupBox):
 
     def stop_recording(self):
         """Stop recording video data to disk."""
-        if self.new_ffmpeg_dropped_frames:
-            self.data_recorder.dropped_frames += self.new_ffmpeg_dropped_frames
-            self.new_ffmpeg_dropped_frames = 0
+        if self._ffmpeg_new_dropped_frames:
+            self.data_recorder.dropped_frames += self._ffmpeg_new_dropped_frames
+            self._ffmpeg_new_dropped_frames = 0
         self.data_recorder.stop_recording()
         self.recording = False
         # Update GUI
@@ -307,7 +322,7 @@ class CameraWidget(QGroupBox):
             elapsed_time = datetime.now() - self.data_recorder.record_start_time
             self.recording_status_item.setText(f"RECORDING  {str(elapsed_time).split('.')[0]}", color="g")
         # Dropped frames warning.
-        if self._newly_dropped_frames:
+        if self._camera_new_dropped_framess:
             self.dropped_frames_text.setText("DROPPED FRAMES - camera buffer overflow", color="r")
         elif self.recording and self.video_capture_tab.ffmpeg_buffer_full:
             self.dropped_frames_text.setText("DROPPED FRAMES -FFMPEG buffer overflow", color="r")
