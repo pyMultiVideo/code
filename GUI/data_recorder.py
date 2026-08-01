@@ -43,19 +43,20 @@ class Data_recorder:
         self.camera_buffer_overflow_occurred = False
         self.ffmpeg_buffer_overflow_occurred = False
         self.first_timestamp = None
+        self.first_frame_number = None
         # Create Filepaths_config.
         self.subject_id = subject_id
         self.record_start_time = datetime.now()
         filename_stem = f"{self.subject_id}_{self.record_start_time.strftime('%Y-%m-%d-%H%M%S')}"
         self.video_filepath = os.path.join(save_dir, filename_stem + ".mp4")
-        self.GPIO_filepath = os.path.join(save_dir, filename_stem + "_GPIO_data.csv")
+        self.GPIO_filepath = os.path.join(save_dir, filename_stem + "_frame_info.csv")
         self.metadata_filepath = os.path.join(save_dir, filename_stem + "_metadata.json")
 
         # Open GPIO file and write header data.
         self.gpio_file = open(self.GPIO_filepath, mode="w", newline="")
         self.gpio_writer = csv.writer(self.gpio_file)
         self.gpio_writer.writerow(
-            [f"GPIO{pin}" for pin in range(1, self.camera_widget.camera_api.N_GPIO + 1)] + ["timestamp"]
+            ["number"] + [f"GPIO{pin}" for pin in range(1, self.camera_widget.camera_api.N_GPIO + 1)] + ["timestamp"]
         )
 
         # Create metadata file.
@@ -132,6 +133,8 @@ class Data_recorder:
         """Record newly aquired images and GPIO pinstates."""
         if self.first_timestamp is None:
             self.first_timestamp = new_frames[0].timestamp
+            self.first_frame_number = new_frames[0].number - 1
+
         self.recorded_frames += len(new_frames)
         self.dropped_frames += camera_new_dropped_frames + ffmpeg_new_dropped_frames
         if camera_new_dropped_frames:
@@ -144,4 +147,5 @@ class Data_recorder:
         # Write frame metadata to csv file.
         for frame_data in new_frames:
             rel_timestamp = frame_data.timestamp - self.first_timestamp
-            self.gpio_writer.writerow(list(frame_data.GPIO_pinstate.astype(int)) + [rel_timestamp])
+            rel_frame_number = frame_data.number - self.first_frame_number
+            self.gpio_writer.writerow([rel_frame_number] + list(frame_data.GPIO_pinstate.astype(int)) + [rel_timestamp])
