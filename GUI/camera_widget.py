@@ -4,7 +4,7 @@ import numpy as np
 from datetime import datetime
 from dataclasses import dataclass
 from collections import deque
-from concurrent.futures import wait
+from concurrent.futures import wait, Future
 
 import pyqtgraph as pg
 from PyQt6.QtCore import QTimer, pyqtSignal
@@ -12,6 +12,8 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QComboBox, QGroupBox, QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLayout, QMessageBox
 
 from .data_recorder import Data_recorder
+
+# Helper classes -------------------------------------------------------------------
 
 
 @dataclass
@@ -22,8 +24,16 @@ class CameraWidgetConfig:
     subject_id: str
 
 
+@dataclass
+class EncoderJob:
+    """Represents a job submitted to the encoder thread pool."""
+
+    future: Future
+    camera_id: str
+
+
 class ScrollableGraphicsView(pg.GraphicsView):
-    """Custom Graphics View to detect scroll wheel events. Used to allow preview camera to have scrollable view"""
+    """Custom Graphics View to detect scroll wheel events. Used to zoom preview camera with scroll wheel."""
 
     wheelScrolled = pyqtSignal(str)
 
@@ -40,13 +50,16 @@ class ScrollableGraphicsView(pg.GraphicsView):
         super().wheelEvent(event)
 
 
+# Camera Widget -------------------------------------------------------------------
+
+
 class CameraWidget(QGroupBox):
     """Widget for displaying camera video and camera controls."""
 
     def __init__(self, parent, label, subject_id="", preview_mode=False):
         super(CameraWidget, self).__init__(parent)
-        self.video_capture_tab = parent
-        self.GUI = self.video_capture_tab.GUI
+        self.vct = parent  # VideoCaptureTab
+        self.GUI = self.vct.GUI
         self.preview_mode = preview_mode  # True if widget is being used in camera setup tab.
         # Camera attributes
         self.subject_id = subject_id
@@ -63,7 +76,6 @@ class CameraWidget(QGroupBox):
         self._ffmpeg_new_dropped_frames = 0  # Number of frames dropped from ffmpeg queue since last data write.
         self._last_frame_number = None
         self._camera_new_dropped_frames = 0
-        self.futures = []  #
 
         # Video display ---------------------------------------------------------------
 
@@ -236,18 +248,16 @@ class CameraWidget(QGroupBox):
 
         # Record data to disk.
         if self.recording:
-            if self.video_capture_tab.ffmpeg_buffer_full:
+            if self.vct.ffmpeg_buffer_full:
                 self._ffmpeg_new_dropped_frames += len(new_frames)
             else:
-                future = self.video_capture_tab.threadpool.submit(
+                future = self.vct.threadpool.submit(
                     self.data_recorder.record_new_images,
                     new_frames,
                     self._camera_new_dropped_frames,
                     self._ffmpeg_new_dropped_frames,
                 )
-                self.video_capture_tab.futures.append(future)
-                self.futures = [f for f in self.futures if not f.done()]
-                self.futures.append(future)
+                self.vct.encoder_queue.append(EncoderJob(future, self.settings.unique_id))
                 self._ffmpeg_new_dropped_frames = 0
 
     def update(self, update_video_display=True):
@@ -266,7 +276,7 @@ class CameraWidget(QGroupBox):
             QMessageBox.information(self, "Invalid subject ID", f"Subject ID contains invalid characters: {subject_id}")
             return
         # Start data recording.
-        save_dir = self.GUI.video_capture_tab.data_dir
+        save_dir = self.vct.data_dir
         self.data_recorder.start_recording(subject_id, save_dir, self.settings)
         self._ffmpeg_new_dropped_frames = 0
         # Empty camera buffer before recording is started
@@ -279,14 +289,13 @@ class CameraWidget(QGroupBox):
         self.start_recording_button.setEnabled(False)
         self.subject_id_text.setEnabled(False)
         self.GUI.tab_widget.tabBar().setEnabled(False)
-        self.GUI.video_capture_tab.update_button_states()
+        self.vct.update_button_states()
 
     def stop_recording(self):
         """Stop recording video data to disk."""
-        self.futures = [future for future in self.futures if not future.done()]
-        if self.futures:
-            wait(self.futures)
-        self.futures = []
+        # Wait for any remaining encoder jobs to finish.
+        wait([job.future for job in self.vct.encoder_queue if job.camera_id == self.settings.unique_id])
+        # Stop recording.
         if self._ffmpeg_new_dropped_frames:
             self.data_recorder.dropped_frames += self._ffmpeg_new_dropped_frames
             self._ffmpeg_new_dropped_frames = 0
@@ -298,7 +307,7 @@ class CameraWidget(QGroupBox):
         self.start_recording_button.setEnabled(True)
         self.subject_id_text.setEnabled(True)
         self.camera_dropdown.setEnabled(True)
-        self.GUI.video_capture_tab.update_button_states()
+        self.vct.update_button_states()
         self.GUI.tab_widget.tabBar().setEnabled(True)
 
     # Video display -------------------------------------------------------------------
@@ -331,7 +340,7 @@ class CameraWidget(QGroupBox):
         # Dropped frames warning.
         if self._camera_new_dropped_frames:
             self.dropped_frames_text.setText("DROPPED FRAMES - camera buffer overflow", color="r")
-        elif self.recording and self.video_capture_tab.ffmpeg_buffer_full:
+        elif self.recording and self.vct.ffmpeg_buffer_full:
             self.dropped_frames_text.setText("DROPPED FRAMES -FFMPEG buffer overflow", color="r")
         else:
             self.dropped_frames_text.setText("")
@@ -365,8 +374,7 @@ class CameraWidget(QGroupBox):
             pass  # Signal was not connected
         # Available cameras
         available_cameras = sorted(
-            set(self.GUI.camera_setup_tab.get_camera_labels())
-            - {cam.label for cam in self.GUI.video_capture_tab.camera_widgets},
+            set(self.GUI.camera_setup_tab.get_camera_labels()) - {cam.label for cam in self.vct.camera_widgets},
             key=str.lower,
         )
         selected_camera_label = self.camera_dropdown.currentText()
@@ -401,7 +409,7 @@ class CameraWidget(QGroupBox):
             self.camera_name_item.setText(f"{self.label}", color="white")
         # Overwrite start_recording button if FFMPEG not available
         self.start_recording_button.setEnabled(self.GUI.ffmpeg_path_available)
-        self.GUI.video_capture_tab.update_button_states()
+        self.vct.update_button_states()
 
     def set_control_visibility(self, visible: bool) -> None:
         """Set camera control visibility."""
@@ -470,7 +478,7 @@ class CameraWidget(QGroupBox):
         # Update Frame triggered text
         self.recording_status_item.setText("NOT RECORDING", color="r")
         # Update other camera widget dropdowns
-        for c_w in self.video_capture_tab.camera_widgets:
+        for c_w in self.vct.camera_widgets:
             c_w.update_camera_dropdown()
 
     def closeEvent(self, event):

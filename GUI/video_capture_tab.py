@@ -48,7 +48,7 @@ class VideoCaptureTab(QWidget):
 
         # Initalise Threadpool used to pipe data to ffmpeg processes.
         self.threadpool = ThreadPoolExecutor(max_workers=32)
-        self.futures = []  # List to keep track of jobs waiting to be processed by the threadpool.
+        self.encoder_queue = []  # List to keep track of jobs waiting to be processed by the ffmpeg threadpool.
         self.ffmpeg_buffer_full = False  # Flag to indicate ffmpeg queue is full, causing recording to pause.
         self.ffmpeg_buffer_size = 100  # Queue length at which ffmpeg submission pauses.
 
@@ -194,8 +194,8 @@ class VideoCaptureTab(QWidget):
         self.update_counter = (self.update_counter + 1) % self.GUI.gui_config["camera_updates_per_display_update"]
         update_video_display = self.update_counter == 0
         # Track number of jobs waiting to be processed by the threadpool.
-        self.futures = [f for f in self.futures if not f.done()]
-        queue_length = len(self.futures)
+        self.encoder_queue = [job for job in self.encoder_queue if not job.future.done()]
+        queue_length = len(self.encoder_queue)
         self.ffmpeg_buffer_full = queue_length >= self.ffmpeg_buffer_size
         for camera_widget in self.camera_widgets:
             camera_widget.update(update_video_display)
@@ -435,7 +435,7 @@ class VideoCaptureTab(QWidget):
     def get_camera_widget_labels(self) -> List[str]:
         """Return the camera labels for all camera widgets currently initialsed."""
         return [
-            camera_widget.label if camera_widget.label else camera_widget.camera_api.get_unique_id()
+            camera_widget.label if camera_widget.label else camera_widget.camera_api.unique_id
             for camera_widget in self.camera_widgets
         ]
 
