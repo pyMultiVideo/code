@@ -18,7 +18,7 @@ class FrameData:
     """Class for representing a single frame of image data and associated metadata."""
 
     image: np.ndarray  # Image data as a 1D numpy array.
-    GPIO_pinstate: np.ndarray  # State of GPIO pins as a 1D numpy bool array.
+    GPIO_pinstate: Optional[np.ndarray]  # None if N_GPIO == 0, otherwise a 1D numpy bool array.
     timestamp: int  # Frame timestamp in microseconds.
     number: int  # Frame number.
 
@@ -35,7 +35,7 @@ class GenericCamera:
 
         # Camera parameters to be set by backend-specific camera API subclass.
         self.device_model = "GenericCamera"
-        self.N_GPIO = 0  # Number of GPIO pins used as inputs for sync pulses.
+        self.N_GPIO = 0  # Number of GPIO input pins, set to 0 if camera does not support GPIO input.
         self.image_width = None
         self.image_height = None
         self.pixel_format_aliases = {}  # Maps GUI pixel format names to backend pixel format names.

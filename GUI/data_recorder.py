@@ -148,4 +148,5 @@ class Data_recorder:
         for frame_data in new_frames:
             rel_timestamp = frame_data.timestamp - self.first_timestamp
             rel_frame_number = frame_data.number - self.first_frame_number
-            self.gpio_writer.writerow([rel_frame_number] + list(frame_data.GPIO_pinstate.astype(int)) + [rel_timestamp])
+            gpio = [] if self.camera_widget.camera_api.N_GPIO == 0 else list(frame_data.GPIO_pinstate.astype(int))
+            self.gpio_writer.writerow([rel_frame_number] + gpio + [rel_timestamp])
