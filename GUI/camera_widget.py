@@ -319,6 +319,8 @@ class CameraWidget(QGroupBox):
         self.video_image_item.setImage(image, autoLevels=False)
         # Compute average framerate and display over image.
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
+        if avg_time_diff == 0:
+            avg_time_diff = 1e6  # Avoid division by zero
         calculated_framerate = 1e6 / avg_time_diff
         color = "r" if (abs(calculated_framerate - int(self.settings.fps)) > int(self.settings.fps) * 0.05) else "g"
         self.frame_rate_text.setText(f"FPS: {calculated_framerate:.2f}", color=color)
