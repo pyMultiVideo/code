@@ -8,7 +8,7 @@ import numpy as np
 
 from .generic_camera import FrameData, GenericCamera
 
-_MAX_CAMERA_SCAN = 1
+_MAX_CAMERA_SCAN = 5
 _FRAME_BUFFER_MAX = 256
 
 
@@ -27,9 +27,10 @@ class WebcamCamera(GenericCamera):
             "trigger": False,
         }
         self.pixel_format_aliases = {
-            "bayer_rggb8": None,
+            "bayer_rggb8": "bayer_rggb8",
             "mono8": "mono8",
         }
+        self._active_pixel_format = "bayer_rggb8"
 
         self._device_index = int(serial_number)
         self._cam = _open_capture(self._device_index)
@@ -79,10 +80,10 @@ class WebcamCamera(GenericCamera):
         return (0, 100)
 
     def _get_supported_pixel_formats(self) -> list[str]:
-        return ["mono8"]
+        return ["bayer_rggb8", "mono8"]
 
     def _get_camera_pixel_format(self) -> str:
-        return "mono8"
+        return self._active_pixel_format
 
     # Parameter setters ------------------------------------------------------------------------------
 
@@ -102,8 +103,9 @@ class WebcamCamera(GenericCamera):
             raise NotImplementedError("Webcams do not support external trigger input.")
 
     def _set_pixel_format(self, pixel_format: str) -> None:
-        if pixel_format != "mono8":
+        if pixel_format not in {"mono8", "bayer_rggb8"}:
             raise ValueError(f"Unsupported webcam pixel format: {pixel_format}")
+        self._active_pixel_format = pixel_format
 
     # Camera control ---------------------------------------------------------------------------------
 
@@ -161,8 +163,11 @@ class WebcamCamera(GenericCamera):
                 self._capture_stop_event.wait(0.01)
                 continue
 
-            if frame.ndim == 3:
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            if self._active_pixel_format == "mono8":
+                if frame.ndim == 3:
+                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            else:
+                frame = _to_bayer_rggb8(frame)
 
             frame_data = FrameData(
                 image=np.asarray(frame, dtype=np.uint8).reshape(-1),
@@ -181,6 +186,27 @@ class WebcamCamera(GenericCamera):
             wait_time = next_capture_time - time.perf_counter()
             if wait_time > 0:
                 self._capture_stop_event.wait(wait_time)
+
+
+def _to_bayer_rggb8(frame: np.ndarray) -> np.ndarray:
+    """Convert a webcam frame into a single-channel Bayer RGGB mosaic."""
+    if frame.ndim == 2:
+        return frame
+
+    if frame.ndim == 3 and frame.shape[2] == 4:
+        frame = frame[:, :, :3]
+
+    if frame.ndim != 3 or frame.shape[2] != 3:
+        raise ValueError(f"Unsupported webcam frame shape for Bayer conversion: {frame.shape}")
+
+    # OpenCV returns BGR; map channels into an RGGB Bayer pattern.
+    bgr = np.asarray(frame, dtype=np.uint8)
+    bayer = np.empty(bgr.shape[:2], dtype=np.uint8)
+    bayer[0::2, 0::2] = bgr[0::2, 0::2, 2]  # R
+    bayer[0::2, 1::2] = bgr[0::2, 1::2, 1]  # G
+    bayer[1::2, 0::2] = bgr[1::2, 0::2, 1]  # G
+    bayer[1::2, 1::2] = bgr[1::2, 1::2, 0]  # B
+    return bayer
 
 
 def _open_capture(index: int):
@@ -203,7 +229,7 @@ def _open_capture(index: int):
 def list_available_cameras(VERBOSE=False) -> list[str]:
     """Discover webcam indices available through OpenCV VideoCapture."""
     serial_number_list = []
-
+    cv2.setLogLevel(0)
     for index in range(_MAX_CAMERA_SCAN):
         cam = _open_capture(index)
         if cam is None:
