@@ -76,11 +76,6 @@ class SettingsTab(QWidget):
         self.setups_changed = False  # Flag that is checked for handling camera setups being changed
         self.trigger_manager = PyboardManager()
 
-        # Check if any cameras are connected
-        _, CAMERAS_CONNECTED = get_camera_ids()
-        if not CAMERAS_CONNECTED:
-            QMessageBox.warning(self, "Warning", "No cameras connected.")
-
         # Camera settings groupbox
         self.camera_table_groupbox = QGroupBox("Cameras")
         self.camera_table = CameraOverviewTable(parent=self)
@@ -213,7 +208,7 @@ class SettingsTab(QWidget):
         self.refresh_timer.setInterval(1000)
         self.refresh_timer.timeout.connect(self.refresh)
 
-        self.refresh()
+        self.refresh(on_startup=True)
         self.trigger_enable_changed(self.trigger_enable_checkbox.isChecked())
 
     # Tab changing logic -------------------------------------------------------------------------------
@@ -365,10 +360,12 @@ class SettingsTab(QWidget):
             with open(self.camera_settings_filepath, "w") as f:
                 json.dump([asdict(setup) for setup in self.saved_setups], f, indent=4)
 
-    def refresh(self):
+    def refresh(self, on_startup=False):
         """Check for new and removed cameras and updates the setups table."""
         self._refresh_trigger_port_options()
-        connected_cameras, _ = get_camera_ids()
+        connected_cameras = get_camera_ids()
+        if len(connected_cameras) == 0 and on_startup:
+            QMessageBox.warning(self, "Warning", "No cameras connected.")
         if not connected_cameras == self.setups.keys():
             # Add any new cameras setups to the setups (comparing unique_ids)
             for unique_id in set(connected_cameras) - set(self.setups.keys()):

@@ -74,7 +74,7 @@ def get_camera_ids():
             camera_list.extend(f"{serial_number}-{module}" for serial_number in serial_numbers)
         except ModuleNotFoundError:
             continue
-    return camera_list, not len(camera_list) == 0
+    return camera_list
 
 
 class CameraManager:
