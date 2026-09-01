@@ -8,7 +8,7 @@ import numpy as np
 
 from .generic_camera import FrameData, GenericCamera
 
-_MAX_CAMERA_SCAN = 5
+_MAX_CAMERA_SCAN = 10
 _FRAME_BUFFER_MAX = 256
 
 
@@ -63,7 +63,7 @@ class WebcamCamera(GenericCamera):
 
     def get_frame_rate_range(self) -> tuple[int, int]:
         """Return a conservative frame-rate range for webcam controls."""
-        return (1, 120)
+        return (1, 30)
 
     def get_exposure_time(self) -> Optional[float]:
         return None
@@ -233,8 +233,7 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
     for index in range(_MAX_CAMERA_SCAN):
         cam = _open_capture(index)
         if cam is None:
-            continue
-
+            break
         # Confirm we can retrieve at least one frame before advertising the camera.
         ok, _ = cam.read()
         cam.release()
