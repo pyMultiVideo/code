@@ -2,7 +2,7 @@ import os
 import json
 from dataclasses import dataclass, asdict
 
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QWidget,
     QGroupBox,
@@ -84,6 +84,11 @@ class SettingsTab(QWidget):
 
         self.camera_table_layout = QVBoxLayout()
         self.camera_table_layout.addWidget(self.camera_table)
+
+        self.refresh_camera_list_button = QPushButton("Refresh camera list")
+        self.refresh_camera_list_button.clicked.connect(self.refresh)
+        self.camera_table_layout.addWidget(self.refresh_camera_list_button)
+
         self.camera_table_groupbox.setLayout(self.camera_table_layout)
 
         # ffmpeg groupbox
@@ -203,11 +208,6 @@ class SettingsTab(QWidget):
                 CameraSettingsConfig(**{**default_camera_config, **cam_dict}) for cam_dict in cams_list
             ]
 
-        # Refresh timer.
-        self.refresh_timer = QTimer(self)
-        self.refresh_timer.setInterval(1000)
-        self.refresh_timer.timeout.connect(self.refresh)
-
         self.refresh(on_startup=True)
         self.trigger_enable_changed(self.trigger_enable_checkbox.isChecked())
 
@@ -215,13 +215,11 @@ class SettingsTab(QWidget):
 
     def tab_selected(self):
         """Called when tab selected."""
-        self.refresh_timer.start()
         self.refresh()
 
     def tab_deselected(self):
         """Called when tab deselected.
         Deinitialise all camera APIs on tab being deselected"""
-        self.refresh_timer.stop()
         for unique_id in self.setups:
             if self.preview_showing:
                 self.setups[unique_id].close_preview_camera()
