@@ -9,10 +9,10 @@ import json
 
 # import tab classes
 from .video_capture_tab import VideoCaptureTab
-from .camera_setup_tab import CameraSetupTab
+from .settings_tab import SettingsTab
+from .camera_manager import CameraManager
 
-from config.config import __version__, gui_config, ffmpeg_config, paths_config
-
+from config.config import __version__, gui_config, ffmpeg_config, trigger_config, paths_config
 
 if os.name == "nt":  # Needed on windows to get taskbar icon to display correctly.
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(f"pyMultiVideo v{__version__}")
@@ -22,20 +22,32 @@ class GUIMain(QMainWindow):
     """Class implementing the main GUI window."""
 
     def __init__(self, parsed_args):
-
         super().__init__()
 
-        # Deal with arguments parsed to application
+        # Handle arguments parsed to application by CLI.
         self.CLI_args = parsed_args
-        # config arguments
-        if self.CLI_args.application_config:
+
+        if self.CLI_args.application_config:  # Config info passed from CLI.
             config_data = json.loads(self.CLI_args.application_config)
             self.paths_config = config_data.get("paths_config")
-            self.ffmpeg_config = config_data.get("ffmpeg_config")
+            loaded_ffmpeg_config = config_data.get("ffmpeg_config") or {}
+            loaded_trigger_config = config_data.get("trigger_config") or {}
+            self.ffmpeg_config = {**ffmpeg_config, **loaded_ffmpeg_config}
+            self.trigger_config = {**trigger_config, **loaded_trigger_config}
             self.gui_config = config_data.get("gui_config")
-        else:
+        else:  # Use config info from config.py and application_config.json file.
             self.paths_config = paths_config
-            self.ffmpeg_config = ffmpeg_config
+            settings_filepath = os.path.join(self.paths_config["config_dir"], "application_config.json")
+            if os.path.exists(settings_filepath):
+                with open(settings_filepath, "r", encoding="utf-8") as f:
+                    loaded_config_data = json.load(f)
+                    loaded_ffmpeg_config = loaded_config_data.get("ffmpeg_config", {})
+                    loaded_trigger_config = loaded_config_data.get("trigger_config", {})
+                self.ffmpeg_config = {**ffmpeg_config, **loaded_ffmpeg_config}
+                self.trigger_config = {**trigger_config, **loaded_trigger_config}
+            else:
+                self.ffmpeg_config = ffmpeg_config
+                self.trigger_config = trigger_config
             self.gui_config = gui_config
 
         # close-after argument
@@ -65,36 +77,32 @@ class GUIMain(QMainWindow):
         self.setWindowTitle(f"pyMultiVideo v{__version__}")  # default window title
         self.setWindowIcon(QIcon(os.path.join(self.paths_config["icons_dir"], "logo.svg")))
         # Initialise the tabs and tab widget.
-        self.camera_setup_tab = CameraSetupTab(parent=self)
+        self.camera_manager = CameraManager()
+        self.camera_setup_tab = SettingsTab(parent=self)
         self.camera_setup_tab.tab_deselected()
         self.video_capture_tab = VideoCaptureTab(parent=self)
         self.tab_widget = QTabWidget()
         self.tab_widget.addTab(self.video_capture_tab, "Video Capture")
-        self.tab_widget.addTab(self.camera_setup_tab, "Cameras")
+        self.tab_widget.addTab(self.camera_setup_tab, "Settings")
         self.tab_widget.currentChanged.connect(self.on_tab_change)
         self.setCentralWidget(self.tab_widget)
-        # Initialise menu bar.
-        main_menu = self.menuBar()
-        view_menu = main_menu.addMenu("Controls")
-        full_screen_controls_action = QAction(
-            QIcon(os.path.join(self.paths_config["icons_dir"], "fullscreen.svg")), "Toggle Fullscreen", self
-        )
-        full_screen_controls_action.setShortcut("Ctrl+F")
-        full_screen_controls_action.triggered.connect(self.video_capture_tab.toggle_full_screen_mode)
-        view_menu.addAction(full_screen_controls_action)
-        # Recording Shortcuts
-        self.start_recording_all_action = QAction(
-            QIcon(os.path.join(self.paths_config["icons_dir"], "record.svg")), "Start Recording", self
-        )
-        self.start_recording_all_action.setShortcut("Ctrl+Shift+R")
-        self.start_recording_all_action.triggered.connect(self.video_capture_tab.start_recording)
-        self.stop_recording_all_action = QAction(
-            QIcon(os.path.join(self.paths_config["icons_dir"], "stop.svg")), "Stop Recording", self
-        )
-        self.stop_recording_all_action.setShortcut("Ctrl+Shift+E")
-        self.stop_recording_all_action.triggered.connect(self.video_capture_tab.stop_recording)
-        view_menu.addAction(self.start_recording_all_action)
-        view_menu.addAction(self.stop_recording_all_action)
+
+        # Keyboard shortcuts.
+        self.maximise_video_action = QAction("Maximise Video", self)
+        self.maximise_video_action.setShortcut("Ctrl+M")
+        self.maximise_video_action.triggered.connect(self.handle_maximise_video_action)
+        self.addAction(self.maximise_video_action)
+
+        self.full_screen_video_action = QAction("Fullscreen Video", self)
+        self.full_screen_video_action.setShortcut("Ctrl+F")
+        self.full_screen_video_action.triggered.connect(self.toggle_full_screen_video)
+        self.addAction(self.full_screen_video_action)
+
+        self.exit_maximised_video_action = QAction("Exit Maximised Video", self)
+        self.exit_maximised_video_action.setShortcut("Esc")
+        self.exit_maximised_video_action.triggered.connect(self.exit_to_standard_video_mode)
+        self.addAction(self.exit_maximised_video_action)
+        self.set_video_mode_actions_enabled(self.tab_widget.currentIndex() == 0)
 
         # Display main window.
         self.show()
@@ -107,34 +115,61 @@ class GUIMain(QMainWindow):
     def on_tab_change(self):
         """Function that is run on tab change: Deselect the tab you are in before selecting a new tab"""
         if self.tab_widget.currentIndex() == 0:  # Select video_capture_tab
+            self.set_video_mode_actions_enabled(True)
             self.camera_setup_tab.tab_deselected()
             self.video_capture_tab.tab_selected()
         else:  # Select camera_setup_tab
+            self.exit_to_standard_video_mode()
+            self.set_video_mode_actions_enabled(False)
             self.video_capture_tab.tab_deselected()
             self.camera_setup_tab.tab_selected()
 
+    def set_video_mode_actions_enabled(self, enabled: bool):
+        """Enable or disable keyboard actions used by video display modes."""
+        self.maximise_video_action.setEnabled(enabled)
+        self.full_screen_video_action.setEnabled(enabled)
+        self.exit_maximised_video_action.setEnabled(enabled)
+
+    def handle_maximise_video_action(self):
+        """Handle Ctrl+M with special behavior while in fullscreen mode."""
+        if self.isFullScreen():  # Leave fullscreen but keep video maximised layout.
+            self.showNormal()
+        else:
+            self.video_capture_tab.toggle_maximise_video()
+
+    def toggle_full_screen_video(self):
+        """Toggle true fullscreen video mode while preserving maximised-video layout behavior."""
+        if self.isFullScreen():
+            self.exit_to_standard_video_mode()
+        else:
+            self.video_capture_tab.enter_video_maximised_mode()
+            self.showFullScreen()
+
+    def exit_to_standard_video_mode(self):
+        """Return to standard mode: not fullscreen and not maximised video layout."""
+        if self.isFullScreen():
+            self.showNormal()
+        self.video_capture_tab.exit_video_maximised_mode()
+
     def closeEvent(self, event):
         """Close the GUI"""
-        # Ensure all threadpool futures are complete
-        while self.video_capture_tab.futures:
-            future = self.video_capture_tab.futures.pop()
-            future.result()
+        self.camera_setup_tab.trigger_manager.stop_pulse()
         # Close open camera widgets
-        while self.video_capture_tab.futures:
-            future = self.video_capture_tab.futures.pop()
-            future.result()
         for c_w in self.video_capture_tab.camera_widgets:
             if c_w.recording:
                 c_w.stop_recording()
             c_w.closeEvent(event)
             c_w.deleteLater()
         # Close Camera preview
-        if self.camera_setup_tab.camera_preview:
+        if self.camera_setup_tab.preview_showing:
             self.camera_setup_tab.camera_preview.closeEvent(event)
             self.camera_setup_tab.camera_preview.deleteLater()
 
+        self.camera_manager.close_all()
+
         event.accept()
         sys.exit(0)
+
     def exception_hook(self, exctype, value, traceback):
         """Hook for uncaught exceptions"""
         print("Using the except hook to close the application")

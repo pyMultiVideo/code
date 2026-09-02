@@ -3,7 +3,6 @@ import json
 from typing import List
 from dataclasses import dataclass, asdict
 from concurrent.futures import ThreadPoolExecutor
-import threading
 
 from PyQt6.QtWidgets import (
     QVBoxLayout,
@@ -44,14 +43,14 @@ class VideoCaptureTab(QWidget):
         self.camera_widgets = []
         self.saved_config = None
         self.config_save_path = None
+        self.video_maximised_mode = False
+        self._tab_bar_visible_before_maximise = True
 
-        # Initalise Threadpool & futures
+        # Initalise Threadpool used to pipe data to ffmpeg processes.
         self.threadpool = ThreadPoolExecutor(max_workers=32)
-        self.futures = []
-        # Flags for alert if futures length is growing
-        self.suppress_alert = False
-        self._warning_box_open = False
-        self.warning_thread_length = 100
+        self.encoder_queue = []  # List to keep track of jobs waiting to be processed by the ffmpeg threadpool.
+        self.ffmpeg_buffer_full = False  # Flag to indicate ffmpeg queue is full, causing recording to pause.
+        self.ffmpeg_buffer_size = 100  # Queue length at which ffmpeg submission pauses.
 
         # GUI Layout
         self.camera_layout = QGridLayout()
@@ -165,6 +164,10 @@ class VideoCaptureTab(QWidget):
         self.page_layout.addWidget(self.header_groupbox)
         self.page_layout.addLayout(self.camera_layout)
         self.setLayout(self.page_layout)
+        self.default_page_layout_margins = self.page_layout.contentsMargins()
+        self.default_page_layout_spacing = self.page_layout.spacing()
+        self.default_camera_layout_margins = self.camera_layout.contentsMargins()
+        self.default_camera_layout_spacing = self.camera_layout.spacing()
         # Handle if the parsed args are send via the command line
         if self.GUI.CLI_args.experiment_config is None:
             available_cameras = sorted(list(self.camera_setup_tab.get_camera_labels()), key=str.lower)
@@ -190,30 +193,12 @@ class VideoCaptureTab(QWidget):
         """Fetches new images from all cameras, updates video displays every n calls."""
         self.update_counter = (self.update_counter + 1) % self.GUI.gui_config["camera_updates_per_display_update"]
         update_video_display = self.update_counter == 0
+        # Track number of jobs waiting to be processed by the threadpool.
+        self.encoder_queue = [job for job in self.encoder_queue if not job.future.done()]
+        queue_length = len(self.encoder_queue)
+        self.ffmpeg_buffer_full = queue_length >= self.ffmpeg_buffer_size
         for camera_widget in self.camera_widgets:
             camera_widget.update(update_video_display)
-        # Remove completed futures from the list
-        if self.futures:
-            self.futures = [f for f in self.futures if not f.done()]
-            if len(self.futures) > self.warning_thread_length:
-                # Show warning only if is it not suppressed and isn't already showing
-                if not self.suppress_alert and not self._warning_box_open:
-                    self._warning_box_open = True
-                    QTimer.singleShot(0, self.warn_buffer_overflow)
-        # To implement: if the length of the futures becomes wayy to big, then i will stop collecting frames from the cameras an accept dropped frames.
-
-    def warn_buffer_overflow(self):
-        msg_box = QMessageBox(self)
-        msg_box.setIcon(QMessageBox.Icon.Warning)
-        msg_box.setWindowTitle("Warning")
-        msg_box.setText("pyMuliVideo buffer's is starting to overflow. Video recording might be affected.")
-        msg_box.setInformativeText("Do you want to suppress this warning in the future?")
-        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
-        ret = msg_box.exec()
-        if ret == QMessageBox.StandardButton.Yes:
-            self.suppress_alert = True
-        self._warning_box_open = False
 
     def refresh(self):
         """Refresh tab"""
@@ -249,12 +234,13 @@ class VideoCaptureTab(QWidget):
         for camera_widget in self.camera_widgets:
             camera_widget.stop_recording()
 
-    # GUI element update functions ----------------------------------------------------
+    # Tab select / deselect ----------------------------------------------------
 
     def tab_selected(self):
-        """Called when tab deselected to start aqusition of the camera video streams."""
+        """Called when tab selected to configure cameras and start aqusition of the camera video streams."""
         for camera_widget in self.camera_widgets:
             camera_widget.begin_capturing()
+            camera_widget.configure_camera_settings()
         self.camera_widget_update_timer.start(int(1000 / self.GUI.gui_config["camera_update_rate"]))
         self.refresh()
 
@@ -302,12 +288,52 @@ class VideoCaptureTab(QWidget):
         while self.camera_widgets:
             self.remove_camera_widget(self.camera_widgets.pop())
 
-    def toggle_full_screen_mode(self):
-        """Toggle full screen video display mode on/off."""
-        is_visible = self.header_groupbox.isVisible()
-        self.header_groupbox.setVisible(not is_visible)
+    def toggle_maximise_video(self):
+        """Toggle maximised video display mode on/off."""
+        if self.video_maximised_mode:
+            self.exit_video_maximised_mode()
+        else:
+            self.enter_video_maximised_mode()
+
+    def enter_video_maximised_mode(self):
+        """Hide chrome and spacing to maximize area available for video feeds."""
+        if self.video_maximised_mode:
+            return
+        tab_bar = self.GUI.tab_widget.tabBar()
+        self._tab_bar_visible_before_maximise = tab_bar.isVisible()
+        self.video_maximised_mode = True
+        self.header_groupbox.setVisible(False)
+        tab_bar.setVisible(False)
+        self.page_layout.setContentsMargins(0, 0, 0, 0)
+        self.page_layout.setSpacing(0)
+        self.camera_layout.setContentsMargins(0, 0, 0, 0)
+        self.camera_layout.setSpacing(0)
         for camera_widget in self.camera_widgets:
-            camera_widget.toggle_control_visibility()
+            camera_widget.set_video_maximised_mode(True)
+        self._refresh_video_layout()
+
+    def exit_video_maximised_mode(self):
+        """Restore chrome and layout spacing after maximised-video mode."""
+        if not self.video_maximised_mode:
+            return
+        tab_bar = self.GUI.tab_widget.tabBar()
+        self.video_maximised_mode = False
+        self.header_groupbox.setVisible(True)
+        tab_bar.setVisible(self._tab_bar_visible_before_maximise)
+        self.page_layout.setContentsMargins(self.default_page_layout_margins)
+        self.page_layout.setSpacing(self.default_page_layout_spacing)
+        self.camera_layout.setContentsMargins(self.default_camera_layout_margins)
+        self.camera_layout.setSpacing(self.default_camera_layout_spacing)
+        for camera_widget in self.camera_widgets:
+            camera_widget.set_video_maximised_mode(False)
+        self._refresh_video_layout()
+
+    def _refresh_video_layout(self):
+        """Force layout updates so camera views immediately resize after mode change."""
+        self.camera_layout.invalidate()
+        self.page_layout.invalidate()
+        self.updateGeometry()
+        self.update()
 
     def set_number_of_columns(self):
         """Set the number of columns in the camera grid layout."""
@@ -409,7 +435,7 @@ class VideoCaptureTab(QWidget):
     def get_camera_widget_labels(self) -> List[str]:
         """Return the camera labels for all camera widgets currently initialsed."""
         return [
-            camera_widget.label if camera_widget.label else camera_widget.unique_id
+            camera_widget.label if camera_widget.label else camera_widget.camera_api.unique_id
             for camera_widget in self.camera_widgets
         ]
 
@@ -419,9 +445,7 @@ class VideoCaptureTab(QWidget):
         all_ready = all(c_w.start_recording_button.isEnabled() for c_w in self.camera_widgets)
         any_recording = any(camera_widget.recording for camera_widget in self.camera_widgets)
         self.start_recording_button.setEnabled(all_ready)
-        self.GUI.start_recording_all_action.setEnabled(all_ready)
         self.stop_recording_button.setEnabled(any_recording)
-        self.GUI.stop_recording_all_action.setEnabled(any_recording)
         # If any of the cameras are recording, disable certain buttons
         self.save_dir_button.setEnabled(not any_recording)
         self.load_button.setEnabled(not any_recording)

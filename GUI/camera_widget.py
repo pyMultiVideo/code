@@ -1,9 +1,10 @@
 import os
 import cv2
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime
 from dataclasses import dataclass
 from collections import deque
+from concurrent.futures import wait, Future
 
 import pyqtgraph as pg
 from PyQt6.QtCore import QTimer, pyqtSignal
@@ -11,7 +12,8 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QComboBox, QGroupBox, QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLayout, QMessageBox
 
 from .data_recorder import Data_recorder
-from camera_api import init_camera_api_from_module
+
+# Helper classes -------------------------------------------------------------------
 
 
 @dataclass
@@ -22,8 +24,16 @@ class CameraWidgetConfig:
     subject_id: str
 
 
+@dataclass
+class EncoderJob:
+    """Represents a job submitted to the encoder thread pool."""
+
+    future: Future
+    camera_id: str
+
+
 class ScrollableGraphicsView(pg.GraphicsView):
-    """Custom Graphics View to detect scroll wheel events. Used to allow preview camera to have scrollable view"""
+    """Custom Graphics View to detect scroll wheel events. Used to zoom preview camera with scroll wheel."""
 
     wheelScrolled = pyqtSignal(str)
 
@@ -40,25 +50,32 @@ class ScrollableGraphicsView(pg.GraphicsView):
         super().wheelEvent(event)
 
 
+# Camera Widget -------------------------------------------------------------------
+
+
 class CameraWidget(QGroupBox):
     """Widget for displaying camera video and camera controls."""
 
     def __init__(self, parent, label, subject_id="", preview_mode=False):
         super(CameraWidget, self).__init__(parent)
-        self.video_capture_tab = parent
-        self.GUI = self.video_capture_tab.GUI
+        self.vct = parent  # VideoCaptureTab
+        self.GUI = self.vct.GUI
         self.preview_mode = preview_mode  # True if widget is being used in camera setup tab.
         # Camera attributes
         self.subject_id = subject_id
         self.label = label
         self.settings = self.GUI.camera_setup_tab.get_camera_settings_from_label(label)
-        self.camera_api = init_camera_api_from_module(settings=self.settings)
-        self.camera_height = self.camera_api.get_height()
-        self.camera_width = self.camera_api.get_width()
+        self.camera_api = self.GUI.camera_manager.get_or_create(self.settings.unique_id)
+        self.image_height = self.camera_api.image_height
+        self.image_width = self.camera_api.image_width
         self.latest_image = None
+        self.latest_GPIO = None
+        self.last_video_update_timestamp = 0
         self.frame_timestamps = deque([0], maxlen=10)
-        self.framenumbers = deque([0], maxlen=10)
-        self.controls_visible = True
+        self.recording = False
+        self._ffmpeg_new_dropped_frames = 0  # Number of frames dropped from ffmpeg queue since last data write.
+        self._last_frame_number = None
+        self._camera_new_dropped_frames = 0
 
         # Video display ---------------------------------------------------------------
 
@@ -69,6 +86,7 @@ class CameraWidget(QGroupBox):
         self.graphics_view.setCentralItem(self.video_view_box)
         pg.setConfigOption("imageAxisOrder", "row-major")
         self.video_image_item = pg.ImageItem()
+        self.video_image_item.setLevels((0, 255))
         self.video_view_box.addItem(self.video_image_item)
         self.video_view_box.setAspectLocked()
 
@@ -94,15 +112,12 @@ class CameraWidget(QGroupBox):
         self.frame_rate_text.setText("FPS:", color="r")
 
         # GPIO state overlay
-        self.gpio_state_smoothed = np.zeros(self.camera_api.N_GPIO)
         self.gpio_status_item = pg.TextItem()
         self.gpio_status_item.setPos(10, 4 * text_spacing)
         self.graphics_view.addItem(self.gpio_status_item)
-        self.gpio_status_item.setText("GPIO state", color="blue")
-        self.gpio_status_indicators = [pg.TextItem() for _ in range(self.camera_api.N_GPIO)]
-        for i, gpio_indicator in enumerate(self.gpio_status_indicators):
-            gpio_indicator.setPos((5 + i) * text_spacing, 4 * text_spacing)
-            self.graphics_view.addItem(gpio_indicator)
+        self.gpio_status_item.setText("GPIO state", color="yellow")
+        self.gpio_status_indicators = []
+        self._initialise_gpio_indicators(text_spacing)
 
         # Dropped frames overlay
         self.dropped_frames_text = pg.TextItem()
@@ -113,13 +128,13 @@ class CameraWidget(QGroupBox):
         if self.preview_mode:
             # Exposure time overlay
             self.exposure_time_text = pg.TextItem()
-            self.exposure_time_text.setPos(10, 6 * text_spacing)
+            self.exposure_time_text.setPos(10, 7 * text_spacing)
             self.graphics_view.addItem(self.exposure_time_text)
             self.exposure_time_text.setText("Exposure Time:", color="magenta")
 
             # Gain overlay
             self.gain_text = pg.TextItem()
-            self.gain_text.setPos(10, 7 * text_spacing)
+            self.gain_text.setPos(10, 8 * text_spacing)
             self.graphics_view.addItem(self.gain_text)
             self.gain_text.setText("Gain:", color="magenta")
 
@@ -168,26 +183,38 @@ class CameraWidget(QGroupBox):
         self.vlayout.addLayout(self.header_layout)
         self.vlayout.addWidget(self.graphics_view, stretch=100)
 
+        # Store default layout/frame settings so maximised-video mode can be restored cleanly.
+        self.default_header_layout_margins = self.header_layout.contentsMargins()
+        self.default_header_layout_spacing = self.header_layout.spacing()
+        self.default_vlayout_margins = self.vlayout.contentsMargins()
+        self.default_vlayout_spacing = self.vlayout.spacing()
+        self.default_is_flat = self.isFlat()
+
         self.setLayout(self.vlayout)
 
         if self.preview_mode:
-            self.toggle_control_visibility()
+            self.set_control_visibility(False)
             self.update_timer = QTimer()
             self.update_timer.timeout.connect(self.update)
             self.update_timer.start(int(1000 / self.GUI.gui_config["camera_update_rate"]))
         else:
             self.data_recorder = Data_recorder(self)
 
-        self.begin_capturing()  # After init, start capturing from the widget
+        # Initialize camera stream and apply settings.
+        self.begin_capturing()
+        self.configure_camera_settings()
 
     # Camera control ----------------------------------------------------
 
     def begin_capturing(self):
         """Start streaming video from camera."""
         self.recording = False
-        self._last_timestamp = None
-        # Begin capturing using the camera API
-        self.camera_api.begin_capturing(self.settings)
+        self._reset_frame_tracking()
+        self.camera_api.begin_capturing()
+
+    def _reset_frame_tracking(self):
+        self._last_frame_number = None
+        self._camera_new_dropped_frames = 0
 
     def stop_capturing(self):
         """Stop streaming video from camera."""
@@ -195,30 +222,46 @@ class CameraWidget(QGroupBox):
             self.stop_recording()
         self.camera_api.stop_capturing()
 
+    def configure_camera_settings(self):
+        """Update camera settings to match those currently specified in the setups tab."""
+        self.camera_api.configure_settings(self.settings)
+
     def fetch_image_data(self):
         """Get images and associated data from camera and save to disk if recording."""
-        new_images = self.camera_api.get_available_images()
-        if new_images == None:
+        new_frames = self.camera_api.get_available_images()
+        if not new_frames:
             return
-        # Store most recent image and GPIO state for the next display update.
-        self.latest_image = new_images["images"][-1]
-        self.latest_GPIO = new_images["gpio_data"][-1]
-        # Check for dropped frames based on expected interval between exposure timestamps
-        self._newly_dropped_frames = new_images["dropped_frames"]
-        self.frame_timestamps.extend(new_images["timestamps"])  # For displaying the calculated framerate
+
+        self._camera_new_dropped_frames = 0
+        for frame in new_frames:
+            if self._last_frame_number is not None and frame.number > self._last_frame_number + 1:
+                self._camera_new_dropped_frames += frame.number - self._last_frame_number - 1
+            self._last_frame_number = frame.number
+
+        latest_frame = new_frames[-1]
+        self.latest_image = latest_frame.image
+        self.latest_GPIO = latest_frame.GPIO_pinstate
+        self.frame_timestamps.extend(frame.timestamp for frame in new_frames)  # For displaying the calculated framerate
 
         # Record data to disk.
         if self.recording:
-            self.video_capture_tab.futures.append(
-                self.video_capture_tab.threadpool.submit(self.data_recorder.record_new_images, new_images)
-            )
+            if self.vct.ffmpeg_buffer_full:
+                self._ffmpeg_new_dropped_frames += len(new_frames)
+            else:
+                future = self.vct.threadpool.submit(
+                    self.data_recorder.record_new_images,
+                    new_frames,
+                    self._camera_new_dropped_frames,
+                    self._ffmpeg_new_dropped_frames,
+                )
+                self.vct.encoder_queue.append(EncoderJob(future, self.settings.unique_id))
+                self._ffmpeg_new_dropped_frames = 0
 
     def update(self, update_video_display=True):
         """Called regularly by timer to fetch new images and optionally update video display."""
         self.fetch_image_data()
         if update_video_display:
             self.update_video_display()
-        
 
     # Recording controls --------------------------------------------------------------
 
@@ -230,10 +273,12 @@ class CameraWidget(QGroupBox):
             QMessageBox.information(self, "Invalid subject ID", f"Subject ID contains invalid characters: {subject_id}")
             return
         # Start data recording.
-        save_dir = self.GUI.video_capture_tab.data_dir
+        save_dir = self.vct.data_dir
         self.data_recorder.start_recording(subject_id, save_dir, self.settings)
+        self._ffmpeg_new_dropped_frames = 0
         # Empty camera buffer before recording is started
         self.camera_api.get_available_images()
+        self._reset_frame_tracking()
         self.recording = True
         # Update GUI
         self.stop_recording_button.setEnabled(True)
@@ -241,10 +286,16 @@ class CameraWidget(QGroupBox):
         self.start_recording_button.setEnabled(False)
         self.subject_id_text.setEnabled(False)
         self.GUI.tab_widget.tabBar().setEnabled(False)
-        self.GUI.video_capture_tab.update_button_states()
+        self.vct.update_button_states()
 
     def stop_recording(self):
         """Stop recording video data to disk."""
+        # Wait for any remaining encoder jobs to finish.
+        wait([job.future for job in self.vct.encoder_queue if job.camera_id == self.settings.unique_id])
+        # Stop recording.
+        if self._ffmpeg_new_dropped_frames:
+            self.data_recorder.dropped_frames += self._ffmpeg_new_dropped_frames
+            self._ffmpeg_new_dropped_frames = 0
         self.data_recorder.stop_recording()
         self.recording = False
         # Update GUI
@@ -253,36 +304,44 @@ class CameraWidget(QGroupBox):
         self.start_recording_button.setEnabled(True)
         self.subject_id_text.setEnabled(True)
         self.camera_dropdown.setEnabled(True)
-        self.GUI.video_capture_tab.update_button_states()
+        self.vct.update_button_states()
         self.GUI.tab_widget.tabBar().setEnabled(True)
 
     # Video display -------------------------------------------------------------------
 
-    def update_video_display(self, gpio_smoothing_decay=0.5):
+    def update_video_display(self, gpio_smoothing_tau=0.1):
         """Display most recent image and update information overlays."""
         if self.latest_image is None:
             return
-        image = np.frombuffer(self.latest_image, dtype=np.uint8).reshape(self.camera_height, self.camera_width)
-        if self.settings.pixel_format != "Mono":
-            image = cv2.cvtColor(image, self.camera_api.pixel_format_map[self.settings.pixel_format]["cv2"])
-        self.video_image_item.setImage(image)
+        image = np.frombuffer(self.latest_image, dtype=np.uint8).reshape(self.image_height, self.image_width)
+        if self.camera_api.pixel_format.cv2_code is not None:
+            image = cv2.cvtColor(image, self.camera_api.pixel_format.cv2_code)
+        self.video_image_item.setImage(image, autoLevels=False)
         # Compute average framerate and display over image.
         avg_time_diff = (self.frame_timestamps[-1] - self.frame_timestamps[0]) / (self.frame_timestamps.maxlen - 1)
-        calculated_framerate = 1e9 / avg_time_diff
-        color = "r" if (abs(calculated_framerate - int(self.settings.fps)) > 1) else "g"
+        if avg_time_diff == 0:
+            avg_time_diff = 1e6  # Avoid division by zero
+        calculated_framerate = 1e6 / avg_time_diff
+        color = "r" if (abs(calculated_framerate - int(self.settings.fps)) > int(self.settings.fps) * 0.05) else "g"
         self.frame_rate_text.setText(f"FPS: {calculated_framerate:.2f}", color=color)
         # Update GPIO status indicators.
-        self.gpio_state_smoothed = gpio_smoothing_decay * self.gpio_state_smoothed
-        self.gpio_state_smoothed[np.array(self.latest_GPIO) > 0] = 1
-        for i, gpio_indicator in enumerate(self.gpio_status_indicators):
-            gpio_indicator.setText("\u2b24", color=[0, 0, self.gpio_state_smoothed[i] * 255])
+        if self.camera_api.N_GPIO > 0:
+            inter_update_interval = (self.frame_timestamps[-1] - self.last_video_update_timestamp) / 1e6  # in seconds
+            self.last_video_update_timestamp = self.frame_timestamps[-1]
+            self.gpio_smoothed = self.gpio_smoothed * np.exp(-inter_update_interval / gpio_smoothing_tau)
+            self.gpio_smoothed[self.latest_GPIO] = 1
+            for i, gpio_indicator in enumerate(self.gpio_status_indicators):
+                color = [255 * self.gpio_smoothed[i], 255 * self.gpio_smoothed[i], 150 * (1 - self.gpio_smoothed[i])]
+                gpio_indicator.setText("\u2b24", color=color)
         # Display the current recording duration over image.
         if self.recording:
             elapsed_time = datetime.now() - self.data_recorder.record_start_time
             self.recording_status_item.setText(f"RECORDING  {str(elapsed_time).split('.')[0]}", color="g")
-        # Update dropped frames indicator.
-        if self._newly_dropped_frames:
-            self.dropped_frames_text.setText("DROPPED FRAMES", color="r")
+        # Dropped frames warning.
+        if self._camera_new_dropped_frames:
+            self.dropped_frames_text.setText("DROPPED FRAMES - camera buffer overflow", color="r")
+        elif self.recording and self.vct.ffmpeg_buffer_full:
+            self.dropped_frames_text.setText("DROPPED FRAMES -FFMPEG buffer overflow", color="r")
         else:
             self.dropped_frames_text.setText("")
         # Show additional camera settings if in preview mode.
@@ -298,6 +357,21 @@ class CameraWidget(QGroupBox):
             self.gain_text.setText(
                 f"Gain (dB) :{self.camera_api.get_gain():.2f}" if self.camera_api.get_gain() else "Gain (dB) : N/A"
             )
+
+    def _initialise_gpio_indicators(self, text_spacing):
+        """Initialise the GPIO status indicators based on the number of GPIO pins."""
+        self.gpio_smoothed = np.zeros(self.camera_api.N_GPIO)
+        for gpio_indicator in self.gpio_status_indicators:
+            self.graphics_view.removeItem(gpio_indicator)
+        self.gpio_status_indicators = [pg.TextItem() for _ in range(self.camera_api.N_GPIO)]
+        for i, gpio_indicator in enumerate(self.gpio_status_indicators):
+            gpio_indicator.setPos((5 + i) * text_spacing, 4 * text_spacing)
+            self.graphics_view.addItem(gpio_indicator)
+        # has_gpio = self.camera_api.N_GPIO > 0
+        # self.gpio_status_item.setVisible(has_gpio)
+        # for gpio_indicator in self.gpio_status_indicators:
+        #    gpio_indicator.setVisible(has_gpio)
+        self.gpio_status_item.setVisible(self.camera_api.N_GPIO > 0)
 
     # GUI element updates -------------------------------------------------------------
 
@@ -315,8 +389,7 @@ class CameraWidget(QGroupBox):
             pass  # Signal was not connected
         # Available cameras
         available_cameras = sorted(
-            set(self.GUI.camera_setup_tab.get_camera_labels())
-            - {cam.label for cam in self.GUI.video_capture_tab.camera_widgets},
+            set(self.GUI.camera_setup_tab.get_camera_labels()) - {cam.label for cam in self.vct.camera_widgets},
             key=str.lower,
         )
         selected_camera_label = self.camera_dropdown.currentText()
@@ -351,14 +424,30 @@ class CameraWidget(QGroupBox):
             self.camera_name_item.setText(f"{self.label}", color="white")
         # Overwrite start_recording button if FFMPEG not available
         self.start_recording_button.setEnabled(self.GUI.ffmpeg_path_available)
-        self.GUI.video_capture_tab.update_button_states()
+        self.vct.update_button_states()
 
-    def toggle_control_visibility(self) -> None:
-        """Toggle the visibility of the camera controls."""
-        self.controls_visible = not self.controls_visible
+    def set_control_visibility(self, visible: bool) -> None:
+        """Set camera control visibility."""
         for i in range(self.header_layout.count()):
             widget = self.header_layout.itemAt(i).widget()
-            widget.setVisible(self.controls_visible)
+            widget.setVisible(visible)
+
+    def set_video_maximised_mode(self, enabled: bool) -> None:
+        """Set control visibility and adjust frame and spacing to maximise video feed area."""
+        if enabled:
+            self.set_control_visibility(False)
+            self.setFlat(True)
+            self.header_layout.setContentsMargins(0, 0, 0, 0)
+            self.header_layout.setSpacing(0)
+            self.vlayout.setContentsMargins(0, 0, 0, 0)
+            self.vlayout.setSpacing(0)
+        else:
+            self.set_control_visibility(True)
+            self.setFlat(self.default_is_flat)
+            self.header_layout.setContentsMargins(self.default_header_layout_margins)
+            self.header_layout.setSpacing(self.default_header_layout_spacing)
+            self.vlayout.setContentsMargins(self.default_vlayout_margins)
+            self.vlayout.setSpacing(self.default_vlayout_spacing)
 
     def handle_wheel_event(self, direction):
         """Zoom in / out of the video data"""
@@ -366,55 +455,48 @@ class CameraWidget(QGroupBox):
             scale_factor = 1.1 if direction == "Wheel scrolled up" else 1 / 1.1
             self.video_view_box.scaleBy((scale_factor, scale_factor))
 
-    ### Config related functions ------------------------------------------------------
+    # Config related functions ------------------------------------------------------
 
     def get_camera_config(self):
         """Get the camera configuration"""
         return CameraWidgetConfig(label=self.label, subject_id=self.subject_id)
 
-    def change_camera(self) -> None:
+    def change_camera(self):
         # shut down old camera
         if self.camera_api is not None:
-            self.camera_api.close_api()
-            del self.camera_api
+            self.camera_api.stop_capturing()
         self.latest_image = None
         # Initialise the new camera
         self.label = str(self.camera_dropdown.currentText())
         self.settings = self.GUI.camera_setup_tab.get_camera_settings_from_label(self.label)
-        self.camera_api = init_camera_api_from_module(self.settings)
-        self.camera_api.begin_capturing(self.settings)
-        self.camera_height = self.camera_api.get_height()
-        self.camera_width = self.camera_api.get_width()
+        self.camera_api = self.GUI.camera_manager.get_or_create(self.settings.unique_id)
+        self.camera_api.begin_capturing()
+        self.camera_api.configure_settings(self.settings)
+        self.image_height = self.camera_api.image_height
+        self.image_width = self.camera_api.image_width
+        self.latest_GPIO = None
         # Rename pyqtgraph element
         self.camera_name_item.setText(
             f"{self.settings.name if self.settings.name is not None else self.settings.unique_id}", color="white"
         )
         # Update GPIO elements
-        self.gpio_state_smoothed = np.zeros(self.camera_api.N_GPIO)
-        for gpio_indicator in self.gpio_status_indicators:
-            self.graphics_view.removeItem(gpio_indicator)
-        self.gpio_status_indicators = [pg.TextItem() for _ in range(self.camera_api.N_GPIO)]
-        for i, gpio_indicator in enumerate(self.gpio_status_indicators):
-            gpio_indicator.setPos(
-                (5 + i) * int(self.GUI.gui_config["font_size"] * 1.25), 4 * int(self.GUI.gui_config["font_size"] * 1.25)
-            )
-            self.graphics_view.addItem(gpio_indicator)
+        self.last_video_update_timestamp = 0
+        self._initialise_gpio_indicators(int(self.GUI.gui_config["font_size"] * 1.25))
         # Update Frame triggered text
         self.recording_status_item.setText("NOT RECORDING", color="r")
         # Update other camera widget dropdowns
-        for c_w in self.video_capture_tab.camera_widgets: 
+        for c_w in self.vct.camera_widgets:
             c_w.update_camera_dropdown()
-            
+
     def closeEvent(self, event):
         """Handle the close event to stop the timer and release resources"""
         self.stop_capturing()
         if self.preview_mode:
             self.update_timer.stop()
-        self.close()
         super().closeEvent(event)
         event.accept()
 
-    ### Functions for changing camera settings ----------------------------------------
+    # Functions for changing camera settings ----------------------------------------
 
     def rename(self, new_label):
         """Rename the camera"""

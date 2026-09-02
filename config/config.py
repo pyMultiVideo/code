@@ -13,10 +13,26 @@ gui_config = {
 # Default FFMPEG config ----------------------------------------------------------------
 
 ffmpeg_config = {
-    "crf": 23,  # Controls video quality vs file size, range [1 - 51], lower is higher quality and larger files.
-    "encoding_speed": "fast",  # Controls encoding speed vs file size, value values ["fast", "medium", "slow"]
+    "crf": 28,  # Controls video quality vs file size, range [1 - 51], lower is higher quality and larger files.
+    "encoding_speed": "fast",  # Controls encoding speed vs file size, valid values ["fast", "medium", "slow"]
     "compression_standard": "h264",  # ["h265" , "h264"]
 }
+
+# Default trigger config -------------------------------------------------------------
+
+trigger_config = {
+    "enabled": False,
+    "port": "",
+    "pin": "X1",
+    "frequency_hz": 60,
+}
+
+# Camera pixel format preferences -----------------------------------------------
+
+pixel_format_priority = [
+    "bayer_rggb8",
+    "mono8",
+]
 
 # Paths -------------------------------------------------------------------------------
 
@@ -40,5 +56,5 @@ default_camera_config = {
     "exposure_time": 15000,
     "gain": 0,
     "external_trigger": False,
-    "pixel_format": "Mono",
+    "pixel_format": "mono8",
 }
