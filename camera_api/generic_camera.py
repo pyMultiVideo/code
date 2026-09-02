@@ -181,6 +181,6 @@ def list_available_cameras() -> list[str]:
     return serial_number_list
 
 
-def initialise_camera_api(serial_number: str):
+def initialise_camera(serial_number: str):
     """Return a GenericCamera object for the requested serial number."""
     return GenericCamera(serial_number=serial_number)

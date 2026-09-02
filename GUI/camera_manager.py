@@ -32,11 +32,15 @@ def _validate_camera_modules():
 
             # Check if the expected functions and classes exist in every python module in the camera package
             if hasattr(module, "list_available_cameras") is False:
-                print(f"Error: {module} does not have the function 'list_available_cameras. \
-                    This is a requirment of all modules in the camera package.")
-            if hasattr(module, "initialise_camera_api") is False:
-                print(f"Error: {module} does not have the function 'initialise_camera_api. \
-                    This is a requirment of all modules in the camera package.")
+                print(
+                    f"Error: {module} does not have the function 'list_available_cameras. \
+                    This is a requirment of all modules in the camera package."
+                )
+            if hasattr(module, "initialise_camera") is False:
+                print(
+                    f"Error: {module} does not have the function 'initialise_camera. \
+                    This is a requirment of all modules in the camera package."
+                )
 
             # Check if the module has a class with the inheritance from GenericCamera
             for attribute_name in dir(module):
@@ -48,8 +52,10 @@ def _validate_camera_modules():
                 ):
                     break
             else:
-                print(f"Error: {module} does not have a class inheriting from 'GenericCamera'. \
-                    This is a requirment of all modules in the camera package.")
+                print(
+                    f"Error: {module} does not have a class inheriting from 'GenericCamera'. \
+                    This is a requirment of all modules in the camera package."
+                )
 
 
 # Run validation on module import
@@ -86,7 +92,7 @@ class CameraManager:
     def _create(self, unique_id):
         serial_number, module_name = unique_id.rsplit("-", 1)
         camera_module = importlib.import_module(f"camera_api.{module_name}")
-        return camera_module.initialise_camera_api(serial_number=serial_number)
+        return camera_module.initialise_camera(serial_number=serial_number)
 
     def get_or_create(self, unique_id):
         """Return an existing camera API instance, or create one for this camera ID."""

@@ -199,6 +199,6 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
     return serial_number_list
 
 
-def initialise_camera_api(serial_number):
+def initialise_camera(serial_number):
     """Instantiate the XimeaCamera object"""
     return XimeaCamera(serial_number=serial_number)

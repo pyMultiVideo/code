@@ -113,7 +113,6 @@ class SpinnakerCamera(GenericCamera):
     def set_external_trigger_enable(self, enable: bool):
         """Configure whether camera uses external triggering for frame acquisition."""
         if enable:  # Enable external triggering
-
             # Ensure external trigger mode is off before configuring settings
             trigger_mode = PySpin.CEnumerationPtr(self._nodemap.GetNode("TriggerMode"))
             trigger_mode.SetIntValue(trigger_mode.GetEntryByName("Off").GetValue())
@@ -138,7 +137,6 @@ class SpinnakerCamera(GenericCamera):
             trigger_overlap.SetIntValue(trigger_overlap.GetEntryByName("ReadOut").GetValue())
 
         else:  # Internal triggering
-
             # Ensure that the trigger mode is off so manual camera control is enabled
             trigger_mode = PySpin.CEnumerationPtr(self._nodemap.GetNode("TriggerMode"))
             trigger_mode.SetIntValue(trigger_mode.GetEntryByName("Off").GetValue())
@@ -289,7 +287,7 @@ def list_available_cameras(VERBOSE=False) -> list[str]:
     return serial_number_list
 
 
-def initialise_camera_api(serial_number):
+def initialise_camera(serial_number):
     """Instantiate the model-appropriate Spinnaker camera object."""
     cam_list = PYSPINSYSTEM.GetCameras()
     cam = next((cam for cam in cam_list if cam.TLDevice.DeviceSerialNumber.GetValue() == serial_number))
