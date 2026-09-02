@@ -11,6 +11,8 @@ from .generic_camera import FrameData, GenericCamera
 _MAX_CAMERA_SCAN = 10
 _FRAME_BUFFER_MAX = 256
 
+cv2.setLogLevel(0)  # Turn of warnings if camera not found at specified index.
+
 
 class WebcamCamera(GenericCamera):
     """Generic webcam backend based on OpenCV VideoCapture."""
@@ -133,6 +135,8 @@ class WebcamCamera(GenericCamera):
         if self._capture_thread is not None:
             self._capture_thread.join(timeout=1.0)
             self._capture_thread = None
+        self._cam.release()
+        self._cam = None
 
     def get_available_images(self) -> list[FrameData]:
         with self._buffer_lock:
@@ -144,31 +148,26 @@ class WebcamCamera(GenericCamera):
 
     def close(self):
         self.stop_capturing()
-        if self._cam is not None:
-            self._cam.release()
-            self._cam = None
 
     def _capture_loop(self):
         """Capture frames in a background thread and enqueue FrameData for GUI polling."""
         next_capture_time = time.perf_counter()
-
         while not self._capture_stop_event.is_set():
             if self._cam is None or not self._cam.isOpened():
                 break
-
             frame_start_time = time.perf_counter()
             ok, frame = self._cam.read()
+            # Avoid a tight spin loop if camera read fails repeatedly.
             if not ok or frame is None:
-                # Avoid a tight spin loop when camera read fails repeatedly.
                 self._capture_stop_event.wait(0.01)
                 continue
-
+            # Convert pixel format.
             if self._active_pixel_format == "mono8":
                 if frame.ndim == 3:
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             else:
                 frame = _to_bayer_rggb8(frame)
-
+            # Make FrameData object and put in frame buffer.
             frame_data = FrameData(
                 image=np.asarray(frame, dtype=np.uint8).reshape(-1),
                 GPIO_pinstate=None,
@@ -176,11 +175,9 @@ class WebcamCamera(GenericCamera):
                 number=self._frame_number,
             )
             self._frame_number += 1
-
             with self._buffer_lock:
                 self._frame_buffer.append(frame_data)
-
-            # Pace capture to requested FPS. If the camera read itself is slower, no extra wait is applied.
+            # Pace capture to requested FPS.
             target_interval = 1.0 / max(self._target_fps, 1.0)
             next_capture_time = max(next_capture_time + target_interval, frame_start_time + target_interval)
             wait_time = next_capture_time - time.perf_counter()
@@ -192,13 +189,10 @@ def _to_bayer_rggb8(frame: np.ndarray) -> np.ndarray:
     """Convert a webcam frame into a single-channel Bayer RGGB mosaic."""
     if frame.ndim == 2:
         return frame
-
     if frame.ndim == 3 and frame.shape[2] == 4:
         frame = frame[:, :, :3]
-
     if frame.ndim != 3 or frame.shape[2] != 3:
         raise ValueError(f"Unsupported webcam frame shape for Bayer conversion: {frame.shape}")
-
     # OpenCV returns BGR; map channels into an RGGB Bayer pattern.
     bgr = np.asarray(frame, dtype=np.uint8)
     bayer = np.empty(bgr.shape[:2], dtype=np.uint8)
@@ -211,41 +205,26 @@ def _to_bayer_rggb8(frame: np.ndarray) -> np.ndarray:
 
 def _open_capture(index: int):
     """Open webcam using backend hints appropriate for the current platform."""
-    backends = [
-        cv2.CAP_DSHOW,
-        cv2.CAP_MSMF,
-        None,
-    ]
-
-    for backend in backends:
+    for backend in [cv2.CAP_DSHOW, cv2.CAP_MSMF, None]:
         cam = cv2.VideoCapture(index) if backend is None else cv2.VideoCapture(index, backend)
         if cam.isOpened():
             return cam
         cam.release()
-
     return None
 
 
 def list_available_cameras(VERBOSE=False) -> list[str]:
     """Discover webcam indices available through OpenCV VideoCapture."""
     serial_number_list = []
-    cv2.setLogLevel(0)
     for index in range(_MAX_CAMERA_SCAN):
         cam = _open_capture(index)
         if cam is None:
             break
-        # Confirm we can retrieve at least one frame before advertising the camera.
-        ok, _ = cam.read()
-        cam.release()
-
-        if ok:
-            serial_number_list.append(str(index))
-            if VERBOSE:
-                print(f"Webcam index found: {index}")
-
+        serial_number_list.append(str(index))
+        if VERBOSE:
+            print(f"Webcam found at index: {index}")
     if VERBOSE:
         print(f"Number of webcams detected: {len(serial_number_list)}")
-
     return serial_number_list
 
 
