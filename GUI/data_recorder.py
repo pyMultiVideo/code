@@ -65,7 +65,7 @@ class Data_recorder:
             # Camera Config Settings
             "camera_unique_id": self.settings.unique_id,
             "camera_name": self.settings.name,
-            "FPS": int(self.settings.fps),
+            "FPS": "external_trigger" if self.settings.external_trigger else int(self.settings.fps),
             "exposure_time": self.settings.exposure_time,
             "gain": self.settings.gain,
             "pixel_format": self.camera_widget.camera_api.pixel_format.name,
