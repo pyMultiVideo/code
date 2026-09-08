@@ -115,6 +115,8 @@ class PyboardManager:
         self.pulse_running = False
         self._checked_ports = set()
         self._pyboard_ports = set()
+        self._paused = False  # True if pulse was stopped by pause_pulse() and awaits resume_pulse()
+        self._pulse_params = None  # (port, pin, frequency_hz) from the most recent successful start_pulse()
 
     def get_available_ports(self) -> list[str]:
         """Return detected board ports, keeping active port visible while pulsing."""
@@ -166,6 +168,7 @@ class PyboardManager:
             self.pyboard.exec(getsource(_pyboard_enable_pulses))
             self.pyboard.exec_raw_no_follow(f"_pyboard_enable_pulses({frequency_hz})")
             self.pulse_running = True
+            self._pulse_params = (port, pin, frequency_hz)
         except PyboardError:
             self.pulse_running = False
             self.disconnect()
@@ -182,6 +185,20 @@ class PyboardManager:
             raise (PyboardError(f"Could not stop pulse: {exc}"))
         self.pulse_running = False
         self.disconnect()
+
+    def pause_pulse(self):
+        """Temporarily stop pulse output, if running, so it can be resumed with resume_pulse()."""
+        if not self.pulse_running:
+            return
+        self.stop_pulse()
+        self._paused = True
+
+    def resume_pulse(self):
+        """Restart pulse output previously stopped by pause_pulse(), using the same parameters."""
+        if not self._paused:
+            return
+        self._paused = False
+        self.start_pulse(*self._pulse_params)
 
 
 # Helper functions. ---------------------------------------------------------------------------

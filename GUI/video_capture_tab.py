@@ -21,6 +21,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import QTimer, Qt
 
 from .camera_widget import CameraWidget, CameraWidgetConfig
+from .frame_trigger import PyboardError
 
 
 @dataclass
@@ -225,14 +226,33 @@ class VideoCaptureTab(QWidget):
             self.start_recording_button.setEnabled(False)
             QMessageBox.information(None, "Duplicate Subject IDs", "Duplicate Subject IDs detected.")
             return
-
-        # Begin Recording
+        # Begin Recording - pause trigger pulses so all cameras start recording on same pulse.
+        self._pause_trigger_pulse()
         for camera_widget in self.camera_widgets:
             camera_widget.start_recording()
+        self._resume_trigger_pulse()
 
     def stop_recording(self):
+        """Stop recording video from all camera widgets."""
+        self._pause_trigger_pulse()
+        self.update_camera_widgets()  # Flush camera buffers to ensure all frames written to disk.
         for camera_widget in self.camera_widgets:
             camera_widget.stop_recording()
+        self._resume_trigger_pulse()
+
+    def _pause_trigger_pulse(self):
+        """Pause trigger pulse output if enabled so all cameras see the same pulses during recording."""
+        try:
+            self.camera_setup_tab.trigger_manager.pause_pulse()
+        except PyboardError as e:
+            QMessageBox.warning(self, "Warning", f"Error pausing trigger pulse: {e}")
+
+    def _resume_trigger_pulse(self):
+        """Resume trigger pulse output after all cameras have started/stopped recording."""
+        try:
+            self.camera_setup_tab.trigger_manager.resume_pulse()
+        except PyboardError as e:
+            QMessageBox.warning(self, "Warning", f"Error resuming trigger pulse: {e}")
 
     # Tab select / deselect ----------------------------------------------------
 
