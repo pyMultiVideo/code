@@ -98,21 +98,21 @@ subject_ids = [f"subject_{i}" for i in range(len(get_camera_unique_ids()))]
 # The parameters which are varied
 testing_parameters = {
     # Folder test name
-    "test_name": "maze-r-2",
+    "test_name": "perf-test",
     # "test_name": f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
     # Recording_length (s)
-    "close_after": "00:45",  # MM:SS
+    "close_after": 45,  # Seconds
     # Config
-    "n_cameras": list(range(1, len(get_camera_unique_ids()) + 1)),
-    "downsample_range": [1, 2, 4],
-    "fps_range": [30, 60, 90, 120],
+    "n_cameras": [1, 2],
+    "downsample_range": [1],
+    "fps_range": [30, 60, 90],
     # GUI config
-    "camera_update_range": [10, 20, 40],
-    "camera_updates_per_display_update": [1, 2, 4],
+    "camera_update_range": [30],
+    "camera_updates_per_display_update": [1],
     # FFMPEG
-    "crf_range": [23],
-    "encoding_speed_options": ["fast", "medium", "slow"],
-    "compression_standard": ["h264", "h265"],
+    "crf_range": [28],
+    "encoding_speed_options": ["fast"],
+    "compression_standard": ["h264"],
 }
 
 # Setup data directors for test to take place in

@@ -40,8 +40,6 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # pyMV code 
 
 paths_config = {
     "ROOT": ROOT,
-    "camera_dir": os.path.join(ROOT, "config"),
-    "encoder_dir": os.path.join(ROOT, "config"),
     "data_dir": os.path.join(ROOT, "data"),
     "config_dir": os.path.join(ROOT, "config"),
     "icons_dir": os.path.join(ROOT, "GUI", "icons"),

@@ -68,7 +68,7 @@ class SettingsTab(QWidget):
     def __init__(self, parent=None):
         super(SettingsTab, self).__init__(parent)
         self.GUI = parent
-        self.camera_settings_filepath = os.path.join(self.GUI.paths_config["camera_dir"], "camera_configs.json")
+        self.camera_settings_filepath = os.path.join(self.GUI.paths_config["config_dir"], "camera_configs.json")
         self.ffmpeg_settings_filepath = os.path.join(self.GUI.paths_config["config_dir"], "application_config.json")
         self.setups = {}  # Dict of setups: {Unique_id: Camera_table_item}
         self.preview_showing = False

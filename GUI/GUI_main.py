@@ -52,13 +52,8 @@ class GUIMain(QMainWindow):
 
         # close-after argument
         if self.CLI_args.close_after:
-            # Parse time in HH:SS format
-            time_parts = self.CLI_args.close_after.split(":")
-            mins = int(time_parts[0])
-            seconds = int(time_parts[1])
-            total_seconds = mins * 60 + seconds
             close_timer = QTimer(self)
-            close_timer.setInterval(total_seconds * 1000)
+            close_timer.setInterval(self.CLI_args.close_after * 1000)
             close_timer.setSingleShot(True)
             close_timer.timeout.connect(self.close)
             close_timer.start()

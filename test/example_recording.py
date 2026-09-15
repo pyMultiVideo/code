@@ -21,8 +21,6 @@ config_data = {
         },
         "paths_config": {
             "ROOT": ROOT,
-            "camera_dir": os.path.join(ROOT, "config"),
-            "encoder_dir": os.path.join(ROOT, "config"),
             "data_dir": os.path.join(ROOT, "data"),
             "config_dir": os.path.join(ROOT, "config"),
             "icons_dir": os.path.join(ROOT, "GUI", "icons"),
@@ -54,7 +52,7 @@ config_data = {
         }
     ],
     "record-on-startup": True,
-    "close_after": "00:10",
+    "close_after": 10,
 }
 # Convert test_config to a JSON formatted string
 config_data = json.loads(json.dumps(config_data, default=str))

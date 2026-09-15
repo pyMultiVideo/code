@@ -41,36 +41,18 @@ def open_error_dialog():
 # Terminal Commands -----------------------------------------------------------------------------
 
 
-def valid_time(value):
-    try:
-        hours, minutes = map(int, value.split(":"))
-        if hours < 0 or minutes < 0 or minutes >= 60:
-            raise ValueError
-        return value
-    except ValueError:
-        raise argparse.ArgumentTypeError("Time must be in the format HH:MM with valid values.")
-
-
 def parse_args():
-    """
-    Run the application with config option specified. By default, this overwrite options specificied in config/config.py or specific camera configs
-    """
+    """Run the application with config option specified, overwritting options set in config directory."""
     parser = argparse.ArgumentParser()
     # Experiment Config
-    parser.add_argument("--experiment-config", help="Path to the experiment configuration file in JSON format")
+    parser.add_argument("--experiment-config", help="Experiment configuration in JSON format")
     # Camera Conifg
-    parser.add_argument("--camera-config", help="Path to the camera configuration file in JSON format", type=str)
+    parser.add_argument("--camera-config", help="Camera configuration in JSON format", type=str)
     # Config.py
-    parser.add_argument(
-        "--application-config", help="Path to the application configuration file in JSON format", type=str
-    )
+    parser.add_argument("--application-config", help="Application configuration in JSON format", type=str)
     # Recording options
     parser.add_argument("--record-on-startup", help="if true: Cameras start recording on startup", type=bool)
-    parser.add_argument(
-        "--close-after",
-        help="Amount of time the application will be open for (Specific time in HH:MM)",
-        type=valid_time,
-    )
+    parser.add_argument("--close-after", help="Amount of time in seconds before the application closes", type=int)
     # Return the arguments to the main function
     return parser.parse_known_args()
 

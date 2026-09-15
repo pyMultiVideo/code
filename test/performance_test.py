@@ -17,8 +17,7 @@ def run_performance_test(test_dir="data/test-large", script_path="pyMultiVideo_G
         test_path = dir / "test_config.json"
         with open(test_path, "r") as f:
             config_data = json.load(f)
-        minutes, seconds = map(int, config_data["close_after"].split(":"))
-        total_runtime += int(config_data["close_after"].replace(":", ""))
+        total_runtime += config_data["close_after"]
 
     hours = total_runtime // 3600
     minutes = (total_runtime % 3600) // 60
