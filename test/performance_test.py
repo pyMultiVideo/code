@@ -5,10 +5,13 @@ import sys
 from tqdm import tqdm
 import fire
 
+ROOT = Path(__file__).resolve().parent.parent  # pyMV code folder.
+sys.path.append(str(ROOT))
 
-def run_performance_test(test_dir="data/test-large", script_path="pyMultiVideo_GUI.pyw"):
-    test_dir = Path(test_dir)
-    script_path = Path(script_path)
+
+def run_performance_test(test_dir="data/perf-test", script_path="pyMultiVideo_GUI.pyw"):
+    test_dir = ROOT / test_dir
+    script_path = ROOT / script_path
 
     directories = [d.resolve() for d in test_dir.iterdir() if d.is_dir()]
 
@@ -33,18 +36,18 @@ def run_performance_test(test_dir="data/test-large", script_path="pyMultiVideo_G
             sys.executable,
             script_path,
             "--experiment-config",
-            json.dumps(json.dumps(config_data["experiment_config"])),
+            json.dumps(config_data["experiment_config"]),
             "--camera-config",
-            json.dumps(json.dumps(config_data["camera_config"])),
+            json.dumps(config_data["camera_config"]),
             "--application-config",
-            json.dumps(json.dumps(config_data["application_config"])),
+            json.dumps(config_data["application_config"]),
             "--record-on-startup",
             config_data["record-on-startup"],
             "--close-after",
             config_data["close_after"],
         ]
 
-        command = " ".join(map(str, command))
+        command = [str(argument) for argument in command]
         process = subprocess.Popen(command, stdin=subprocess.PIPE, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
         try:
             while process.poll() is None:

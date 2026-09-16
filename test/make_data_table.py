@@ -6,21 +6,23 @@ import cv2
 from tqdm import tqdm
 import fire
 
+ROOT = Path(__file__).resolve().parent.parent  # pyMV code folder.
+# sys.path.append(str(ROOT))
 
-# Flatten the testing_params dictionary
-def flatten_dict(d, parent_key="", sep="_"):
-    items = []
-    for k, v in d.items():
-        new_key = f"{parent_key}{sep}{k}" if parent_key else k
-        if isinstance(v, dict):
-            items.extend(flatten_dict(v, new_key, sep=sep).items())
+
+def flatten_dict(d):
+    """Flatten a nested dictionary into a single-level dictionary, keeping only innermost keys."""
+    result = {}
+    for key, value in d.items():
+        if isinstance(value, dict):
+            result.update(flatten_dict(value))
         else:
-            items.append((new_key, v))
-    return dict(items)
+            result[key] = value
+    return result
 
 
-def process_videos(test_name="test-photo-1"):
-    test_dir = Path(".") / "data" / test_name
+def process_videos(test_name="perf-test"):
+    test_dir = ROOT / "data" / test_name
     directories = [d for d in test_dir.resolve().iterdir() if d.is_dir()]
 
     camera_rows = []
@@ -31,6 +33,9 @@ def process_videos(test_name="test-photo-1"):
         with open(testing_params_path, "r") as f:
             testing_params = json.load(f)
 
+        del testing_params["application_config"]["default_camera_config"]
+        del testing_params["application_config"]["paths_config"]
+        del testing_params["camera_config"]
         testing_params = flatten_dict(testing_params)
         # Add test ID for each row
         testing_params["test_id"] = directory.name
@@ -51,19 +56,12 @@ def process_videos(test_name="test-photo-1"):
                 video_capture = cv2.VideoCapture(str(video_file_path.resolve()))
                 if not video_capture.isOpened():
                     raise ValueError(f"Unable to open video file: {video_file_path}")
-
                 # Extract video properties
-                metadata["real_frame_count"] = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
-                metadata["real_fps"] = video_capture.get(cv2.CAP_PROP_FPS)  # FPS encoded by FFMPEG
-                metadata["real_duration"] = (
-                    pd.to_timedelta(metadata["real_frame_count"] / metadata["real_fps"], unit="s")
-                    if metadata["real_fps"] > 0
-                    else None
-                )
+                metadata["openCV_frame_count"] = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+                metadata["openCV_fps"] = video_capture.get(cv2.CAP_PROP_FPS)  # FPS encoded by FFMPEG
             except Exception as e:
-                metadata["real_frame_count"] = None
-                metadata["real_fps"] = None
-                metadata["real_duration"] = None
+                metadata["openCV_frame_count"] = None
+                metadata["openCV_fps"] = None
                 print(f"Error processing video file {video_file_path}: {e}")
             finally:
                 if "video_capture" in locals():
