@@ -4,7 +4,7 @@ import json
 import sys
 from itertools import product
 
-# Add the parent directory to sys.path for proper imports
+# Add pyMultivideo root directory to sys.path for imports
 ROOT = Path(__file__).resolve().parent.parent  # pyMV code folder.
 sys.path.append(str(ROOT))
 
@@ -19,19 +19,16 @@ test_parameters = {
         "fps": [30, 60, 90, 120, 150],
         "n_cameras": [1, 2],
     },
-}
-
-# Default values for parameters not sweeped during the performance test.
-
-SWEEP_DEFAULTS = {
-    "n_cameras": 1,
-    "fps": default_camera_config["fps"],
-    "downsampling_factor": default_camera_config["downsampling_factor"],
-    "camera_update_rate": gui_config["camera_update_rate"],
-    "camera_updates_per_display_update": gui_config["camera_updates_per_display_update"],
-    "crf": ffmpeg_config["crf"],
-    "encoding_speed": ffmpeg_config["encoding_speed"],
-    "compression_standard": ffmpeg_config["compression_standard"],
+    "default_parameters": {  # Default values for parameters not sweeped during the performance test.
+        "n_cameras": 1,
+        "fps": default_camera_config["fps"],
+        "downsampling_factor": default_camera_config["downsampling_factor"],
+        "camera_update_rate": gui_config["camera_update_rate"],
+        "camera_updates_per_display_update": gui_config["camera_updates_per_display_update"],
+        "crf": ffmpeg_config["crf"],
+        "encoding_speed": ffmpeg_config["encoding_speed"],
+        "compression_standard": ffmpeg_config["compression_standard"],
+    },
 }
 
 # Generate test config.
@@ -39,7 +36,7 @@ SWEEP_DEFAULTS = {
 
 def generate_test_configs(test_parameters):
     """Create all performance-test configuration files from the supplied parameters."""
-    test_directory = ROOT / "data" / test_parameters["test_name"]
+    test_directory = ROOT / "test" / "test_data" / test_parameters["test_name"]
     test_directory.mkdir(parents=True, exist_ok=True)
     print(f"Directory created at: {test_directory}")
 
@@ -158,13 +155,10 @@ def _as_list(value):
 def _get_parameter_combinations(parameters):
     """Return parameter combinations for a test specification."""
     parameter_sweeps = parameters.get("parameter_sweeps", {})
-    unknown_parameters = set(parameter_sweeps) - set(SWEEP_DEFAULTS)
-    if unknown_parameters:
-        raise ValueError(f"Unknown parameter sweep(s): {sorted(unknown_parameters)}")
-
-    sweep_names = list(SWEEP_DEFAULTS)
+    default_parameters = parameters["default_parameters"]
+    sweep_names = list(default_parameters)
     sweep_values = [
-        _as_list(parameter_sweeps[name]) if name in parameter_sweeps else [SWEEP_DEFAULTS[name]]
+        _as_list(parameter_sweeps[name]) if name in parameter_sweeps else [default_parameters[name]]
         for name in sweep_names
     ]
     return [dict(zip(sweep_names, values)) for values in product(*sweep_values)]

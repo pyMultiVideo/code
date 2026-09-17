@@ -21,8 +21,9 @@ def flatten_dict(d):
     return result
 
 
-def process_videos(test_name="perf-test"):
-    test_dir = ROOT / "data" / test_name
+def make_data_table(test_name="perf-test"):
+    """Create a csv data table from the metadata files in a test data directory and the corresponding video files."""
+    test_dir = ROOT / "test" / "test_data" / test_name
     directories = [d for d in test_dir.resolve().iterdir() if d.is_dir()]
 
     camera_rows = []
@@ -107,4 +108,4 @@ pause
 
 
 if __name__ == "__main__":
-    fire.Fire(process_videos)
+    fire.Fire(make_data_table)

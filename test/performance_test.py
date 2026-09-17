@@ -9,9 +9,15 @@ ROOT = Path(__file__).resolve().parent.parent  # pyMV code folder.
 sys.path.append(str(ROOT))
 
 
-def run_performance_test(test_dir="data/perf-test", script_path="pyMultiVideo_GUI.pyw"):
-    test_dir = ROOT / test_dir
-    script_path = ROOT / script_path
+def run_performance_test(test_name="perf-test"):
+    """Run a performance test by recording video using the different acquisition parameters specified in the test
+    configuration files. The test is performed by launching the GUI once for each configuration file
+    in the test directory, configuring acqusition parameters using command line arguments, and closing the GUI
+    automatically after the specified recording duration.
+    """
+
+    test_dir = ROOT / "test" / "test_data" / test_name
+    script_path = ROOT / "pyMultiVideo_GUI.pyw"
 
     directories = [d.resolve() for d in test_dir.iterdir() if d.is_dir()]
 

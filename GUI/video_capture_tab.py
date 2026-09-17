@@ -80,7 +80,7 @@ class VideoCaptureTab(QWidget):
 
         # Save as button
         self.save_as_button = QPushButton("Save as")
-        self.save_as_button.setIcon(QIcon("GUI/icons/save_as.svg"))
+        self.save_as_button.setIcon(QIcon(os.path.join(self.GUI.paths_config["icons_dir"], "save_as.svg")))
         self.save_as_button.setFixedHeight(30)
         self.save_as_button.setToolTip("Save the current camera configuration as a new file")
         self.save_as_button.clicked.connect(self.save_config_as)
