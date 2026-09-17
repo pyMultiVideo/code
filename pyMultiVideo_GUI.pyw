@@ -1,7 +1,8 @@
 import logging
 import sys
 import argparse
-from config.config import gui_config
+from pathlib import Path
+from config.config import gui_config, paths_config
 
 # Dependancy Mangement
 import importlib.util
@@ -10,7 +11,7 @@ import importlib.util
 logging.basicConfig(
     level=logging.ERROR,
     handlers=[
-        logging.FileHandler("ErrorLog.txt", delay=True),
+        logging.FileHandler(Path(paths_config["ROOT"]) / "ErrorLog.txt", delay=True),
     ],
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
