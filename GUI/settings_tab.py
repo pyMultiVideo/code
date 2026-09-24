@@ -228,6 +228,8 @@ class SettingsTab(QWidget):
 
     def save_app_config(self):
         """Save current ffmpeg and trigger settings to disk."""
+        if self.GUI.CLI_args.application_config:  # Config supplied via CLI, don't persist it.
+            return
         with open(self.ffmpeg_settings_filepath, "w", encoding="utf-8") as f:
             json.dump(
                 {
@@ -353,6 +355,8 @@ class SettingsTab(QWidget):
             self.saved_setups.remove(saved_setup)
         # Add the setup config to the saved setups list
         self.saved_setups.append(setup.settings)
+        if self.GUI.CLI_args.camera_config:  # Config supplied via CLI, don't persist it.
+            return
         # Save any setups in the list of setups
         if self.saved_setups:
             with open(self.camera_settings_filepath, "w") as f:
