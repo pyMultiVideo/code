@@ -40,7 +40,7 @@ class SpinnakerCamera(GenericCamera):
 
         # Set Buffer handling mode to OldestFirst and buffer size to 100 frames.
         bh_node = PySpin.CEnumerationPtr(self._stream_nodemap.GetNode("StreamBufferHandlingMode"))
-        bh_node.SetIntValue(bh_node.GetEntryByName("OldestFirst").GetValue())
+        bh_node.SetIntValue(bh_node.GetEntryByName("OldestFirstOverwrite").GetValue())
         sbc_node = PySpin.CIntegerPtr(self._stream_nodemap.GetNode("StreamBufferCountManual"))
         sbc_node.SetValue(100)
 
@@ -218,7 +218,7 @@ class SpinnakerCamera(GenericCamera):
                         image=frame_image,
                         GPIO_pinstate=self._extract_gpio_data(frame_image, chunk_data),
                         timestamp=chunk_data.GetTimestamp() // 1000,
-                        number=int(next_image.GetFrameID()),
+                        number=chunk_data.GetFrameID(),
                     )
                 )
                 next_image.Release()  # Clears image from buffer.
