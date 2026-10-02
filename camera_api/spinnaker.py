@@ -49,6 +49,8 @@ class SpinnakerCamera(GenericCamera):
         self._configure_gpio(chunk_selector)
         chunk_selector.SetIntValue(chunk_selector.GetEntryByName("Timestamp").GetValue())
         self._cam.ChunkEnable.SetValue(True)
+        chunk_selector.SetIntValue(chunk_selector.GetEntryByName("FrameCounter").GetValue())
+        self._cam.ChunkEnable.SetValue(True)
         self._cam.ChunkModeActive.SetValue(True)
 
         # Set continuous acquisition mode
