@@ -33,6 +33,7 @@ class XimeaCamera(GenericCamera):
 
         self._cam.disable_aeag()  # Automatic exposure gain disabled
         self._cam.set_acq_timing_mode("XI_ACQ_TIMING_MODE_FRAME_RATE")  # Manual Framerate control
+        self._cam.set_buffers_queue_size(20)  # Set frame buffer size.
 
         print(f"Ximea camera {self.serial_number} initialised")
 
