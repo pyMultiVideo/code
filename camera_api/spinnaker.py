@@ -40,7 +40,7 @@ class SpinnakerCamera(GenericCamera):
 
         # Set Buffer handling mode to OldestFirst and buffer size to 100 frames.
         bh_node = PySpin.CEnumerationPtr(self._stream_nodemap.GetNode("StreamBufferHandlingMode"))
-        bh_node.SetIntValue(bh_node.GetEntryByName("OldestFirstOverwrite").GetValue())
+        bh_node.SetIntValue(bh_node.GetEntryByName("OldestFirst").GetValue())
         sbc_node = PySpin.CIntegerPtr(self._stream_nodemap.GetNode("StreamBufferCountManual"))
         sbc_node.SetValue(100)
 
@@ -164,6 +164,7 @@ class SpinnakerCamera(GenericCamera):
 
     def set_frame_rate(self, frame_rate):
         """Set the frame rate of the camera in Hz."""
+        self.ifi = 1e6 / int(frame_rate)  # Expected inter-frame interval in microseconds
         PySpin.CFloatPtr(self._nodemap.GetNode("AcquisitionFrameRate")).SetValue(int(frame_rate))
 
     def set_exposure_time(self, exposure_time: float) -> None:
@@ -189,6 +190,8 @@ class SpinnakerCamera(GenericCamera):
         if not self._cam.IsInitialized():
             self._cam.Init()
         if not self._cam.IsStreaming():
+            self.last_frame_time = 0
+            self.frame_number = 0
             self._cam.BeginAcquisition()
 
     def stop_capturing(self) -> None:
@@ -215,12 +218,17 @@ class SpinnakerCamera(GenericCamera):
                 next_image = self._cam.GetNextImage(0)  # Raises exception if buffer empty.
                 chunk_data = next_image.GetChunkData()  # Image metadata.
                 frame_image = next_image.GetData()  # Image pixels as 1D numpy array of image bytes.
+                frame_timestamp = chunk_data.GetTimestamp() // 1000  # convert to microseconds
+                # Update frame number based on the time elapsed since the last frame.
+                # We don't use chunk_data.GetFrameID because it does not track frames dropped when buffer is full.
+                self.frame_number = self.frame_number + round((frame_timestamp - self.last_frame_time) / self.ifi)
+                self.last_frame_time = frame_timestamp
                 frames.append(
                     FrameData(
                         image=frame_image,
                         GPIO_pinstate=self._extract_gpio_data(frame_image, chunk_data),
-                        timestamp=chunk_data.GetTimestamp() // 1000,
-                        number=chunk_data.GetFrameID(),
+                        timestamp=frame_timestamp,
+                        number=self.frame_number,
                     )
                 )
                 next_image.Release()  # Clears image from buffer.
