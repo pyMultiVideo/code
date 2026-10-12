@@ -5,6 +5,8 @@ from .generic_camera import FrameData, GenericCamera
 
 PYSPINSYSTEM = PySpin.System.GetInstance()  # One PySpin system instance per pMV
 
+# Spinnaker camera class --------------------------------------------------------------------------------------------
+
 
 class SpinnakerCamera(GenericCamera):
     """Inherits from GenericCamera class and adds spinnaker specific functions from the PySpin library"""
@@ -44,14 +46,8 @@ class SpinnakerCamera(GenericCamera):
         sbc_node = PySpin.CIntegerPtr(self._stream_nodemap.GetNode("StreamBufferCountManual"))
         sbc_node.SetValue(100)
 
-        # Configure image metadata to include GPIO pinstate and image timestamp.
-        chunk_selector = PySpin.CEnumerationPtr(self._nodemap.GetNode("ChunkSelector"))
-        self._configure_gpio(chunk_selector)
-        chunk_selector.SetIntValue(chunk_selector.GetEntryByName("Timestamp").GetValue())
-        self._cam.ChunkEnable.SetValue(True)
-        chunk_selector.SetIntValue(chunk_selector.GetEntryByName("FrameCounter").GetValue())
-        self._cam.ChunkEnable.SetValue(True)
-        self._cam.ChunkModeActive.SetValue(True)
+        # Configure image metadata to include GPIO pinstate, frame IDs and image timestamp.
+        self._configure_image_metadata()
 
         # Set continuous acquisition mode
         acq_mode = PySpin.CEnumerationPtr(self._nodemap.GetNode("AcquisitionMode"))
@@ -110,7 +106,42 @@ class SpinnakerCamera(GenericCamera):
                 pxl_formats.append(str(entry.GetSymbolic()))
         return pxl_formats
 
-    # Configure Camera for external acqusition
+    # Functions used in initial camera configuration ------------------------------------------------------------------
+
+    def _configure_image_metadata(self):
+        """Configure camera to include GPIO pinstate, frame IDs, and image timestamp in image metadata."""
+        chunk_selector = PySpin.CEnumerationPtr(self._nodemap.GetNode("ChunkSelector"))
+        for chunk_name in ("Timestamp", "FrameCounter", "ExposureEndLineStatusAll"):
+            chunk_selector.SetIntValue(chunk_selector.GetEntryByName(chunk_name).GetValue())
+            self._cam.ChunkEnable.SetValue(True)
+        self._cam.ChunkModeActive.SetValue(True)
+
+    def _enable_manual_frame_rate_control(self):
+        """Enable manual frame-rate control for non-Chameleon Spinnaker cameras."""
+        fra_node = PySpin.CBooleanPtr(self._nodemap.GetNode("AcquisitionFrameRateEnable"))
+        fra_node.SetValue(True)
+
+    # Functions to set camera parameters ------------------------------------------------------------------------------
+
+    def set_frame_rate(self, frame_rate):
+        """Set the frame rate of the camera in Hz."""
+        PySpin.CFloatPtr(self._nodemap.GetNode("AcquisitionFrameRate")).SetValue(int(frame_rate))
+
+    def set_exposure_time(self, exposure_time: float) -> None:
+        """Set the exposure time of the camera in microseconds."""
+        PySpin.CFloatPtr(self._nodemap.GetNode("ExposureTime")).SetValue(float(exposure_time))
+
+    def set_gain(self, gain: float):
+        """Set gain (dB)"""
+        PySpin.CFloatPtr(self._nodemap.GetNode("Gain")).SetValue(float(gain))
+
+    def _set_pixel_format(self, pixel_format: str):
+        """Set the pixel format using a spinnaker-native format name."""
+        pxf_node = PySpin.CEnumerationPtr(self._nodemap.GetNode("PixelFormat"))
+        if PySpin.IsAvailable(pxf_node) and PySpin.IsWritable(pxf_node):
+            pxf_node.SetIntValue(pxf_node.GetEntryByName(pixel_format).GetValue())
+        else:
+            print(f"Unable to set pixel format. Current format: {self._get_camera_pixel_format()}")
 
     def set_external_trigger_enable(self, enable: bool):
         """Configure whether camera uses external triggering for frame acquisition."""
@@ -145,53 +176,13 @@ class SpinnakerCamera(GenericCamera):
             # Set frame rate control to manual.
             self._enable_manual_frame_rate_control()
 
-    def _configure_gpio(self, chunk_selector):
-        """Configure camera to include GPIO pinstates in image metadata."""
-        chunk_selector.SetIntValue(chunk_selector.GetEntryByName("ExposureEndLineStatusAll").GetValue())
-        self._cam.ChunkEnable.SetValue(True)
-
-    def _enable_manual_frame_rate_control(self):
-        """Enable manual frame-rate control for non-Chameleon Spinnaker cameras."""
-        fra_node = PySpin.CBooleanPtr(self._nodemap.GetNode("AcquisitionFrameRateEnable"))
-        fra_node.SetValue(True)
-
-    def _extract_gpio_data(self, _img_data, chunk_data):
-        """Extract GPIO pin states from chunk data, return as numpy boolean array."""
-        gpio_binary = format(chunk_data.GetExposureEndLineStatusAll(), "04b")
-        return np.array([int(gpio_binary[3]), int(gpio_binary[1]), int(gpio_binary[0])], dtype=bool)
-
-    # Functions to set camera paramteters -----------------------------------------------------------------------------
-
-    def set_frame_rate(self, frame_rate):
-        """Set the frame rate of the camera in Hz."""
-        self.ifi = 1e6 / int(frame_rate)  # Expected inter-frame interval in microseconds
-        PySpin.CFloatPtr(self._nodemap.GetNode("AcquisitionFrameRate")).SetValue(int(frame_rate))
-
-    def set_exposure_time(self, exposure_time: float) -> None:
-        """Set the exposure time of the camera in microseconds."""
-        PySpin.CFloatPtr(self._nodemap.GetNode("ExposureTime")).SetValue(float(exposure_time))
-
-    def set_gain(self, gain: float):
-        """Set gain (dB)"""
-        PySpin.CFloatPtr(self._nodemap.GetNode("Gain")).SetValue(float(gain))
-
-    def _set_pixel_format(self, pixel_format: str):
-        """Set the pixel format using a spinnaker-native format name."""
-        pxf_node = PySpin.CEnumerationPtr(self._nodemap.GetNode("PixelFormat"))
-        if PySpin.IsAvailable(pxf_node) and PySpin.IsWritable(pxf_node):
-            pxf_node.SetIntValue(pxf_node.GetEntryByName(pixel_format).GetValue())
-        else:
-            print(f"Unable to set pixel format. Current format: {self._get_camera_pixel_format()}")
-
-    # Functions to control the camera streaming and check status. -----------------------------------------------------
+    # Functions to control camera streaming and acquire images -------------------------------------------------------------------
 
     def begin_capturing(self) -> None:
         """Start camera streaming images."""
         if not self._cam.IsInitialized():
             self._cam.Init()
         if not self._cam.IsStreaming():
-            self.last_frame_time = 0
-            self.frame_number = 0
             self._cam.BeginAcquisition()
 
     def stop_capturing(self) -> None:
@@ -212,40 +203,32 @@ class SpinnakerCamera(GenericCamera):
     def get_available_images(self) -> list[FrameData]:
         """Gets all available images from the buffer and returns FrameData objects."""
         frames = []
-
         try:
             while True:
-                next_image = self._cam.GetNextImage(0)  # Raises exception if buffer empty.
-                chunk_data = next_image.GetChunkData()  # Image metadata.
-                frame_image = next_image.GetData()  # Image pixels as 1D numpy array of image bytes.
-                frame_timestamp = chunk_data.GetTimestamp() // 1000  # convert to microseconds
-                # Update frame number based on the time elapsed since the last frame.
-                # We don't use chunk_data.GetFrameID because it does not track frames dropped when buffer is full.
-                self.frame_number = self.frame_number + round((frame_timestamp - self.last_frame_time) / self.ifi)
-                self.last_frame_time = frame_timestamp
-                frames.append(
-                    FrameData(
-                        image=frame_image,
-                        GPIO_pinstate=self._extract_gpio_data(frame_image, chunk_data),
-                        timestamp=frame_timestamp,
-                        number=self.frame_number,
-                    )
-                )
-                next_image.Release()  # Clears image from buffer.
+                image = self._cam.GetNextImage(0)  # Raises exception if buffer empty.
+                img_data = image.GetData()
+                chunk_data = image.GetChunkData()
+                frames.append(FrameData(image=img_data, **self._get_image_metadata(img_data, chunk_data)))
+                image.Release()  # Clears image from buffer.
         except PySpin.SpinnakerException:  # Buffer is empty.
             return frames
+
+    def _get_image_metadata(self, img_data, chunk_data):
+        """Get the image metadata chunk_data."""
+        gpio_binary = format(chunk_data.GetExposureEndLineStatusAll(), "04b")
+        gpio_pinstate = np.array([int(gpio_binary[3]), int(gpio_binary[1]), int(gpio_binary[0])], dtype=bool)
+        return {
+            "GPIO_pinstate": gpio_pinstate,
+            "timestamp": chunk_data.GetTimestamp() // 1000,  # convert to microseconds
+            "number": chunk_data.GetFrameID(),
+        }
+
+
+# Chamelon3 camera class --------------------------------------------------------------------------------------------
 
 
 class Chameleon3Camera(SpinnakerCamera):
     """Spinnaker camera implementation for Chameleon3 model-specific behavior."""
-
-    def _configure_gpio(self, chunk_selector):
-        """Configure camera to include GPIO pinstates in image data. Getting GPIO pinstate
-        from chunk data is not supported on Chameleon3 cameras."""
-        FRAME_INFO_REG = 0xFFFFF0F012F8
-        reg_read = self._cam.ReadPort(FRAME_INFO_REG)
-        reg_write = (reg_read & 0xFFFFFC00) + 0x3FF
-        self._cam.WritePort(FRAME_INFO_REG, reg_write)
 
     def _enable_manual_frame_rate_control(self):
         frc_node = PySpin.CBooleanPtr(self._nodemap.GetNode("AcquisitionFrameRateEnabled"))
@@ -253,16 +236,29 @@ class Chameleon3Camera(SpinnakerCamera):
         fra_node = PySpin.CEnumerationPtr(self._nodemap.GetNode("AcquisitionFrameRateAuto"))
         fra_node.SetIntValue(fra_node.GetEntryByName("Off").GetValue())
 
-    def _extract_gpio_data(self, img_data, chunk_data):
-        """Extract GPIO pin states from image data, return as numpy boolean array."""
-        return np.array(
-            [
-                (img_data[32] >> 4) & 1,
-                (img_data[32] >> 5) & 1,
-                (img_data[32] >> 7) & 1,
-            ],
-            dtype=bool,
-        )
+    def _configure_image_metadata(self):
+        """Chameleon3 cameras do not suppot reading GPIO pinstate or frame IDs from chunk data. We instead
+        configure these to be embedded in the image data. Timestamps are still read from chunk data."""
+        # Confiure chunk data to include timestamp as normal.
+        chunk_selector = PySpin.CEnumerationPtr(self._nodemap.GetNode("ChunkSelector"))
+        chunk_selector.SetIntValue(chunk_selector.GetEntryByName("Timestamp").GetValue())
+        self._cam.ChunkEnable.SetValue(True)
+        self._cam.ChunkModeActive.SetValue(True)
+        # Configure embedding GPIO pinstates and frame ID number in image data.
+        FRAME_INFO_REG = 0xFFFFF0F012F8
+        reg_value = self._cam.ReadPort(FRAME_INFO_REG)
+        reg_value = (reg_value & 0xFFFF0000) | 0x140
+        self._cam.WritePort(FRAME_INFO_REG, reg_value)
+
+    def _get_image_metadata(self, img_data, chunk_data):
+        """Get the image metadata from chunk_data and embedded image data."""
+        gpio_pinstate = np.array([(img_data[4] >> 4) & 1, (img_data[4] >> 5) & 1, (img_data[4] >> 7) & 1], dtype=bool)
+        frame_id = (int(img_data[0]) << 24) | (int(img_data[1]) << 16) | (int(img_data[2]) << 8) | int(img_data[3])
+        return {
+            "GPIO_pinstate": gpio_pinstate,
+            "timestamp": chunk_data.GetTimestamp() // 1000,  # convert to microseconds
+            "number": frame_id,
+        }
 
 
 # Camera system functions -------------------------------------------------------------------------------
