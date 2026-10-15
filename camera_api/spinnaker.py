@@ -111,7 +111,7 @@ class SpinnakerCamera(GenericCamera):
     def _configure_image_metadata(self):
         """Configure camera to include GPIO pinstate, frame IDs, and image timestamp in image metadata."""
         chunk_selector = PySpin.CEnumerationPtr(self._nodemap.GetNode("ChunkSelector"))
-        for chunk_name in ("Timestamp", "FrameCounter", "ExposureEndLineStatusAll"):
+        for chunk_name in ("Timestamp", "ExposureEndLineStatusAll"):
             chunk_selector.SetIntValue(chunk_selector.GetEntryByName(chunk_name).GetValue())
             self._cam.ChunkEnable.SetValue(True)
         self._cam.ChunkModeActive.SetValue(True)
@@ -224,11 +224,14 @@ class SpinnakerCamera(GenericCamera):
         }
 
 
-# Chamelon3 camera class --------------------------------------------------------------------------------------------
+# Gen2 camera class --------------------------------------------------------------------------------------------
+
+gen2_cameramodels = ("Blackfly BFLY-U3", "Grasshopper3 GS3-U3", "Flea3 FL3-U3", "Chameleon3 CM3-U3")
 
 
-class Chameleon3Camera(SpinnakerCamera):
-    """Spinnaker camera implementation for Chameleon3 model-specific behavior."""
+class Gen2Camera(SpinnakerCamera):
+    """Spinnaker camera implementation for older Gen2 FLIR cameras which do not support
+    getting GPIO pinstates and frame IDs from chunk data."""
 
     def _enable_manual_frame_rate_control(self):
         frc_node = PySpin.CBooleanPtr(self._nodemap.GetNode("AcquisitionFrameRateEnabled"))
@@ -298,8 +301,8 @@ def initialise_camera(serial_number):
     cam_list = PYSPINSYSTEM.GetCameras()
     cam = next((cam for cam in cam_list if cam.TLDevice.DeviceSerialNumber.GetValue() == serial_number))
     cam_list.Clear()
-    model = cam.TLDevice.DeviceModelName.GetValue()[:10]
-    if model[:10] == "Chameleon3":
-        return Chameleon3Camera(serial_number=serial_number)
+    model = cam.TLDevice.DeviceModelName.GetValue()
+    if model.startswith(gen2_cameramodels):
+        return Gen2Camera(serial_number=serial_number)
     else:
         return SpinnakerCamera(serial_number=serial_number)
