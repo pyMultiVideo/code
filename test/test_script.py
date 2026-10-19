@@ -10,17 +10,16 @@ from plot_test_results import plot_test_results
 # General test parameters
 
 default_parameters = {  # Default values for parameters not sweeped during the performance test.
-    "n_cameras": 2,
+    "n_cameras": 7,
     "fps": 60,
     "downsampling_factor": 1,
     "camera_update_rate": 30,
-    "camera_updates_per_display_update": 1,
     "crf": 28,
     "encoding_speed": "fast",
     "compression_standard": "h264",
 }
 
-recording_duration = 10  # seconds.
+recording_duration = 30  # seconds.
 
 # Individual tests.
 
@@ -29,7 +28,7 @@ test_fps_n_cameras = {  # Sweep fps and number of cameras.
     "recording_duration": recording_duration,
     "parameter_sweeps": {
         "fps": [30, 60, 90, 120, 150],
-        "n_cameras": [1, 2],
+        "n_cameras": [1,2,3,4,5,6,7],
     },
     "default_parameters": default_parameters,
 }
@@ -48,21 +47,12 @@ test_fps_encoding_speed = {  # Sweep fps and encoding speed.
     "test_name": "fps_encoding_speed",
     "recording_duration": recording_duration,
     "parameter_sweeps": {
-        "fps": [30, 60, 90, 120, 150],
-        "encoding_speed": ["slow", "medium", "fast"],
+        "fps": [60, 90], #[30, 60, 90, 120, 150],
+        "encoding_speed": ["slow", "fast"], #["slow", "medium", "fast"],
     },
     "default_parameters": default_parameters,
 }
 
-test_fps_cam_updates = {  # Sweep fps and camera updates per display update.
-    "test_name": "fps_cam_updates",
-    "recording_duration": recording_duration,
-    "parameter_sweeps": {
-        "fps": [30, 60, 90, 120, 150],
-        "camera_updates_per_display_update": [1, 2, 4],
-    },
-    "default_parameters": default_parameters,
-}
 
 test_fps_comp_standard = {  # Sweep fps and camera updates per display update.
     "test_name": "fps_comp_standard",
@@ -75,11 +65,10 @@ test_fps_comp_standard = {  # Sweep fps and camera updates per display update.
 }
 
 all_tests = [
-    test_fps_n_cameras,
-    test_fps_downsampling,
+    #test_fps_n_cameras,
+    #test_fps_downsampling,
     test_fps_encoding_speed,
-    test_fps_cam_updates,
-    test_fps_comp_standard,
+    #test_fps_comp_standard,
 ]
 
 # Run all tests and plot results ----------------------------------------------------------------

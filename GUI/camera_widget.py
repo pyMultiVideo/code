@@ -257,11 +257,10 @@ class CameraWidget(QGroupBox):
                 self.vct.encoder_queue.append(EncoderJob(future, self.settings.unique_id))
                 self._ffmpeg_new_dropped_frames = 0
 
-    def update(self, update_video_display=True):
-        """Called regularly by timer to fetch new images and optionally update video display."""
+    def update(self):
+        """Called regularly by timer to fetch new images and update video display."""
         self.fetch_image_data()
-        if update_video_display:
-            self.update_video_display()
+        self.update_video_display()
 
     # Recording controls --------------------------------------------------------------
 

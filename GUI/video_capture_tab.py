@@ -191,15 +191,14 @@ class VideoCaptureTab(QWidget):
     # Timer callbacks -----------------------------------------------------------------
 
     def update_camera_widgets(self):
-        """Fetches new images from all cameras, updates video displays every n calls."""
-        self.update_counter = (self.update_counter + 1) % self.GUI.gui_config["camera_updates_per_display_update"]
-        update_video_display = self.update_counter == 0
+        """Fetches new images from all cameras and update video displays."""
         # Track number of jobs waiting to be processed by the threadpool.
         self.encoder_queue = [job for job in self.encoder_queue if not job.future.done()]
         queue_length = len(self.encoder_queue)
         self.ffmpeg_buffer_full = queue_length >= self.ffmpeg_buffer_size
+        # Update camera widgets
         for camera_widget in self.camera_widgets:
-            camera_widget.update(update_video_display)
+            camera_widget.update()
 
     def refresh(self):
         """Refresh tab"""

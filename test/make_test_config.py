@@ -24,7 +24,6 @@ test_parameters = {
         "fps": default_camera_config["fps"],
         "downsampling_factor": default_camera_config["downsampling_factor"],
         "camera_update_rate": gui_config["camera_update_rate"],
-        "camera_updates_per_display_update": gui_config["camera_updates_per_display_update"],
         "crf": ffmpeg_config["crf"],
         "encoding_speed": ffmpeg_config["encoding_speed"],
         "compression_standard": ffmpeg_config["compression_standard"],
@@ -61,7 +60,6 @@ def generate_test_configs(test_parameters):
                     downsampling_factor=combination["downsampling_factor"],
                     encoding_speed=combination["encoding_speed"],
                     compression_standard=combination["compression_standard"],
-                    updates_per_display=combination["camera_updates_per_display_update"],
                 ),
                 f,
                 indent=4,
@@ -114,7 +112,6 @@ def _generate_recording_config(
     data_dir,
     close_after,
     camera_update_rate,
-    updates_per_display,
     fps,
     n_camera,
     downsampling_factor,
@@ -127,7 +124,6 @@ def _generate_recording_config(
         "application_config": {
             "gui_config": {
                 "camera_update_rate": camera_update_rate,
-                "camera_updates_per_display_update": updates_per_display,
                 "font_size": 12,
             },
             "ffmpeg_config": {
@@ -168,8 +164,7 @@ def _get_config_directory_name(parameters):
     """Build a stable directory name from one effective parameter combination."""
     return (
         f"config_ncams_{parameters['n_cameras']}_downsample_{parameters['downsampling_factor']}_"
-        f"fps_{parameters['fps']}_update_{parameters['camera_update_rate']}_"
-        f"upd_per_disp_{parameters['camera_updates_per_display_update']}_crf_{parameters['crf']}_"
+        f"fps_{parameters['fps']}_update_{parameters['camera_update_rate']}_crf_{parameters['crf']}_"
         f"speed_{parameters['encoding_speed']}_comp_{parameters['compression_standard']}"
     )
 
