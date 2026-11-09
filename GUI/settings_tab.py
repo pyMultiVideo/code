@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import (
     QSpinBox,
     QPushButton,
     QSizePolicy,
+    QAbstractScrollArea,
     QHeaderView,
     QMessageBox,
     QCheckBox,
@@ -80,7 +81,7 @@ class SettingsTab(QWidget):
         self.camera_table_groupbox = QGroupBox("Cameras")
         self.camera_table = CameraOverviewTable(parent=self)
         self.camera_table.setMinimumSize(1, 1)
-        self.camera_table.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        self.camera_table.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
 
         self.camera_table_layout = QVBoxLayout()
         self.camera_table_layout.addWidget(self.camera_table)
@@ -431,6 +432,7 @@ class CameraOverviewTable(QTableWidget):
         self.setColumnCount(len(self.header_names))
         self.setRowCount(0)
         self.verticalHeader().setVisible(False)
+        self.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
 
         self.setHorizontalHeaderLabels(self.header_names)
         for i in range(len(self.header_names)):
