@@ -209,6 +209,7 @@ class SettingsTab(QWidget):
             ]
 
         self.refresh(on_startup=True)
+        self.camera_table.sort_rows_by_label()
         self.trigger_enable_changed(self.trigger_enable_checkbox.isChecked())
 
     # Tab changing logic -------------------------------------------------------------------------------
@@ -216,6 +217,7 @@ class SettingsTab(QWidget):
     def tab_selected(self):
         """Called when tab selected."""
         self.refresh()
+        self.camera_table.sort_rows_by_label()
 
     def tab_deselected(self):
         """Called when tab deselected.
@@ -434,6 +436,15 @@ class CameraOverviewTable(QTableWidget):
         for i in range(len(self.header_names)):
             resize_mode = QHeaderView.ResizeMode.Stretch if i < 2 else QHeaderView.ResizeMode.ResizeToContents
             self.horizontalHeader().setSectionResizeMode(i, resize_mode)
+
+    def sort_rows_by_label(self):
+        """Visually order rows by camera label (case-insensitive). Moves rows without recreating their widgets."""
+        header = self.verticalHeader()
+        setups = self.setups_tab.setups
+        rows = [row for row in range(self.rowCount()) if self.cellWidget(row, 1).text() in setups]
+        rows.sort(key=lambda row: setups[self.cellWidget(row, 1).text()].get_label().lower())
+        for visual_index, row in enumerate(rows):
+            header.moveSection(header.visualIndex(row), visual_index)
 
     def remove(self, unique_id):
         for row in range(self.rowCount()):
